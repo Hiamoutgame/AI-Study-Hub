@@ -1,23 +1,53 @@
 # Validation, Utility va Error Handler
 
-Tai lieu nay note lai cach du an dang xu ly validation, util wrapper va loi trong `src/`.
-Stack hien tai dung Express 5, TypeScript, `express-validator`, `lodash/omit` va bo model loi rieng trong `src/models/Error.ts`.
+Tai lieu nay ghi chu lai quy uoc va luong xu ly validation, util wrapper va error trong `src/`.
+Stack dang dung: Express 5, TypeScript, `express-validator`, `lodash/omit` va bo model loi rieng trong `src/models/Error.ts`.
 
 ## 1. Cac file lien quan
 
-| File | Vai tro |
-| --- | --- |
-| `src/utils/validation.ts` | Tao middleware `validate(...)` de chay validation chain va gom loi validation ve cung mot format. |
-| `src/utils/handler.ts` | Tao helper `wrapAsync(...)` boc controller/middleware async bang `try/catch` roi day loi vao `next(err)`. |
-| `src/models/Error.ts` | Dinh nghia 2 class loi chinh: `ErrorWithStatus` va `EntityErr`. |
-| `src/middlewares/error.middlewares.ts` | Middleware xu ly loi cuoi cung: `defautHandler(...)`. |
-| `src/constants/httpStatus.ts` | Noi tap trung cac HTTP status code hay dung. |
+| File                                   | Vai tro                                                                                                  |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `src/utils/validation.ts`              | Middleware `validate(...)` chay validation chain va gom loi ve 1 format.                                 |
+| `src/utils/handler.ts`                 | Helper `wrapAsync(...)` boc async controller/middleware, tu dong `try/catch` va day loi vao `next(err)`. |
+| `src/models/Error.ts`                  | Dinh nghia 2 class loi: `ErrorWithStatus` va `EntityErr`.                                                |
+| `src/middlewares/error.middlewares.ts` | Middleware xu ly loi cuoi cung: `defautHandler(...)`.                                                    |
+| `src/constants/httpStatus.ts`          | Noi tap trung cac HTTP status code hay dung.                                                             |
 
 ## 2. Cac model loi
 
 ### `ErrorWithStatus`
 
 Dung cho cac loi co HTTP status cu the, vi du 401, 404, 500.
+
+````ts
+export class ErrorWithStatus {
+  message: string
+  status: number
+
+  constructor(message: string, status: number) {
+    this.message = message
+    this.status = status
+  }
+# Validation, Utility và Error Handler
+
+Tài liệu này ghi chú lại quy ước và luồng xử lý validation, util wrapper và error trong `src/`.
+Stack đang dùng: Express 5, TypeScript, `express-validator`, `lodash/omit` và bộ model lỗi riêng trong `src/models/Error.ts`.
+
+## 1. Các file liên quan
+
+| File | Vai trò |
+| --- | --- |
+| `src/utils/validation.ts` | Middleware `validate(...)` chạy validation chain và gom lỗi về 1 format. |
+| `src/utils/handler.ts` | Helper `wrapAsync(...)` bọc async controller/middleware, tự động `try/catch` và đẩy lỗi vào `next(err)`. |
+| `src/models/Error.ts` | Định nghĩa 2 class lỗi: `ErrorWithStatus` và `EntityErr`. |
+| `src/middlewares/error.middlewares.ts` | Middleware xử lý lỗi cuối cùng: `defautHandler(...)`. |
+| `src/constants/httpStatus.ts` | Nơi tập trung các HTTP status code hay dùng. |
+
+## 2. Các model lỗi
+
+### `ErrorWithStatus`
+
+Dùng cho các lỗi có HTTP status cụ thể, ví dụ 401, 404, 500.
 
 ```ts
 export class ErrorWithStatus {
@@ -29,9 +59,9 @@ export class ErrorWithStatus {
     this.status = status
   }
 }
-```
+````
 
-Khi loi nay di vao `defautHandler`, response se lay `status` lam HTTP status va bo field `status` ra khoi body:
+Khi lỗi này đi vào `defautHandler`, response sẽ lấy `status` làm HTTP status và loại bỏ field `status` khỏi body:
 
 ```json
 {
@@ -41,7 +71,7 @@ Khi loi nay di vao `defautHandler`, response se lay `status` lam HTTP status va 
 
 ### `EntityErr`
 
-Dung cho loi validation data dau vao. Class nay ke thua `ErrorWithStatus` va mac dinh status la `422 Unprocessable Entity`.
+Dùng cho lỗi validation data đầu vào. Class này kế thừa `ErrorWithStatus` và mặc định status là `422 Unprocessable Entity`.
 
 ```ts
 export class EntityErr extends ErrorWithStatus {
@@ -54,7 +84,7 @@ export class EntityErr extends ErrorWithStatus {
 }
 ```
 
-Shape response mong doi:
+Định dạng response mong đợi:
 
 ```json
 {
@@ -70,26 +100,26 @@ Shape response mong doi:
 }
 ```
 
-## 3. Luong validation
+## 3. Luồng validation
 
-File chinh: `src/utils/validation.ts`.
+File chính: `src/utils/validation.ts`.
 
-`validate(validation)` nhan vao mot validation chain cua `express-validator`, sau do tra ve Express middleware.
+`validate(validation)` nhận vào validation chain của `express-validator`, sau đó trả về Express middleware.
 
-Luong chay:
+Các bước:
 
-1. Route goi middleware `validate(...)`.
-2. Middleware chay `await validation.run(req)` de validate request.
-3. Goi `validationResult(req)` de lay danh sach loi.
-4. Neu khong co loi, goi `next()` de di tiep vao controller.
-5. Neu co loi, convert loi ve dang object theo field bang `error.mapped()`.
-6. Tao `EntityErr({ errors: {} })`.
-7. Duyet tung field loi:
-   - Neu `msg` la `ErrorWithStatus` va status khac `422`, day thang loi do vao `next(msg)`.
-   - Nguoc lai, dua loi vao `entityError.errors[field]`.
-8. Goi `next(entityError)` de middleware loi cuoi cung tra response `422`.
+1. Route gọi middleware `validate(...)`.
+2. Middleware chạy `await validation.run(req)` để validate request.
+3. Gọi `validationResult(req)` để lấy danh sách lỗi.
+4. Nếu không có lỗi, gọi `next()` để đi tiếp vào controller.
+5. Nếu có lỗi, chuyển lỗi về dạng object theo field bằng `error.mapped()`.
+6. Tạo `EntityErr({ errors: {} })`.
+7. Duyệt từng field lỗi:
+   - Nếu `msg` là `ErrorWithStatus` và status khác `422`, đẩy thẳng lỗi đó vào `next(msg)`.
+   - Ngược lại, đưa lỗi vào `entityError.errors[field]`.
+8. Gọi `next(entityError)` để middleware lỗi cuối cùng trả response `422`.
 
-Code hien tai:
+Code hiện tại:
 
 ```ts
 export const validate = (validation: RunnableValidationChains<ValidationChain>) => {
@@ -119,11 +149,11 @@ export const validate = (validation: RunnableValidationChains<ValidationChain>) 
 }
 ```
 
-### Vi sao co nhanh `msg instanceof ErrorWithStatus`?
+### Vì sao có nhánh `msg instanceof ErrorWithStatus`?
 
-Trong `express-validator`, message cua validator co the la string, object, hoac mot instance custom.
+Trong `express-validator`, message của validator có thể là string, object, hoặc một instance custom.
 
-Du an tan dung viec nay de cho validation nem ra loi nghiep vu co status khac `422`. Vi du:
+Dự án tận dụng việc này để cho validation ném ra lỗi nghiệp vụ có status khác `422`. Ví dụ:
 
 ```ts
 import { checkSchema } from 'express-validator'
@@ -132,34 +162,37 @@ import { ErrorWithStatus } from '~/models/Error'
 import { validate } from '~/utils/validation'
 
 export const accessTokenValidator = validate(
-  checkSchema({
-    Authorization: {
-      custom: {
-        options: async (value) => {
-          const isValid = Boolean(value)
+  checkSchema(
+    {
+      Authorization: {
+        custom: {
+          options: async (value) => {
+            const isValid = Boolean(value)
 
-          if (!isValid) {
-            throw new ErrorWithStatus('Access token is required', HTTP_STATUS.UNAUTHORIZED)
+            if (!isValid) {
+              throw new ErrorWithStatus('Access token is required', HTTP_STATUS.UNAUTHORIZED)
+            }
+
+            return true
           }
-
-          return true
         }
       }
-    }
-  }, ['headers'])
+    },
+    ['headers']
+  )
 )
 ```
 
-Ket qua:
+Kết quả:
 
-- Loi validate binh thuong se gom ve `422`.
-- Loi co status rieng nhu `401` se di thang vao error handler voi status do.
+- Lỗi validate bình thường sẽ gom về `422`.
+- Lỗi có status riêng như `401` sẽ đi thẳng vào error handler với status đó.
 
 ## 4. Utility `wrapAsync`
 
-File chinh: `src/utils/handler.ts`.
+File chính: `src/utils/handler.ts`.
 
-`wrapAsync(...)` dung de boc controller hoac middleware async, giup khong phai viet `try/catch` lap lai trong tung controller.
+`wrapAsync(...)` bọc controller/middleware async, giúp không phải lặp `try/catch` trong từng controller.
 
 ```ts
 export const wrapAsync = <P, T>(fn: RequestHandler<P, any, any, T>) => {
@@ -173,7 +206,7 @@ export const wrapAsync = <P, T>(fn: RequestHandler<P, any, any, T>) => {
 }
 ```
 
-Vi du dung trong route:
+Ví dụ dùng trong route:
 
 ```ts
 import { Router } from 'express'
@@ -197,25 +230,25 @@ router.get(
 )
 ```
 
-Neu controller throw loi, `wrapAsync` se bat loi va goi `next(err)`, sau do Express day loi qua `defautHandler`.
+Nếu controller throw lỗi, `wrapAsync` sẽ bắt lỗi và gọi `next(err)`, sau đó Express đẩy lỗi qua `defautHandler`.
 
-## 5. Error handler cuoi cung
+## 5. Error handler cuối cùng
 
-File chinh: `src/middlewares/error.middlewares.ts`.
+File chính: `src/middlewares/error.middlewares.ts`.
 
-`defautHandler(...)` la middleware gom loi cuoi cung cua app.
+`defautHandler(...)` là middleware gom lỗi cuối cùng của app.
 
-Luong chay:
+Luồng chạy:
 
-1. Neu `err instanceof ErrorWithStatus`:
-   - Lay `err.status` lam HTTP status.
-   - Tra JSON cua loi nhung bo field `status`.
-2. Neu la loi binh thuong:
-   - Mo cac property cua error thanh enumerable de co the serialize.
-   - Tra `500 Internal Server Error`.
-   - Body gom `message` va `errorInfo`, trong do `stack` bi omit.
+1. Nếu `err instanceof ErrorWithStatus`:
+   - Lấy `err.status` làm HTTP status.
+   - Trả JSON của lỗi nhưng bỏ field `status`.
+2. Nếu là lỗi bình thường:
+   - Mở các property của error thành enumerable để có thể serialize.
+   - Trả `500 Internal Server Error`.
+   - Body gồm `message` và `errorInfo`, trong đó `stack` bị omit.
 
-Code hien tai:
+Code hiện tại:
 
 ```ts
 export const defautHandler = (err: any, req: Request, res: Response, next: NextFunction) => {
@@ -234,7 +267,7 @@ export const defautHandler = (err: any, req: Request, res: Response, next: NextF
 }
 ```
 
-### Response voi `ErrorWithStatus`
+### Response với `ErrorWithStatus`
 
 ```ts
 throw new ErrorWithStatus('User not found', HTTP_STATUS.NOT_FOUND)
@@ -250,7 +283,7 @@ Response:
 
 HTTP status: `404`.
 
-### Response voi `EntityErr`
+### Response với `EntityErr`
 
 ```ts
 next(
@@ -277,7 +310,7 @@ Response:
 
 HTTP status: `422`.
 
-### Response voi loi bat ngo
+### Response với lỗi bất ngờ
 
 ```ts
 throw new Error('Database connection failed')
@@ -296,9 +329,9 @@ Response:
 
 HTTP status: `500`.
 
-## 6. Cach lap route theo pattern hien tai
+## 6. Cách lắp route theo pattern hiện tại
 
-Pattern de viet mot endpoint co validation va controller async:
+Pattern để viết một endpoint có validation và controller async:
 
 ```ts
 import { Router } from 'express'
@@ -343,7 +376,7 @@ router.post(
 export default router
 ```
 
-## 7. Flow tong quat cua request
+## 7. Flow tổng quát của request
 
 ```txt
 Client request
@@ -351,27 +384,27 @@ Client request
   -> validate(...)
        -> validation.run(req)
        -> validationResult(req)
-       -> next() neu hop le
-       -> next(EntityErr) neu loi validation 422
-       -> next(ErrorWithStatus) neu loi custom status
+       -> next() nếu hợp lệ
+       -> next(EntityErr) nếu lỗi validation 422
+       -> next(ErrorWithStatus) nếu lỗi custom status
   -> wrapAsync(controller)
-       -> controller xu ly nghiep vu
-       -> catch loi async va next(err)
+       -> controller xử lý nghiệp vụ
+       -> catch lỗi async và next(err)
   -> defautHandler(...)
-       -> ErrorWithStatus: tra status tu loi
-       -> Error binh thuong: tra 500
+       -> ErrorWithStatus: trả status từ lỗi
+       -> Error bình thường: trả 500
   -> Client response
 ```
 
-## 8. Luu y hien trang trong `index.ts`
+## 8. Lưu ý hiện trạng trong `index.ts`
 
-Hien tai `src/index.ts` moi mount Swagger va route `/`, chua mount:
+Hiện tại `src/index.ts` mới mount Swagger và route `/`, chưa mount:
 
-- `express.json()` de doc JSON body.
-- Cac router trong `src/routes`.
-- `defautHandler` o cuoi app.
+- `express.json()` để đọc JSON body.
+- Các router trong `src/routes`.
+- `defautHandler` ở cuối app.
 
-Khi bat dau them API thuc te, nen mount theo thu tu:
+Khi bắt đầu thêm API thực tế, nên mount theo thứ tự:
 
 ```ts
 import express from 'express'
@@ -387,14 +420,14 @@ app.use('/users', userRouter)
 app.use(defautHandler)
 ```
 
-Thu tu rat quan trong: error handler phai dat sau routes, vi no can nhan loi duoc day qua `next(err)`.
+Thứ tự rất quan trọng: error handler phải đặt sau routes, vì nó cần nhận lỗi được đẩy qua `next(err)`.
 
-## 9. Quy uoc nen giu khi mo rong
+## 9. Quy ước nên giữ khi mở rộng
 
-- Validation dau vao nen di qua `validate(...)` thay vi tu check trong controller.
-- Controller async nen duoc boc bang `wrapAsync(...)`.
-- Loi validation field nen tra ve `EntityErr` voi status `422`.
-- Loi nghiep vu co status ro rang nen dung `ErrorWithStatus`.
-- Khong nen tra raw error truc tiep trong controller; hay `throw` loi va de `defautHandler` quyet dinh response.
-- Cac status code nen lay tu `HTTP_STATUS` de tranh viet so magic number rai rac.
-- Neu doi ten, co the can nhac sua `defautHandler` thanh `defaultHandler` cho dung chinh ta, nhung phai update import o noi su dung.
+- Validation đầu vào nên đi qua `validate(...)` thay vì tự check trong controller.
+- Controller async nên được bọc bằng `wrapAsync(...)`.
+- Lỗi validation field nên trả về `EntityErr` với status `422`.
+- Lỗi nghiệp vụ có status rõ ràng nên dùng `ErrorWithStatus`.
+- Không nên trả raw error trực tiếp trong controller; hãy `throw` lỗi và để `defautHandler` quyết định response.
+- Các status code nên lấy từ `HTTP_STATUS` để tránh viết số magic number rải rác.
+- Nếu đổi tên, có thể cân nhắc sửa `defautHandler` thành `defaultHandler` cho đúng chính tả, nhưng phải update import ở nơi sử dụng.
