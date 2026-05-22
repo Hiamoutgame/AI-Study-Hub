@@ -44,7 +44,7 @@
 │  accounts        │  groups          │  ai_chat_sessions         │
 │  storage_quotas  │  solutions       │  ai_messages              │
 │  activity_logs   │  solution_cats   │  document_embeddings      │
-│                  │  history_sols    │                           │
+│                  │  history_sols    │  ai_configurations        │
 ├──────────────────┼──────────────────┼───────────────────────────┤
 │  🔐 ACCESS       │  📝 INTERACTION  │  🔔 UTILITY               │
 │  permissions     │  comment_notes   │  notifications            │
@@ -119,6 +119,7 @@ schema.plugin(mongooseDelete, { overrideMethods: true, deletedAt: true });
 | 15  | **favorites**         | Interaction | Danh mục yêu thích của người dùng              |
 | 16  | **activity_logs**     | Identity    | Nhật ký hành động người dùng (audit trail)     |
 | 17  | **storage_quotas**    | Identity    | Dung lượng lưu trữ theo từng tài khoản         |
+| 18  | **ai_configurations** | AI Engine   | Cấu hình động AI chatbot (model, prompt, rate limit, feature flag) |
 
 > **Lưu ý:** Đã bỏ `Tag` và `SolutionTag` — trong MongoDB, tags có thể lưu trực tiếp dưới dạng mảng string trong `solutions` collection (`tags: [String]`), đơn giản hơn và tối ưu hơn cho NoSQL.
 
@@ -730,6 +731,60 @@ permission_change, favorite_add, favorite_remove, profile_update
 
 ---
 
+### 4.18. `ai_configurations`
+
+> Lưu cấu hình động cho AI chatbot — cho phép Admin thay đổi model, prompt, rate limit, feature flag mà không cần deploy lại code. Phục vụ US24 (Cấu Hình AI).
+
+| Field         | Mongoose Type   | Ràng buộc                                                                  | Mô tả                                              |
+| ------------- | --------------- | -------------------------------------------------------------------------- | -------------------------------------------------- |
+| `_id`         | `ObjectId`      | auto                                                                       | Khóa chính                                         |
+| `configKey`   | `String`        | required, unique, maxlength: 100                                           | Key cấu hình (VD: `ai.model.default`)              |
+| `configValue` | `Mixed`         | required                                                                   | Giá trị (string/number/boolean/object/array)       |
+| `category`    | `String`        | enum: `['model','prompt','rate_limit','feature_flag','general']`, required | Nhóm cấu hình                                      |
+| `dataType`    | `String`        | enum: `['string','number','boolean','object','array']`, required           | Kiểu dữ liệu của configValue                       |
+| `description` | `String`        | —                                                                          | Mô tả ý nghĩa cấu hình                             |
+| `isActive`    | `Boolean`       | default: `true`                                                            | Cấu hình còn hiệu lực không                        |
+| `version`     | `Number`        | default: `1`                                                               | Phiên bản cấu hình (tăng khi update)               |
+| `updatedBy`   | `ObjectId`      | ref: `'accounts'`                                                          | Admin cập nhật lần cuối                            |
+| `createdAt`   | `Date`          | auto (timestamps)                                                          |                                                    |
+| `updatedAt`   | `Date`          | auto (timestamps)                                                          |                                                    |
+
+**Mongoose Schema mẫu:**
+
+```javascript
+const aiConfigurationSchema = new Schema({
+  configKey:   { type: String, required: true, unique: true, maxlength: 100 },
+  configValue: { type: Schema.Types.Mixed, required: true },
+  category:    { type: String, enum: ['model', 'prompt', 'rate_limit', 'feature_flag', 'general'], required: true },
+  dataType:    { type: String, enum: ['string', 'number', 'boolean', 'object', 'array'], required: true },
+  description: { type: String },
+  isActive:    { type: Boolean, default: true },
+  version:     { type: Number, default: 1 },
+  updatedBy:   { type: Schema.Types.ObjectId, ref: 'accounts' },
+}, { timestamps: true });
+```
+
+**Seed data mẫu:**
+
+| configKey                     | category       | configValue                       | mô tả                          |
+| ----------------------------- | -------------- | --------------------------------- | ------------------------------ |
+| `ai.model.default`            | model          | `"claude-3-sonnet"`               | Model AI mặc định              |
+| `ai.model.temperature`        | model          | `0.7`                             | Độ sáng tạo của model          |
+| `ai.model.max_tokens`         | model          | `2048`                            | Số token tối đa mỗi response   |
+| `ai.prompt.system`            | prompt         | `"You are a study assistant..."` | System prompt mặc định         |
+| `ai.rate_limit.free`          | rate_limit     | `50`                              | AI queries/tháng cho plan free |
+| `ai.rate_limit.student`       | rate_limit     | `500`                             | AI queries/tháng cho student   |
+| `ai.feature.chat_enabled`     | feature_flag   | `true`                            | Bật/tắt AI chat                |
+| `ai.feature.summary_enabled`  | feature_flag   | `true`                            | Bật/tắt AI summary             |
+
+**Quan hệ:**
+
+- `N AI_Configuration → 1 Account` (Many-to-One qua `updatedBy` — Admin nào cập nhật cuối)
+
+> **Lưu ý:** Cache configValue ở tầng application (Redis hoặc in-memory) để tránh query DB mỗi lần gọi AI. Khi Admin update, invalidate cache.
+
+---
+
 ## 5. Bảng Tổng Hợp Quan Hệ (Đã Hiệu Chỉnh)
 
 | Entity A            | Quan hệ    | Entity B            | FK / Ref trong MongoDB            | Mô tả                                                               |
@@ -760,6 +815,7 @@ permission_change, favorite_add, favorite_remove, profile_update
 | **SolutionCategory**| **1 : N**  | **SolutionCategory**| `solutionCategory.parentId` (self-ref) | Category con (cây phân cấp)                                   |
 | **CommentNote**     | **1 : N**  | **CommentNote**     | `commentNote.parentId` (self-ref) | Nested replies                                                      |
 | **AI_ChatSession**  | **1 : N**  | **AI_Message**      | `aiMessage.sessionId`             | Nhiều tin nhắn trong một phiên                                      |
+| **Account**         | **1 : N**  | **AI_Configuration**| `aiConfiguration.updatedBy`       | Admin cập nhật nhiều cấu hình AI                                    |
 | **Permission**      | **Độc lập**| **PermissionLink**  | không có FK trực tiếp             | Cả hai đều thuộc Solution, mục đích khác nhau — xem 4.14           |
 
 ---
@@ -1030,6 +1086,10 @@ activityLogSchema.index({ createdAt: 1 }, { expireAfterSeconds: 7776000 }); // T
 
 // ── storage_quotas ────────────────────────────────────────────
 storageQuotaSchema.index({ accountId: 1 }, { unique: true });
+
+// ── ai_configurations ─────────────────────────────────────────
+aiConfigurationSchema.index({ configKey: 1 }, { unique: true });
+aiConfigurationSchema.index({ category: 1, isActive: 1 });
 ```
 
 ---
