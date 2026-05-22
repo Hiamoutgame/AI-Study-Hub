@@ -4,4 +4,7 @@ dotenv.config()
 export const Base = {
   port: 5284
 }
-export const BASE_URL = process.env.BASE_URL || `http://localhost:${Base.port}`
+export const BASE_URL = process.env.BASE_URL || (`http://localhost:${Base.port}` as string)
+export const DATABASE_URL =
+  `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@cluster0.8rbfzkl.mongodb.net/` as string
+export const DB_NAME = process.env.DB_NAME as string
