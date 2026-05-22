@@ -1,10 +1,10 @@
 # 📚 AI Study Hub — Tài liệu Thiết kế API
 
-> **Phiên bản:** v2.0
+> **Phiên bản:** v2.1 (lean)
 > **Base URL:** `https://api.aistudyhub.io/api/v1`
 > **Encoding:** UTF-8 / JSON
 > **Auth:** Bearer JWT (Header: `Authorization: Bearer <accessToken>`)
-> **Naming convention:** `camelCase` cho field JSON (đồng bộ với Mongoose schema v2)
+> **Naming convention:** `camelCase` cho field JSON (đồng bộ với Mongoose schema v2.1)
 > **ID format:** MongoDB `ObjectId` (24-char hex)
 
 ---
@@ -82,7 +82,7 @@ Tất cả response đều bọc trong envelope chuẩn:
 | `user`  | Sinh viên / Người dùng thường                                        |
 | `admin` | Quản trị viên hệ thống                                               |
 
-> **Lưu ý:** Schema v2 chỉ có 2 role hệ thống: `user` và `admin`. Quyền moderator nằm ở scope từng group qua `groupMembership.role` (`owner` / `moderator` / `member`).
+> **Lưu ý:** Schema v2.1 chỉ có 2 role hệ thống: `user` và `admin`. Đã bỏ feature group/moderator để giảm scope theo user stories thực tế.
 
 ### 1.4 Mapping API ↔ Collection
 
@@ -499,7 +499,7 @@ Tất cả response đều bọc trong envelope chuẩn:
 
 > **User Story:** US03, US04, US05, US06, US07, US08
 > **Actor:** User
-> **Collection:** `solutions`, `solution_categories`, `history_solutions`
+> **Collection:** `solutions`, `solution_categories`, `activity_logs`
 
 ---
 
@@ -520,7 +520,6 @@ Tất cả response đều bọc trong envelope chuẩn:
 | `title`       | string   | ✅       | Tiêu đề tài liệu                                |
 | `description` | string   | ❌       | Mô tả tài liệu                                  |
 | `categoryId`  | string   | ❌       | ObjectId danh mục                               |
-| `groupId`     | string   | ❌       | ObjectId group (null = tài liệu cá nhân)        |
 | `tags`        | string[] | ❌       | Danh sách tag (vd: `["giải tích", "chương 1"]`) |
 | `language`    | string   | ❌       | Mã ngôn ngữ (default: `"vi"`)                   |
 | `isPublic`    | boolean  | ❌       | Công khai (default: `false`)                    |
@@ -535,7 +534,6 @@ Tất cả response đều bọc trong envelope chuẩn:
   "data": {
     "_id": "64a1b2c3d4e5f6a7b8c9d002",
     "uploaderId": "64a1b2c3d4e5f6a7b8c9d001",
-    "groupId": null,
     "categoryId": "64a1b2c3d4e5f6a7b8c9d005",
     "title": "Giáo trình Giải tích 1",
     "description": "Tài liệu ôn tập chương 1-3",
@@ -549,7 +547,6 @@ Tất cả response đều bọc trong envelope chuẩn:
     "storageKey": "solutions/64a1b2c3d4e5f6a7b8c9d002/giai-tich-1.pdf",
     "publicUrl": null,
     "thumbnailUrl": "https://cdn.aistudyhub.io/thumbs/64a1b2c3d4e5f6a7b8c9d002.jpg",
-    "version": 1,
     "status": "active",
     "aiStatus": "pending",
     "ocrStatus": "pending",
@@ -578,7 +575,6 @@ Tất cả response đều bọc trong envelope chuẩn:
 | ------------ | ------- | -------- | ------------------------------------------------------------ |
 | `q`          | string  | ❌       | Từ khóa tìm kiếm theo `title`, `description`, `ocrText`      |
 | `categoryId` | string  | ❌       | Lọc theo ObjectId danh mục                                   |
-| `groupId`    | string  | ❌       | Lọc theo group                                               |
 | `tags`       | string  | ❌       | Lọc theo tag (phân cách bởi dấu phẩy)                        |
 | `isPublic`   | boolean | ❌       | Lọc public/private                                           |
 | `aiStatus`   | string  | ❌       | `pending`, `processing`, `ready`, `failed`                   |
@@ -658,7 +654,6 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
   "data": {
     "_id": "64a1b2c3d4e5f6a7b8c9d002",
     "uploaderId": "64a1b2c3d4e5f6a7b8c9d001",
-    "groupId": null,
     "category": {
       "_id": "64a1b2c3d4e5f6a7b8c9d005",
       "name": "Toán học"
@@ -672,7 +667,6 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
     "mimeType": "application/pdf",
     "thumbnailUrl": "https://cdn.aistudyhub.io/thumbs/64a1b2c3d4e5f6a7b8c9d002.jpg",
     "pageCount": 120,
-    "version": 1,
     "status": "active",
     "aiStatus": "ready",
     "ocrStatus": "completed",
@@ -737,13 +731,12 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
     "title": "Giáo trình Giải tích 1 - Cập nhật",
     "tags": ["giải tích", "chương 1", "chương 2"],
     "isPublic": true,
-    "version": 2,
     "updatedAt": "2024-10-16T09:00:00.000Z"
   }
 }
 ```
 
-> 💡 Mỗi lần update sẽ tạo 1 document trong `history_solutions` với `action: 'update_meta'` và `diffData: { before, after }`.
+> 💡 Mọi update được ghi nhận trong `activity_logs` với `action: 'update_solution_meta'` để phục vụ audit trail.
 
 ---
 
@@ -771,7 +764,7 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
 }
 ```
 
-> 💡 Tài liệu bị soft delete (set `deletedAt`) và tạo entry trong `recycle_bins` với `autoDeleteAt = now + 30 ngày`.
+> 💡 Tài liệu bị soft delete inline trong `solutions` — set `deletedAt`, `deletedBy`, `autoDeleteAt = now + 30 ngày`. Cron job mỗi ngày sẽ purge các document có `autoDeleteAt < now`.
 
 ---
 
@@ -876,7 +869,7 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
 > **Actor:** User
 > **Collection:** `solutions` (OCR fields lưu inline)
 
-> **Lưu ý kiến trúc:** Schema v2 không có collection `ocr_jobs` riêng. Toàn bộ trạng thái và kết quả OCR được lưu inline trong `solutions` document qua các field: `ocrStatus`, `ocrText`, `ocrLanguage`, `ocrConfidence`, `ocrProcessedAt`, `ocrErrorMessage` (cần bổ sung vào schema solutions).
+> **Lưu ý kiến trúc:** Toàn bộ trạng thái và kết quả OCR được lưu inline trong `solutions` document qua các field: `ocrStatus`, `ocrText`, `ocrLanguage`, `ocrConfidence`, `ocrProcessedAt`, `ocrErrorMessage`. Không có collection `ocr_jobs` riêng.
 
 ---
 
@@ -967,7 +960,6 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
 | Trường         | Kiểu     | Bắt buộc | Mô tả                                                          |
 | -------------- | -------- | -------- | -------------------------------------------------------------- |
 | `solutionId`   | string   | ❌       | ObjectId tài liệu trọng tâm                                    |
-| `groupId`      | string   | ❌       | ObjectId group (chat về toàn group)                            |
 | `title`        | string   | ❌       | Tiêu đề phiên chat                                             |
 | `sessionType`  | string   | ❌       | `"document_qa"` (default), `"general"`, `"search_assist"`      |
 | `contextDocumentIds` | string[] | ❌ | Danh sách ObjectId tài liệu trong context (multi-doc)         |
@@ -1389,7 +1381,7 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
 
 > **User Story:** US17
 > **Actor:** User
-> **Collection:** `permission_links`, `permissions`
+> **Collection:** `permission_links`
 
 ---
 
@@ -1959,7 +1951,6 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
 | Tham số    | Kiểu    | Bắt buộc | Mô tả                                          |
 | ---------- | ------- | -------- | ---------------------------------------------- |
 | `parentId` | string  | ❌       | Lọc theo category cha (null = root categories) |
-| `groupId`  | string  | ❌       | Lọc theo group                                 |
 | `type`     | string  | ❌       | `"system"`, `"custom"`                         |
 | `isActive` | boolean | ❌       | Lọc active                                     |
 
@@ -2010,7 +2001,6 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
 | `color`              | string   | ❌       | Màu hiển thị (hex, default `#999999`)|
 | `type`               | string   | ❌       | `"system"`, `"custom"` (default)     |
 | `parentId`           | string   | ❌       | ObjectId danh mục cha                |
-| `groupId`            | string   | ❌       | ObjectId group (null = global)       |
 | `acceptedExtensions` | string[] | ❌       | VD: `[".pdf", ".docx"]`              |
 | `sortOrder`          | integer  | ❌       | Thứ tự hiển thị                      |
 
@@ -2130,9 +2120,8 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
 | `body`         | string   | ✅       | Nội dung thông báo                                                          |
 | `type`         | string   | ✅       | `"system"` (chung), hoặc các type khác như `"share_received"`, `"ai_ready"` |
 | `priority`     | string   | ❌       | `"low"`, `"normal"` (default), `"high"`                                     |
-| `target`       | string   | ✅       | `"all"`, `"recipientIds"`, `"groupId"`                                      |
+| `target`       | string   | ✅       | `"all"`, `"recipientIds"`                                                   |
 | `recipientIds` | string[] | ❌       | Danh sách ObjectId account nhận (khi `target = "recipientIds"`)             |
-| `groupId`      | string   | ❌       | ObjectId group (khi `target = "groupId"`)                                   |
 | `actionUrl`    | string   | ❌       | Link điều hướng khi click                                                   |
 | `sendEmail`    | boolean  | ❌       | Gửi kèm email (default: `false`)                                            |
 
@@ -2876,6 +2865,27 @@ Tất cả lỗi đều tuân theo cấu trúc nhất quán:
 
 ---
 
+## Changelog v2.1 (lean)
+
+Cắt gọn theo user stories thực tế — bỏ các collection vượt scope:
+
+| Thay đổi | Trước (v2.0) | Sau (v2.1) |
+| --- | --- | --- |
+| **Số collection** | 18 | **12** (giảm 6) |
+| **`groups` / `group_memberships`** | Có | **Bỏ** — không có US về lớp học/nhóm |
+| **`history_solutions`** | Có (version tracking) | **Bỏ** — không có US về rollback. Dùng `activity_logs` cho audit |
+| **`recycle_bins`** | Collection riêng | **Gộp inline vào `solutions`** (`deletedAt`, `deletedBy`, `autoDeleteAt`) |
+| **`comment_notes`** | Có | **Bỏ** — không có US về comment trên tài liệu |
+| **`permissions`** (per-user ACL) | Có | **Bỏ** — US17 chỉ dùng `permission_links` |
+| **`solutions.groupId`** | Có (ref groups) | **Bỏ** |
+| **`solutions.version`** | Có (gắn history) | **Bỏ** |
+| **`solutions` OCR fields** | "Cần bổ sung vào schema" | **Đã add chính thức** (`ocrStatus`, `ocrText`, `ocrLanguage`, `ocrConfidence`, `ocrProcessedAt`, `ocrErrorMessage`) |
+| **Notification target** | `all` / `recipientIds` / `groupId` | `all` / `recipientIds` (bỏ broadcast theo group) |
+| **Notification types** | có `comment_*`, `group_*` | bỏ các type tương ứng collection đã xoá |
+| **Tổng API endpoints** | 65 | **~62** (gỡ các endpoint group/comment, gộp OCR vào solutions) |
+
+---
+
 ## Changelog v2.0
 
 | Thay đổi | Trước (v1.0) | Sau (v2.0) |
@@ -2892,4 +2902,4 @@ Tất cả lỗi đều tuân theo cấu trúc nhất quán:
 
 ---
 
-_Tài liệu này được thiết kế theo chuẩn RESTful API, JWT Authentication, MongoDB/Mongoose, và cloud-native architecture. Tổng cộng: **65 endpoints** bao phủ đầy đủ 25 User Stories + các API bổ sung cần thiết._
+_Tài liệu này được thiết kế theo chuẩn RESTful API, JWT Authentication, MongoDB/Mongoose, và cloud-native architecture. Bao phủ đầy đủ 25 User Stories trên 12 collections (schema v2.1 lean)._
