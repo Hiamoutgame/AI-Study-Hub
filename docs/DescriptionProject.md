@@ -76,27 +76,27 @@ Tất cả response đều bọc trong envelope chuẩn:
 
 ### 1.3 Vai trò (Roles)
 
-| Role    | Mô tả                                                                |
-| ------- | -------------------------------------------------------------------- |
-| `guest` | Chưa đăng nhập                                                       |
-| `user`  | Sinh viên / Người dùng thường                                        |
-| `admin` | Quản trị viên hệ thống                                               |
+| Role    | Mô tả                         |
+| ------- | ----------------------------- |
+| `guest` | Chưa đăng nhập                |
+| `user`  | Sinh viên / Người dùng thường |
+| `admin` | Quản trị viên hệ thống        |
 
 > **Lưu ý:** Schema v2.1 chỉ có 2 role hệ thống: `user` và `admin`. Đã bỏ feature group/moderator để giảm scope theo user stories thực tế.
 
 ### 1.4 Mapping API ↔ Collection
 
-| API resource (path)    | MongoDB collection      |
-| ---------------------- | ----------------------- |
-| `/users`, `/auth`      | `accounts`              |
-| `/documents`           | `solutions`             |
-| `/chat/sessions`       | `ai_chat_sessions`      |
-| `/chat/.../messages`   | `ai_messages`           |
-| `/categories`          | `solution_categories`   |
-| `/admin/ai-settings`   | `ai_configurations`     |
-| `/admin/logs/system`   | `activity_logs`         |
-| `/users/me/bookmarks`  | `favorites`             |
-| `/documents/.../share` | `permission_links`      |
+| API resource (path)    | MongoDB collection    |
+| ---------------------- | --------------------- |
+| `/users`, `/auth`      | `accounts`            |
+| `/documents`           | `solutions`           |
+| `/chat/sessions`       | `ai_chat_sessions`    |
+| `/chat/.../messages`   | `ai_messages`         |
+| `/categories`          | `solution_categories` |
+| `/admin/ai-settings`   | `ai_configurations`   |
+| `/admin/logs/system`   | `activity_logs`       |
+| `/users/me/bookmarks`  | `favorites`           |
+| `/documents/.../share` | `permission_links`    |
 
 > **Quy ước ID:** Path param dùng `{id}` ngắn gọn, ID trong body/response là `_id` (MongoDB ObjectId) hoặc reference fields theo schema (`accountId`, `solutionId`, ...).
 
@@ -118,7 +118,7 @@ Tất cả response đều bọc trong envelope chuẩn:
 
 ### US01 — Đăng ký tài khoản
 
-**`POST /auth/register`**
+**`POST /account/register`**
 
 | Thông tin    | Chi tiết |
 | ------------ | -------- |
@@ -165,7 +165,7 @@ Tất cả response đều bọc trong envelope chuẩn:
 
 ### US01-SUB — Xác thực Email
 
-**`GET /auth/verify-email?token={token}`**
+**`GET /account/verify-email?token={token}`**
 
 | Thông tin    | Chi tiết              |
 | ------------ | --------------------- |
@@ -192,7 +192,7 @@ Tất cả response đều bọc trong envelope chuẩn:
 
 ### US01-SUB — Gửi lại Email xác thực
 
-**`POST /auth/resend-verification`**
+**`POST /account/resend-verification`**
 
 **Request Body:**
 
@@ -214,7 +214,7 @@ Tất cả response đều bọc trong envelope chuẩn:
 
 ### US02 — Đăng nhập
 
-**`POST /auth/login`**
+**`POST /account/login`**
 
 | Thông tin    | Chi tiết    |
 | ------------ | ----------- |
@@ -243,7 +243,6 @@ Tất cả response đều bọc trong envelope chuẩn:
   "message": "Đăng nhập thành công.",
   "data": {
     "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "refreshToken": "dGhpcyBpcyBhIHJlZnJlc2ggdG9rZW4...",
     "tokenType": "Bearer",
     "expiresIn": 3600,
     "user": {
@@ -264,34 +263,9 @@ Tất cả response đều bọc trong envelope chuẩn:
 
 ---
 
-### US02-SUB — Làm mới Access Token
-
-**`POST /auth/refresh-token`**
-
-**Request Body:**
-
-| Trường         | Kiểu   | Bắt buộc | Mô tả                      |
-| -------------- | ------ | -------- | -------------------------- |
-| `refreshToken` | string | ✅       | Refresh token còn hiệu lực |
-
-**Response `200`:**
-
-```json
-{
-  "success": true,
-  "message": "Token đã được làm mới.",
-  "data": {
-    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "expiresIn": 3600
-  }
-}
-```
-
----
-
 ### US02 — Đăng xuất
 
-**`POST /auth/logout`**
+**`POST /account/logout`**
 
 | Thông tin    | Chi tiết        |
 | ------------ | --------------- |
@@ -312,13 +286,11 @@ Tất cả response đều bọc trong envelope chuẩn:
 }
 ```
 
-> 💡 Server thêm `refreshToken` vào blacklist / xóa session.
-
 ---
 
 ### US02-SUB — Quên mật khẩu
 
-**`POST /auth/forgot-password`**
+**`POST /account/forgot-password`**
 
 | Thông tin    | Chi tiết |
 | ------------ | -------- |
@@ -346,7 +318,7 @@ Tất cả response đều bọc trong envelope chuẩn:
 
 ### US02-SUB — Đặt lại mật khẩu
 
-**`POST /auth/reset-password`**
+**`POST /account/reset-password`**
 
 **Request Body:**
 
@@ -571,17 +543,17 @@ Tất cả response đều bọc trong envelope chuẩn:
 
 **Query Parameters:**
 
-| Tham số      | Kiểu    | Bắt buộc | Mô tả                                                        |
-| ------------ | ------- | -------- | ------------------------------------------------------------ |
-| `q`          | string  | ❌       | Từ khóa tìm kiếm theo `title`, `description`, `ocrText`      |
-| `categoryId` | string  | ❌       | Lọc theo ObjectId danh mục                                   |
-| `tags`       | string  | ❌       | Lọc theo tag (phân cách bởi dấu phẩy)                        |
-| `isPublic`   | boolean | ❌       | Lọc public/private                                           |
-| `aiStatus`   | string  | ❌       | `pending`, `processing`, `ready`, `failed`                   |
-| `sortBy`     | string  | ❌       | `"createdAt"` (default), `"title"`, `"fileSizeBytes"`        |
-| `order`      | string  | ❌       | `"desc"` (default) / `"asc"`                                 |
-| `page`       | integer | ❌       | Trang hiện tại (default: 1)                                  |
-| `limit`      | integer | ❌       | Số bản ghi mỗi trang (default: 20, max: 100)                 |
+| Tham số      | Kiểu    | Bắt buộc | Mô tả                                                   |
+| ------------ | ------- | -------- | ------------------------------------------------------- |
+| `q`          | string  | ❌       | Từ khóa tìm kiếm theo `title`, `description`, `ocrText` |
+| `categoryId` | string  | ❌       | Lọc theo ObjectId danh mục                              |
+| `tags`       | string  | ❌       | Lọc theo tag (phân cách bởi dấu phẩy)                   |
+| `isPublic`   | boolean | ❌       | Lọc public/private                                      |
+| `aiStatus`   | string  | ❌       | `pending`, `processing`, `ready`, `failed`              |
+| `sortBy`     | string  | ❌       | `"createdAt"` (default), `"title"`, `"fileSizeBytes"`   |
+| `order`      | string  | ❌       | `"desc"` (default) / `"asc"`                            |
+| `page`       | integer | ❌       | Trang hiện tại (default: 1)                             |
+| `limit`      | integer | ❌       | Số bản ghi mỗi trang (default: 20, max: 100)            |
 
 **Ví dụ request:**
 
@@ -641,9 +613,9 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
 
 **Path Params:**
 
-| Tham số | Kiểu   | Bắt buộc | Mô tả                       |
-| ------- | ------ | -------- | --------------------------- |
-| `id`    | string | ✅       | ObjectId của tài liệu       |
+| Tham số | Kiểu   | Bắt buộc | Mô tả                 |
+| ------- | ------ | -------- | --------------------- |
+| `id`    | string | ✅       | ObjectId của tài liệu |
 
 **Response `200`:**
 
@@ -884,9 +856,9 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
 
 **Request Body:**
 
-| Trường     | Kiểu   | Bắt buộc | Mô tả                                                          |
-| ---------- | ------ | -------- | -------------------------------------------------------------- |
-| `language` | string | ❌       | Ngôn ngữ tài liệu: `"vie"` (default), `"eng"`, `"vie+eng"`     |
+| Trường     | Kiểu   | Bắt buộc | Mô tả                                                      |
+| ---------- | ------ | -------- | ---------------------------------------------------------- |
+| `language` | string | ❌       | Ngôn ngữ tài liệu: `"vie"` (default), `"eng"`, `"vie+eng"` |
 
 ```json
 {
@@ -957,12 +929,12 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
 
 **Request Body:**
 
-| Trường         | Kiểu     | Bắt buộc | Mô tả                                                          |
-| -------------- | -------- | -------- | -------------------------------------------------------------- |
-| `solutionId`   | string   | ❌       | ObjectId tài liệu trọng tâm                                    |
-| `title`        | string   | ❌       | Tiêu đề phiên chat                                             |
-| `sessionType`  | string   | ❌       | `"document_qa"` (default), `"general"`, `"search_assist"`      |
-| `contextDocumentIds` | string[] | ❌ | Danh sách ObjectId tài liệu trong context (multi-doc)         |
+| Trường               | Kiểu     | Bắt buộc | Mô tả                                                     |
+| -------------------- | -------- | -------- | --------------------------------------------------------- |
+| `solutionId`         | string   | ❌       | ObjectId tài liệu trọng tâm                               |
+| `title`              | string   | ❌       | Tiêu đề phiên chat                                        |
+| `sessionType`        | string   | ❌       | `"document_qa"` (default), `"general"`, `"search_assist"` |
+| `contextDocumentIds` | string[] | ❌       | Danh sách ObjectId tài liệu trong context (multi-doc)     |
 
 ```json
 {
@@ -1295,9 +1267,9 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
 
 **Request Body:**
 
-| Trường | Kiểu   | Bắt buộc | Mô tả                       |
-| ------ | ------ | -------- | --------------------------- |
-| `note` | string | ❌       | Ghi chú cá nhân (max 300)   |
+| Trường | Kiểu   | Bắt buộc | Mô tả                     |
+| ------ | ------ | -------- | ------------------------- |
+| `note` | string | ❌       | Ghi chú cá nhân (max 300) |
 
 **Response `201`:**
 
@@ -1396,16 +1368,16 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
 
 **Request Body:**
 
-| Trường            | Kiểu    | Bắt buộc | Mô tả                                                                |
-| ----------------- | ------- | -------- | -------------------------------------------------------------------- |
-| `permissionLevel` | string  | ✅       | `"viewer"`, `"commenter"`, `"downloader"`, `"editor"`, `"co_owner"`  |
-| `canDownload`     | boolean | ❌       | Cho phép tải xuống (default: `false`)                                |
-| `canComment`      | boolean | ❌       | Cho phép comment (default: `false`)                                  |
-| `requiresLogin`   | boolean | ❌       | Yêu cầu đăng nhập mới dùng được (default: `false`)                   |
-| `passwordHash`    | string  | ❌       | Mật khẩu bảo vệ link                                                 |
-| `maxUses`         | integer | ❌       | Giới hạn số lần dùng (null = không giới hạn)                         |
-| `expiresInDays`   | integer | ❌       | Số ngày link có hiệu lực (0 hoặc null = không hết hạn)               |
-| `note`            | string  | ❌       | Mục đích link                                                        |
+| Trường            | Kiểu    | Bắt buộc | Mô tả                                                               |
+| ----------------- | ------- | -------- | ------------------------------------------------------------------- |
+| `permissionLevel` | string  | ✅       | `"viewer"`, `"commenter"`, `"downloader"`, `"editor"`, `"co_owner"` |
+| `canDownload`     | boolean | ❌       | Cho phép tải xuống (default: `false`)                               |
+| `canComment`      | boolean | ❌       | Cho phép comment (default: `false`)                                 |
+| `requiresLogin`   | boolean | ❌       | Yêu cầu đăng nhập mới dùng được (default: `false`)                  |
+| `passwordHash`    | string  | ❌       | Mật khẩu bảo vệ link                                                |
+| `maxUses`         | integer | ❌       | Giới hạn số lần dùng (null = không giới hạn)                        |
+| `expiresInDays`   | integer | ❌       | Số ngày link có hiệu lực (0 hoặc null = không hết hạn)              |
+| `note`            | string  | ❌       | Mục đích link                                                       |
 
 ```json
 {
@@ -1491,9 +1463,9 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
 
 **`GET /shared/{token}`**
 
-| Thông tin    | Chi tiết                              |
-| ------------ | ------------------------------------- |
-| Auth yêu cầu | Tùy `permissionLink.requiresLogin`    |
+| Thông tin    | Chi tiết                           |
+| ------------ | ---------------------------------- |
+| Auth yêu cầu | Tùy `permissionLink.requiresLogin` |
 
 **Response `200`:**
 
@@ -1567,6 +1539,7 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
 ```
 
 > **Plan limits:**
+>
 > - `free`: 500MB (524288000 bytes), max 20MB/file, 50 AI queries/tháng
 > - `student`: 5GB, max 100MB/file, 500 AI queries/tháng
 > - `premium`: 50GB, max 500MB/file, unlimited AI
@@ -1593,16 +1566,16 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
 
 **Query Parameters:**
 
-| Tham số  | Kiểu    | Bắt buộc | Mô tả                                                     |
-| -------- | ------- | -------- | --------------------------------------------------------- |
-| `q`      | string  | ❌       | Tìm theo `fullName`, `email`, `username`                  |
-| `role`   | string  | ❌       | `user`, `admin`                                           |
-| `status` | string  | ❌       | `"active"`, `"locked"`, `"unverified"`                    |
-| `plan`   | string  | ❌       | `"free"`, `"student"`, `"premium"`, `"admin"`             |
-| `sortBy` | string  | ❌       | `"createdAt"`, `"fullName"`, `"lastLoginAt"`              |
-| `order`  | string  | ❌       | `"desc"` / `"asc"`                                        |
-| `page`   | integer | ❌       | Trang                                                     |
-| `limit`  | integer | ❌       | Số bản ghi                                                |
+| Tham số  | Kiểu    | Bắt buộc | Mô tả                                         |
+| -------- | ------- | -------- | --------------------------------------------- |
+| `q`      | string  | ❌       | Tìm theo `fullName`, `email`, `username`      |
+| `role`   | string  | ❌       | `user`, `admin`                               |
+| `status` | string  | ❌       | `"active"`, `"locked"`, `"unverified"`        |
+| `plan`   | string  | ❌       | `"free"`, `"student"`, `"premium"`, `"admin"` |
+| `sortBy` | string  | ❌       | `"createdAt"`, `"fullName"`, `"lastLoginAt"`  |
+| `order`  | string  | ❌       | `"desc"` / `"asc"`                            |
+| `page`   | integer | ❌       | Trang                                         |
+| `limit`  | integer | ❌       | Số bản ghi                                    |
 
 **Response `200`:**
 
@@ -1689,10 +1662,10 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
 
 **Request Body:**
 
-| Trường     | Kiểu    | Bắt buộc | Mô tả                            |
-| ---------- | ------- | -------- | -------------------------------- |
-| `isActive` | boolean | ✅       | `true` = active, `false` = locked|
-| `reason`   | string  | ❌       | Lý do khóa tài khoản             |
+| Trường     | Kiểu    | Bắt buộc | Mô tả                             |
+| ---------- | ------- | -------- | --------------------------------- |
+| `isActive` | boolean | ✅       | `true` = active, `false` = locked |
+| `reason`   | string  | ❌       | Lý do khóa tài khoản              |
 
 ```json
 {
@@ -1755,12 +1728,12 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
 
 **Request Body:**
 
-| Trường             | Kiểu    | Bắt buộc | Mô tả                                                  |
-| ------------------ | ------- | -------- | ------------------------------------------------------ |
-| `plan`             | string  | ❌       | `"free"`, `"student"`, `"premium"`, `"admin"`          |
-| `totalBytes`       | integer | ❌       | Tổng dung lượng mới (bytes)                            |
-| `maxFileSizeBytes` | integer | ❌       | Giới hạn 1 file (bytes)                                |
-| `aiQueriesLimit`   | integer | ❌       | Giới hạn câu hỏi AI/tháng                              |
+| Trường             | Kiểu    | Bắt buộc | Mô tả                                         |
+| ------------------ | ------- | -------- | --------------------------------------------- |
+| `plan`             | string  | ❌       | `"free"`, `"student"`, `"premium"`, `"admin"` |
+| `totalBytes`       | integer | ❌       | Tổng dung lượng mới (bytes)                   |
+| `maxFileSizeBytes` | integer | ❌       | Giới hạn 1 file (bytes)                       |
+| `aiQueriesLimit`   | integer | ❌       | Giới hạn câu hỏi AI/tháng                     |
 
 **Response `200`:**
 
@@ -1824,18 +1797,18 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
 
 **Query Parameters:**
 
-| Tham số       | Kiểu    | Bắt buộc | Mô tả                                                  |
-| ------------- | ------- | -------- | ------------------------------------------------------ |
-| `q`           | string  | ❌       | Tìm theo `title`                                       |
-| `uploaderId`  | string  | ❌       | Lọc theo ObjectId người upload                         |
-| `categoryId`  | string  | ❌       | Lọc theo danh mục                                      |
-| `isPublic`    | boolean | ❌       | `true` / `false`                                       |
-| `ocrStatus`   | string  | ❌       | `"pending"`, `"processing"`, `"completed"`, `"failed"` |
-| `aiStatus`    | string  | ❌       | `"pending"`, `"processing"`, `"ready"`, `"failed"`     |
-| `status`      | string  | ❌       | `"active"`, `"processing"`, `"error"`, `"archived"`    |
-| `flagged`     | boolean | ❌       | Lọc tài liệu bị báo cáo vi phạm                        |
-| `page`        | integer | ❌       | Trang                                                  |
-| `limit`       | integer | ❌       | Số bản ghi                                             |
+| Tham số      | Kiểu    | Bắt buộc | Mô tả                                                  |
+| ------------ | ------- | -------- | ------------------------------------------------------ |
+| `q`          | string  | ❌       | Tìm theo `title`                                       |
+| `uploaderId` | string  | ❌       | Lọc theo ObjectId người upload                         |
+| `categoryId` | string  | ❌       | Lọc theo danh mục                                      |
+| `isPublic`   | boolean | ❌       | `true` / `false`                                       |
+| `ocrStatus`  | string  | ❌       | `"pending"`, `"processing"`, `"completed"`, `"failed"` |
+| `aiStatus`   | string  | ❌       | `"pending"`, `"processing"`, `"ready"`, `"failed"`     |
+| `status`     | string  | ❌       | `"active"`, `"processing"`, `"error"`, `"archived"`    |
+| `flagged`    | boolean | ❌       | Lọc tài liệu bị báo cáo vi phạm                        |
+| `page`       | integer | ❌       | Trang                                                  |
+| `limit`      | integer | ❌       | Số bản ghi                                             |
 
 **Response `200`:**
 
@@ -1992,17 +1965,17 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
 
 **Request Body:**
 
-| Trường               | Kiểu     | Bắt buộc | Mô tả                                |
-| -------------------- | -------- | -------- | ------------------------------------ |
-| `name`               | string   | ✅       | Tên danh mục (max 100)               |
-| `slug`               | string   | ✅       | URL slug                             |
-| `description`        | string   | ❌       | Mô tả danh mục                       |
-| `icon`               | string   | ❌       | Tên icon                             |
-| `color`              | string   | ❌       | Màu hiển thị (hex, default `#999999`)|
-| `type`               | string   | ❌       | `"system"`, `"custom"` (default)     |
-| `parentId`           | string   | ❌       | ObjectId danh mục cha                |
-| `acceptedExtensions` | string[] | ❌       | VD: `[".pdf", ".docx"]`              |
-| `sortOrder`          | integer  | ❌       | Thứ tự hiển thị                      |
+| Trường               | Kiểu     | Bắt buộc | Mô tả                                 |
+| -------------------- | -------- | -------- | ------------------------------------- |
+| `name`               | string   | ✅       | Tên danh mục (max 100)                |
+| `slug`               | string   | ✅       | URL slug                              |
+| `description`        | string   | ❌       | Mô tả danh mục                        |
+| `icon`               | string   | ❌       | Tên icon                              |
+| `color`              | string   | ❌       | Màu hiển thị (hex, default `#999999`) |
+| `type`               | string   | ❌       | `"system"`, `"custom"` (default)      |
+| `parentId`           | string   | ❌       | ObjectId danh mục cha                 |
+| `acceptedExtensions` | string[] | ❌       | VD: `[".pdf", ".docx"]`               |
+| `sortOrder`          | integer  | ❌       | Thứ tự hiển thị                       |
 
 ```json
 {
@@ -2075,9 +2048,9 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
 
 **Query Params:**
 
-| Tham số     | Kiểu   | Mô tả                                          |
-| ----------- | ------ | ---------------------------------------------- |
-| `migrateTo` | string | ❌ ObjectId danh mục sẽ tiếp nhận tài liệu     |
+| Tham số     | Kiểu   | Mô tả                                      |
+| ----------- | ------ | ------------------------------------------ |
+| `migrateTo` | string | ❌ ObjectId danh mục sẽ tiếp nhận tài liệu |
 
 **Response `200`:**
 
@@ -2199,12 +2172,12 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
 
 **Query Params:**
 
-| Tham số  | Kiểu    | Mô tả                                                   |
-| -------- | ------- | ------------------------------------------------------- |
-| `isRead` | boolean | ❌ Lọc đã đọc / chưa đọc                                |
-| `type`   | string  | ❌ Lọc theo loại notification                           |
-| `page`   | integer | ❌                                                      |
-| `limit`  | integer | ❌                                                      |
+| Tham số  | Kiểu    | Mô tả                         |
+| -------- | ------- | ----------------------------- |
+| `isRead` | boolean | ❌ Lọc đã đọc / chưa đọc      |
+| `type`   | string  | ❌ Lọc theo loại notification |
+| `page`   | integer | ❌                            |
+| `limit`  | integer | ❌                            |
 
 **Response `200`:**
 
@@ -2361,9 +2334,7 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
       "premium": 18,
       "admin": 2
     },
-    "trend": [
-      { "date": "2024-10-01", "newUsers": 12, "activeUsers": 350 }
-    ]
+    "trend": [{ "date": "2024-10-01", "newUsers": 12, "activeUsers": 350 }]
   }
 }
 ```
@@ -2405,9 +2376,7 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
         "documentCount": 120
       }
     ],
-    "trend": [
-      { "date": "2024-10-01", "uploaded": 45, "deleted": 3 }
-    ]
+    "trend": [{ "date": "2024-10-01", "uploaded": 45, "deleted": 3 }]
   }
 }
 ```
@@ -2511,13 +2480,13 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
 
 **Request Body:** (nested object — server tự map sang các record `ai_configurations`)
 
-| Trường       | Kiểu   | Mô tả                                |
-| ------------ | ------ | ------------------------------------ |
-| `model`      | object | Cấu hình model AI                    |
-| `prompt`     | object | System prompt                        |
-| `rateLimit`  | object | Giới hạn AI queries theo plan        |
-| `features`   | object | Bật/tắt từng tính năng AI            |
-| `ocrProvider`| string | OCR provider hệ thống                |
+| Trường        | Kiểu   | Mô tả                         |
+| ------------- | ------ | ----------------------------- |
+| `model`       | object | Cấu hình model AI             |
+| `prompt`      | object | System prompt                 |
+| `rateLimit`   | object | Giới hạn AI queries theo plan |
+| `features`    | object | Bật/tắt từng tính năng AI     |
+| `ocrProvider` | string | OCR provider hệ thống         |
 
 ```json
 {
@@ -2590,9 +2559,7 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
         "tokens": 45000
       }
     ],
-    "dailyUsage": [
-      { "date": "2024-10-01", "tokens": 185000 }
-    ]
+    "dailyUsage": [{ "date": "2024-10-01", "tokens": 185000 }]
   }
 }
 ```
@@ -2620,13 +2587,13 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
 
 **Query Params:**
 
-| Tham số     | Kiểu    | Mô tả                                                |
-| ----------- | ------- | ---------------------------------------------------- |
-| `ocrStatus` | string  | ❌ `"completed"`, `"failed"`, `"processing"`         |
-| `from`      | string  | ❌ ISO8601 — lọc theo `ocrProcessedAt`               |
-| `to`        | string  | ❌ ISO8601                                           |
-| `page`      | integer | ❌                                                   |
-| `limit`     | integer | ❌                                                   |
+| Tham số     | Kiểu    | Mô tả                                        |
+| ----------- | ------- | -------------------------------------------- |
+| `ocrStatus` | string  | ❌ `"completed"`, `"failed"`, `"processing"` |
+| `from`      | string  | ❌ ISO8601 — lọc theo `ocrProcessedAt`       |
+| `to`        | string  | ❌ ISO8601                                   |
+| `page`      | integer | ❌                                           |
+| `limit`     | integer | ❌                                           |
 
 **Response `200`:**
 
@@ -2795,73 +2762,73 @@ Tất cả lỗi đều tuân theo cấu trúc nhất quán:
 
 ## Tổng hợp API theo User Story
 
-| US   | Tên                          | Method | Endpoint                                  |
-| ---- | ---------------------------- | ------ | ----------------------------------------- |
-| US01 | Đăng ký                      | POST   | `/auth/register`                          |
-| US01 | Xác thực email               | GET    | `/auth/verify-email`                      |
-| US01 | Gửi lại email xác thực       | POST   | `/auth/resend-verification`               |
-| US02 | Đăng nhập                    | POST   | `/auth/login`                             |
-| US02 | Đăng xuất                    | POST   | `/auth/logout`                            |
-| US02 | Làm mới token                | POST   | `/auth/refresh-token`                     |
-| US02 | Quên mật khẩu                | POST   | `/auth/forgot-password`                   |
-| US02 | Đặt lại mật khẩu             | POST   | `/auth/reset-password`                    |
-| US03 | Upload tài liệu              | POST   | `/documents`                              |
-| US03 | Kiểm tra trạng thái upload   | GET    | `/documents/{id}/upload-status`           |
-| US04 | Xem danh sách tài liệu       | GET    | `/documents`                              |
-| US04 | Xem chi tiết tài liệu        | GET    | `/documents/{id}`                         |
-| US04 | Tải xuống tài liệu           | GET    | `/documents/{id}/download`                |
-| US05 | Xóa tài liệu                 | DELETE | `/documents/{id}`                         |
-| US06 | Chỉnh sửa thông tin tài liệu | PUT    | `/documents/{id}`                         |
-| US07 | Tìm kiếm tài liệu            | GET    | `/documents?q=...`                        |
-| US08 | Lọc tài liệu                 | GET    | `/documents?categoryId=...`               |
-| US09 | Preview tài liệu             | GET    | `/documents/{id}/preview`                 |
-| US10 | Tạo phiên chat AI            | POST   | `/chat/sessions`                          |
-| US10 | Gửi tin nhắn AI              | POST   | `/chat/sessions/{id}/messages`            |
-| US11 | Tóm tắt tài liệu bằng AI     | POST   | `/documents/{id}/ai/summarize`            |
-| US12 | Giải thích khái niệm AI      | POST   | `/documents/{id}/ai/explain`              |
-| US13 | Xem danh sách phiên chat     | GET    | `/chat/sessions`                          |
-| US13 | Xem lịch sử tin nhắn         | GET    | `/chat/sessions/{id}/messages`            |
-| US13 | Xóa phiên chat               | DELETE | `/chat/sessions/{id}`                     |
-| US14 | Yêu cầu OCR                  | POST   | `/documents/{id}/ocr`                     |
-| US14 | Xem kết quả OCR              | GET    | `/documents/{id}/ocr`                     |
-| US15 | Xem profile                  | GET    | `/users/me`                               |
-| US15 | Cập nhật profile             | PUT    | `/users/me`                               |
-| US15 | Đổi mật khẩu                 | PUT    | `/users/me/password`                      |
-| US16 | Xem dung lượng lưu trữ       | GET    | `/users/me/storage`                       |
-| US17 | Tạo link chia sẻ             | POST   | `/documents/{id}/share`                   |
-| US17 | Xem link chia sẻ             | GET    | `/documents/{id}/share`                   |
-| US17 | Thu hồi chia sẻ              | DELETE | `/documents/{id}/share/{shareId}`         |
-| US17 | Truy cập qua link share      | GET    | `/shared/{token}`                         |
-| US18 | Đánh dấu tài liệu            | POST   | `/documents/{id}/bookmarks`               |
-| US18 | Bỏ đánh dấu                  | DELETE | `/documents/{id}/bookmarks`               |
-| US18 | Xem danh sách bookmark       | GET    | `/users/me/bookmarks`                     |
-| US19 | Xem danh sách user           | GET    | `/admin/users`                            |
-| US19 | Xem chi tiết user            | GET    | `/admin/users/{id}`                       |
-| US19 | Khóa/mở khóa tài khoản       | PUT    | `/admin/users/{id}/status`                |
-| US19 | Cập nhật role                | PUT    | `/admin/users/{id}/role`                  |
-| US19 | Cập nhật storage quota       | PUT    | `/admin/users/{id}/storage-quota`         |
-| US19 | Xóa tài khoản                | DELETE | `/admin/users/{id}`                       |
-| US20 | Xem tất cả tài liệu          | GET    | `/admin/documents`                        |
-| US20 | Admin xóa tài liệu           | DELETE | `/admin/documents/{id}`                   |
-| US20 | Đánh dấu vi phạm             | POST   | `/admin/documents/{id}/flag`              |
-| US21 | Xem danh mục                 | GET    | `/categories`                             |
-| US21 | Tạo danh mục                 | POST   | `/admin/categories`                       |
-| US21 | Cập nhật danh mục            | PUT    | `/admin/categories/{id}`                  |
-| US21 | Xóa danh mục                 | DELETE | `/admin/categories/{id}`                  |
-| US22 | Gửi thông báo (fan-out)      | POST   | `/admin/notifications`                    |
-| US22 | Xem lịch sử thông báo        | GET    | `/admin/notifications`                    |
-| US22 | User xem thông báo           | GET    | `/users/me/notifications`                 |
-| US22 | Đánh dấu đã đọc              | PUT    | `/users/me/notifications/{id}/read`       |
-| US23 | Xem Dashboard                | GET    | `/admin/dashboard`                        |
-| US23 | Thống kê người dùng          | GET    | `/admin/stats/users`                      |
-| US23 | Thống kê tài liệu            | GET    | `/admin/stats/documents`                  |
-| US24 | Xem cấu hình AI              | GET    | `/admin/ai-settings`                      |
-| US24 | Xem cấu hình AI raw          | GET    | `/admin/ai-settings/raw`                  |
-| US24 | Cập nhật cấu hình AI         | PUT    | `/admin/ai-settings`                      |
-| US24 | Xem thống kê AI              | GET    | `/admin/ai-settings/usage`                |
-| US25 | Xem log OCR                  | GET    | `/admin/logs/ocr`                         |
-| US25 | Xem log hệ thống             | GET    | `/admin/logs/system`                      |
-| US25 | Xem audit log                | GET    | `/admin/logs/audit`                       |
+| US   | Tên                          | Method | Endpoint                            |
+| ---- | ---------------------------- | ------ | ----------------------------------- |
+| US01 | Đăng ký                      | POST   | `/auth/register`                    |
+| US01 | Xác thực email               | GET    | `/auth/verify-email`                |
+| US01 | Gửi lại email xác thực       | POST   | `/auth/resend-verification`         |
+| US02 | Đăng nhập                    | POST   | `/auth/login`                       |
+| US02 | Đăng xuất                    | POST   | `/auth/logout`                      |
+| US02 | Làm mới token                | POST   | `/auth/refresh-token`               |
+| US02 | Quên mật khẩu                | POST   | `/auth/forgot-password`             |
+| US02 | Đặt lại mật khẩu             | POST   | `/auth/reset-password`              |
+| US03 | Upload tài liệu              | POST   | `/documents`                        |
+| US03 | Kiểm tra trạng thái upload   | GET    | `/documents/{id}/upload-status`     |
+| US04 | Xem danh sách tài liệu       | GET    | `/documents`                        |
+| US04 | Xem chi tiết tài liệu        | GET    | `/documents/{id}`                   |
+| US04 | Tải xuống tài liệu           | GET    | `/documents/{id}/download`          |
+| US05 | Xóa tài liệu                 | DELETE | `/documents/{id}`                   |
+| US06 | Chỉnh sửa thông tin tài liệu | PUT    | `/documents/{id}`                   |
+| US07 | Tìm kiếm tài liệu            | GET    | `/documents?q=...`                  |
+| US08 | Lọc tài liệu                 | GET    | `/documents?categoryId=...`         |
+| US09 | Preview tài liệu             | GET    | `/documents/{id}/preview`           |
+| US10 | Tạo phiên chat AI            | POST   | `/chat/sessions`                    |
+| US10 | Gửi tin nhắn AI              | POST   | `/chat/sessions/{id}/messages`      |
+| US11 | Tóm tắt tài liệu bằng AI     | POST   | `/documents/{id}/ai/summarize`      |
+| US12 | Giải thích khái niệm AI      | POST   | `/documents/{id}/ai/explain`        |
+| US13 | Xem danh sách phiên chat     | GET    | `/chat/sessions`                    |
+| US13 | Xem lịch sử tin nhắn         | GET    | `/chat/sessions/{id}/messages`      |
+| US13 | Xóa phiên chat               | DELETE | `/chat/sessions/{id}`               |
+| US14 | Yêu cầu OCR                  | POST   | `/documents/{id}/ocr`               |
+| US14 | Xem kết quả OCR              | GET    | `/documents/{id}/ocr`               |
+| US15 | Xem profile                  | GET    | `/users/me`                         |
+| US15 | Cập nhật profile             | PUT    | `/users/me`                         |
+| US15 | Đổi mật khẩu                 | PUT    | `/users/me/password`                |
+| US16 | Xem dung lượng lưu trữ       | GET    | `/users/me/storage`                 |
+| US17 | Tạo link chia sẻ             | POST   | `/documents/{id}/share`             |
+| US17 | Xem link chia sẻ             | GET    | `/documents/{id}/share`             |
+| US17 | Thu hồi chia sẻ              | DELETE | `/documents/{id}/share/{shareId}`   |
+| US17 | Truy cập qua link share      | GET    | `/shared/{token}`                   |
+| US18 | Đánh dấu tài liệu            | POST   | `/documents/{id}/bookmarks`         |
+| US18 | Bỏ đánh dấu                  | DELETE | `/documents/{id}/bookmarks`         |
+| US18 | Xem danh sách bookmark       | GET    | `/users/me/bookmarks`               |
+| US19 | Xem danh sách user           | GET    | `/admin/users`                      |
+| US19 | Xem chi tiết user            | GET    | `/admin/users/{id}`                 |
+| US19 | Khóa/mở khóa tài khoản       | PUT    | `/admin/users/{id}/status`          |
+| US19 | Cập nhật role                | PUT    | `/admin/users/{id}/role`            |
+| US19 | Cập nhật storage quota       | PUT    | `/admin/users/{id}/storage-quota`   |
+| US19 | Xóa tài khoản                | DELETE | `/admin/users/{id}`                 |
+| US20 | Xem tất cả tài liệu          | GET    | `/admin/documents`                  |
+| US20 | Admin xóa tài liệu           | DELETE | `/admin/documents/{id}`             |
+| US20 | Đánh dấu vi phạm             | POST   | `/admin/documents/{id}/flag`        |
+| US21 | Xem danh mục                 | GET    | `/categories`                       |
+| US21 | Tạo danh mục                 | POST   | `/admin/categories`                 |
+| US21 | Cập nhật danh mục            | PUT    | `/admin/categories/{id}`            |
+| US21 | Xóa danh mục                 | DELETE | `/admin/categories/{id}`            |
+| US22 | Gửi thông báo (fan-out)      | POST   | `/admin/notifications`              |
+| US22 | Xem lịch sử thông báo        | GET    | `/admin/notifications`              |
+| US22 | User xem thông báo           | GET    | `/users/me/notifications`           |
+| US22 | Đánh dấu đã đọc              | PUT    | `/users/me/notifications/{id}/read` |
+| US23 | Xem Dashboard                | GET    | `/admin/dashboard`                  |
+| US23 | Thống kê người dùng          | GET    | `/admin/stats/users`                |
+| US23 | Thống kê tài liệu            | GET    | `/admin/stats/documents`            |
+| US24 | Xem cấu hình AI              | GET    | `/admin/ai-settings`                |
+| US24 | Xem cấu hình AI raw          | GET    | `/admin/ai-settings/raw`            |
+| US24 | Cập nhật cấu hình AI         | PUT    | `/admin/ai-settings`                |
+| US24 | Xem thống kê AI              | GET    | `/admin/ai-settings/usage`          |
+| US25 | Xem log OCR                  | GET    | `/admin/logs/ocr`                   |
+| US25 | Xem log hệ thống             | GET    | `/admin/logs/system`                |
+| US25 | Xem audit log                | GET    | `/admin/logs/audit`                 |
 
 ---
 
@@ -2869,36 +2836,36 @@ Tất cả lỗi đều tuân theo cấu trúc nhất quán:
 
 Cắt gọn theo user stories thực tế — bỏ các collection vượt scope:
 
-| Thay đổi | Trước (v2.0) | Sau (v2.1) |
-| --- | --- | --- |
-| **Số collection** | 18 | **12** (giảm 6) |
-| **`groups` / `group_memberships`** | Có | **Bỏ** — không có US về lớp học/nhóm |
-| **`history_solutions`** | Có (version tracking) | **Bỏ** — không có US về rollback. Dùng `activity_logs` cho audit |
-| **`recycle_bins`** | Collection riêng | **Gộp inline vào `solutions`** (`deletedAt`, `deletedBy`, `autoDeleteAt`) |
-| **`comment_notes`** | Có | **Bỏ** — không có US về comment trên tài liệu |
-| **`permissions`** (per-user ACL) | Có | **Bỏ** — US17 chỉ dùng `permission_links` |
-| **`solutions.groupId`** | Có (ref groups) | **Bỏ** |
-| **`solutions.version`** | Có (gắn history) | **Bỏ** |
-| **`solutions` OCR fields** | "Cần bổ sung vào schema" | **Đã add chính thức** (`ocrStatus`, `ocrText`, `ocrLanguage`, `ocrConfidence`, `ocrProcessedAt`, `ocrErrorMessage`) |
-| **Notification target** | `all` / `recipientIds` / `groupId` | `all` / `recipientIds` (bỏ broadcast theo group) |
-| **Notification types** | có `comment_*`, `group_*` | bỏ các type tương ứng collection đã xoá |
-| **Tổng API endpoints** | 65 | **~62** (gỡ các endpoint group/comment, gộp OCR vào solutions) |
+| Thay đổi                           | Trước (v2.0)                       | Sau (v2.1)                                                                                                          |
+| ---------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| **Số collection**                  | 18                                 | **12** (giảm 6)                                                                                                     |
+| **`groups` / `group_memberships`** | Có                                 | **Bỏ** — không có US về lớp học/nhóm                                                                                |
+| **`history_solutions`**            | Có (version tracking)              | **Bỏ** — không có US về rollback. Dùng `activity_logs` cho audit                                                    |
+| **`recycle_bins`**                 | Collection riêng                   | **Gộp inline vào `solutions`** (`deletedAt`, `deletedBy`, `autoDeleteAt`)                                           |
+| **`comment_notes`**                | Có                                 | **Bỏ** — không có US về comment trên tài liệu                                                                       |
+| **`permissions`** (per-user ACL)   | Có                                 | **Bỏ** — US17 chỉ dùng `permission_links`                                                                           |
+| **`solutions.groupId`**            | Có (ref groups)                    | **Bỏ**                                                                                                              |
+| **`solutions.version`**            | Có (gắn history)                   | **Bỏ**                                                                                                              |
+| **`solutions` OCR fields**         | "Cần bổ sung vào schema"           | **Đã add chính thức** (`ocrStatus`, `ocrText`, `ocrLanguage`, `ocrConfidence`, `ocrProcessedAt`, `ocrErrorMessage`) |
+| **Notification target**            | `all` / `recipientIds` / `groupId` | `all` / `recipientIds` (bỏ broadcast theo group)                                                                    |
+| **Notification types**             | có `comment_*`, `group_*`          | bỏ các type tương ứng collection đã xoá                                                                             |
+| **Tổng API endpoints**             | 65                                 | **~62** (gỡ các endpoint group/comment, gộp OCR vào solutions)                                                      |
 
 ---
 
 ## Changelog v2.0
 
-| Thay đổi | Trước (v1.0) | Sau (v2.0) |
-| --- | --- | --- |
-| **ID format** | `usr_01J...`, `doc_01J...` (ULID-like) | MongoDB `ObjectId` 24-char hex |
-| **Naming convention** | `snake_case` (user_id, full_name) | `camelCase` (accountId, fullName) |
-| **Roles** | GUEST, USER, MODERATOR, ADMIN | guest, user, admin (moderator → `groupMembership.role`) |
-| **Storage unit** | MB (`storage_used_mb`) | Bytes (`usedBytes`, `totalBytes`) |
-| **OCR storage** | Implied separate `ocr_jobs` | Inline trong `solutions` (ocrStatus, ocrText, ...) |
-| **AI Settings** | Flat object hardcode | Mapping với `ai_configurations` collection (key-value) |
-| **Notifications** | Flat target=all/user_ids | Fan-out on write với `sourceEventId` |
-| **Share endpoint** | `DELETE /documents/{id}/share` | `DELETE /documents/{id}/share/{shareId}` (multi-link) |
-| **Permission levels** | `link` / `users` | `viewer`, `commenter`, `downloader`, `editor`, `co_owner` |
+| Thay đổi              | Trước (v1.0)                           | Sau (v2.0)                                                |
+| --------------------- | -------------------------------------- | --------------------------------------------------------- |
+| **ID format**         | `usr_01J...`, `doc_01J...` (ULID-like) | MongoDB `ObjectId` 24-char hex                            |
+| **Naming convention** | `snake_case` (user_id, full_name)      | `camelCase` (accountId, fullName)                         |
+| **Roles**             | GUEST, USER, MODERATOR, ADMIN          | guest, user, admin (moderator → `groupMembership.role`)   |
+| **Storage unit**      | MB (`storage_used_mb`)                 | Bytes (`usedBytes`, `totalBytes`)                         |
+| **OCR storage**       | Implied separate `ocr_jobs`            | Inline trong `solutions` (ocrStatus, ocrText, ...)        |
+| **AI Settings**       | Flat object hardcode                   | Mapping với `ai_configurations` collection (key-value)    |
+| **Notifications**     | Flat target=all/user_ids               | Fan-out on write với `sourceEventId`                      |
+| **Share endpoint**    | `DELETE /documents/{id}/share`         | `DELETE /documents/{id}/share/{shareId}` (multi-link)     |
+| **Permission levels** | `link` / `users`                       | `viewer`, `commenter`, `downloader`, `editor`, `co_owner` |
 
 ---
 

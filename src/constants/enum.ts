@@ -141,3 +141,9 @@ export enum NotificationPriority {
   normal = 'normal',
   high = 'high'
 }
+
+export enum TokenType {
+  AccessToken, //0
+  ForgotPasswordToken, //2
+  EmailVerificationToken //3
+}

@@ -2,14 +2,21 @@ import express from 'express'
 import { Base, BASE_URL } from './constants/base'
 import swaggerUi from 'swagger-ui-express'
 import { swaggerDocs } from './swagger'
-
+import databaseService from './services/database.service'
+import accountRouter from './routes/account.route'
+import { defautHandler } from './middlewares/error.middlewares'
+databaseService.connect()
 const app = express()
 
+app.use(express.json())
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs))
+app.use('/account', accountRouter)
 
 app.get('/', (req, res) => {
   res.send('Hello World!')
 })
+
+app.use(defautHandler)
 
 app.listen(Base.port, () => {
   console.log(`Server is running at ${BASE_URL || `http://localhost:${Base.port}`}`)

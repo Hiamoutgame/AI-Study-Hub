@@ -1,5 +1,5 @@
 import { Collection, Db, MongoClient, ServerApiVersion } from 'mongodb'
-import { DATABASE_URL, DB_NAME } from '~/constants/base'
+import { DATABASE_URL, DB_NAME, DNS_SERVERS } from '~/constants/base'
 import { Account } from '~/models/Account.schema'
 import { ActivityLog } from '~/models/ActivityLog.schema'
 import { AiChatSession } from '~/models/AiChatSession.schema'
@@ -12,6 +12,9 @@ import { PermissionLink } from '~/models/PermissionLink.schema'
 import { Solution } from '~/models/Solution.schema'
 import { SolutionCategory } from '~/models/SolutionCategory.schema'
 import { StorageQuota } from '~/models/StorageQuota.schema'
+import dns from 'node:dns'
+
+dns.setServers([DNS_SERVERS] as string[]) // cái này quan trọng cần phải set trước
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 class DatabaseService {
@@ -26,6 +29,7 @@ class DatabaseService {
       await this.dbName.command({ ping: 1 })
       console.log('You successfully connected to MongoDB!')
     } catch (error) {
+      console.log('DATABASE_URL', DATABASE_URL)
       console.error('Error connecting to MongoDB:', error)
       throw error
     }
