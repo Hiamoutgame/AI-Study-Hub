@@ -6,6 +6,20 @@ import { TokenPayLoad } from '~/models/request/account.request'
 import { ChangePasswordReqBody, UpdateProfileReqBody } from '~/models/request/user.request'
 import userService from '~/services/user.service'
 
+export const getProfileController = async (req: Request, res: Response) => {
+  const { user_id } = req.decoded_authorization as TokenPayLoad
+  const result = await userService.getProfile(user_id)
+
+  return res.status(HTTP_STATUS.OK).json({ message: USER_MESSAGES.GET_PROFILE_SUCCESS, data: result })
+}
+
+export const getStorageController = async (req: Request, res: Response) => {
+  const { user_id } = req.decoded_authorization as TokenPayLoad
+  const result = await userService.getStorage(user_id)
+
+  return res.status(HTTP_STATUS.OK).json({ message: USER_MESSAGES.GET_STORAGE_SUCCESS, data: result })
+}
+
 export const updateProfileController = async (
   req: Request<ParamsDictionary, any, UpdateProfileReqBody>,
   res: Response

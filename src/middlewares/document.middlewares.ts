@@ -5,7 +5,7 @@ import { DOCUMENT_MESSAGES } from '~/constants/message'
 import { validate } from '~/utils/validation'
 
 const optionalObjectIdSchema = (errorMessage: string): ParamSchema => ({
-  optional: true,
+  optional: { options: { checkFalsy: true } },
   trim: true,
   custom: {
     options: (value) => {

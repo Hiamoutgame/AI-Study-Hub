@@ -3,7 +3,12 @@ import { ParamsDictionary } from 'express-serve-static-core'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { DOCUMENT_MESSAGES } from '~/constants/message'
 import { TokenPayLoad } from '~/models/request/account.request'
-import { GetDocumentsQuery, UpdateDocumentReqBody, UploadDocumentReqBody } from '~/models/request/document.request'
+import {
+  DeleteDocumentReqBody,
+  GetDocumentsQuery,
+  UpdateDocumentReqBody,
+  UploadDocumentReqBody
+} from '~/models/request/document.request'
 import documentService from '~/services/document.service'
 
 export const uploadDocumentController = async (
@@ -69,4 +74,46 @@ export const updateDocumentController = async (
   })
 
   return res.status(HTTP_STATUS.OK).json({ message: DOCUMENT_MESSAGES.UPDATE_DOCUMENT_SUCCESS, data: result })
+}
+
+export const getUploadStatusController = async (req: Request<{ id: string }>, res: Response) => {
+  const { user_id } = req.decoded_authorization as TokenPayLoad
+  const result = await documentService.getUploadStatus({
+    accountId: user_id,
+    documentId: req.params.id
+  })
+
+  return res.status(HTTP_STATUS.OK).json({ message: DOCUMENT_MESSAGES.GET_UPLOAD_STATUS_SUCCESS, data: result })
+}
+
+export const downloadDocumentController = async (req: Request<{ id: string }>, res: Response) => {
+  const { user_id } = req.decoded_authorization as TokenPayLoad
+  const result = await documentService.downloadDocument({
+    accountId: user_id,
+    documentId: req.params.id,
+    context: {
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent')
+    }
+  })
+
+  return res.download(result.filePath, result.document.fileName)
+}
+
+export const deleteDocumentController = async (
+  req: Request<{ id: string }, any, DeleteDocumentReqBody>,
+  res: Response
+) => {
+  const { user_id } = req.decoded_authorization as TokenPayLoad
+  const result = await documentService.deleteDocument({
+    accountId: user_id,
+    documentId: req.params.id,
+    payload: req.body,
+    context: {
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent')
+    }
+  })
+
+  return res.status(HTTP_STATUS.OK).json({ message: DOCUMENT_MESSAGES.DELETE_DOCUMENT_SUCCESS, data: result })
 }

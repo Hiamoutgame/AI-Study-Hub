@@ -27,10 +27,10 @@ export class Notification implements NotificationInput {
   title: string
   body: string
   refEntity: NotificationRefEntity
-  refEntityId: ObjectId
+  refEntityId?: ObjectId
   actionUrl: string
   isRead: boolean
-  readAt: Date
+  readAt?: Date
   priority: NotificationPriority
   createdAt: Date
 
@@ -43,11 +43,11 @@ export class Notification implements NotificationInput {
     this.type = notification.type
     this.title = notification.title
     this.body = notification.body || ''
-    this.refEntity = notification.refEntity || NotificationRefEntity.solution
-    this.refEntityId = notification.refEntityId || new ObjectId()
+    this.refEntity = notification.refEntity || NotificationRefEntity.account
+    this.refEntityId = notification.refEntityId
     this.actionUrl = notification.actionUrl || ''
-    this.isRead = notification.isRead || false
-    this.readAt = notification.readAt || now
+    this.isRead = notification.isRead ?? false
+    this.readAt = notification.readAt
     this.priority = notification.priority || NotificationPriority.normal
     this.createdAt = notification.createdAt || now
   }

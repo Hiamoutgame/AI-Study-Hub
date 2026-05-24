@@ -39,7 +39,7 @@ const accountRouter = express.Router()
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/MessageResponse'
+ *               $ref: '#/components/schemas/RegisterResponse'
  *       422:
  *         description: Validation error or email already exists
  *         content:

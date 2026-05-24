@@ -14,7 +14,12 @@ import HTTP_STATUS from '~/constants/httpStatus'
 import { DOCUMENT_MESSAGES, USER_MESSAGES } from '~/constants/message'
 import { ActivityLog } from '~/models/ActivityLog.schema'
 import { ErrorWithStatus } from '~/models/Error'
-import { GetDocumentsQuery, UpdateDocumentReqBody, UploadDocumentReqBody } from '~/models/request/document.request'
+import {
+  DeleteDocumentReqBody,
+  GetDocumentsQuery,
+  UpdateDocumentReqBody,
+  UploadDocumentReqBody
+} from '~/models/request/document.request'
 import { Solution } from '~/models/Solution.schema'
 import { StorageQuota } from '~/models/StorageQuota.schema'
 import databaseService from './database.service'
@@ -199,6 +204,36 @@ class DocumentService {
     )
   }
 
+  private async getNotDeletedDocument(solutionId: ObjectId) {
+    const document = await databaseService.solutions.findOne({
+      _id: solutionId,
+      ...this.getNotDeletedFilter()
+    })
+
+    if (document) {
+      return document
+    }
+
+    const deletedDocument = await databaseService.solutions.findOne({ _id: solutionId })
+    if (deletedDocument?.deletedAt) {
+      throw new ErrorWithStatus(DOCUMENT_MESSAGES.DOCUMENT_ALREADY_DELETED, HTTP_STATUS.NOT_FOUND)
+    }
+
+    throw new ErrorWithStatus(DOCUMENT_MESSAGES.DOCUMENT_NOT_FOUND, HTTP_STATUS.NOT_FOUND)
+  }
+
+  private ensureCanViewDocument(document: Solution, accountId: ObjectId) {
+    if (!this.canViewDocument(document, accountId)) {
+      throw new ErrorWithStatus(DOCUMENT_MESSAGES.DOCUMENT_ACCESS_DENIED, HTTP_STATUS.FORBIDDEN)
+    }
+  }
+
+  private ensureCanOwnDocument(document: Solution, accountId: ObjectId, errorMessage: string) {
+    if (!document.uploaderId.equals(accountId)) {
+      throw new ErrorWithStatus(errorMessage, HTTP_STATUS.FORBIDDEN)
+    }
+  }
+
   private async removeUploadedFile(file?: Express.Multer.File) {
     if (!file?.path) {
       return
@@ -243,6 +278,27 @@ class DocumentService {
 
   private getLocalStorageKey(file: Express.Multer.File) {
     return file.path.replace(/\\/g, '/')
+  }
+
+  private getLocalFilePath(document: Solution) {
+    return path.isAbsolute(document.storageKey) ? document.storageKey : path.resolve(document.storageKey)
+  }
+
+  private async decreaseStorageUsage(accountId: ObjectId, fileSizeBytes: number) {
+    const storageQuota = await databaseService.storageQuotas.findOne({ accountId })
+    if (!storageQuota) {
+      return
+    }
+
+    await databaseService.storageQuotas.updateOne(
+      { accountId },
+      {
+        $set: {
+          usedBytes: Math.max(storageQuota.usedBytes - fileSizeBytes, 0),
+          updatedAt: new Date()
+        }
+      }
+    )
   }
 
   async uploadDocument({
@@ -419,18 +475,8 @@ class DocumentService {
     const solutionId = this.toObjectId(documentId)
     await this.ensureActiveVerifiedAccount(userObjectId)
 
-    const document = await databaseService.solutions.findOne({
-      _id: solutionId,
-      ...this.getNotDeletedFilter()
-    })
-
-    if (!document) {
-      throw new ErrorWithStatus(DOCUMENT_MESSAGES.DOCUMENT_NOT_FOUND, HTTP_STATUS.NOT_FOUND)
-    }
-
-    if (!this.canViewDocument(document, userObjectId)) {
-      throw new ErrorWithStatus(DOCUMENT_MESSAGES.DOCUMENT_ACCESS_DENIED, HTTP_STATUS.FORBIDDEN)
-    }
+    const document = await this.getNotDeletedDocument(solutionId)
+    this.ensureCanViewDocument(document, userObjectId)
 
     const updatedDocument = await databaseService.solutions.findOneAndUpdate(
       { _id: solutionId },
@@ -512,18 +558,8 @@ class DocumentService {
     const solutionId = this.toObjectId(documentId)
     await this.ensureActiveVerifiedAccount(userObjectId)
 
-    const document = await databaseService.solutions.findOne({
-      _id: solutionId,
-      ...this.getNotDeletedFilter()
-    })
-
-    if (!document) {
-      throw new ErrorWithStatus(DOCUMENT_MESSAGES.DOCUMENT_NOT_FOUND, HTTP_STATUS.NOT_FOUND)
-    }
-
-    if (!document.uploaderId.equals(userObjectId)) {
-      throw new ErrorWithStatus(DOCUMENT_MESSAGES.DOCUMENT_UPDATE_DENIED, HTTP_STATUS.FORBIDDEN)
-    }
+    const document = await this.getNotDeletedDocument(solutionId)
+    this.ensureCanOwnDocument(document, userObjectId, DOCUMENT_MESSAGES.DOCUMENT_UPDATE_DENIED)
 
     const updateData: Partial<Solution> = {
       updatedAt: new Date()
@@ -587,6 +623,128 @@ class DocumentService {
       isPublic: updatedDocument.isPublic,
       language: updatedDocument.language,
       updatedAt: updatedDocument.updatedAt
+    }
+  }
+
+  async getUploadStatus({ accountId, documentId }: { accountId: string; documentId: string }) {
+    const userObjectId = this.toObjectId(accountId)
+    const solutionId = this.toObjectId(documentId)
+    await this.ensureActiveVerifiedAccount(userObjectId)
+
+    const document = await this.getNotDeletedDocument(solutionId)
+    this.ensureCanViewDocument(document, userObjectId)
+
+    return {
+      _id: document._id,
+      fileName: document.fileName,
+      fileSizeBytes: document.fileSizeBytes,
+      status: document.status,
+      aiStatus: document.aiStatus,
+      aiErrorMessage: document.aiErrorMessage,
+      ocrStatus: document.ocrStatus,
+      ocrErrorMessage: document.ocrErrorMessage,
+      storageProvider: document.storageProvider,
+      storageBucket: document.storageBucket,
+      storageKey: document.storageKey,
+      createdAt: document.createdAt,
+      updatedAt: document.updatedAt
+    }
+  }
+
+  async downloadDocument({
+    accountId,
+    documentId,
+    context
+  }: {
+    accountId: string
+    documentId: string
+    context?: RequestContext
+  }) {
+    const userObjectId = this.toObjectId(accountId)
+    const solutionId = this.toObjectId(documentId)
+    await this.ensureActiveVerifiedAccount(userObjectId)
+
+    const document = await this.getNotDeletedDocument(solutionId)
+    this.ensureCanViewDocument(document, userObjectId)
+
+    const filePath = this.getLocalFilePath(document)
+    if (!fs.existsSync(filePath)) {
+      throw new ErrorWithStatus(DOCUMENT_MESSAGES.DOCUMENT_FILE_NOT_FOUND, HTTP_STATUS.NOT_FOUND)
+    }
+
+    await databaseService.solutions.updateOne({ _id: solutionId }, { $inc: { downloadCount: 1 } })
+    await this.createActivityLog({
+      accountId: userObjectId,
+      action: ActivityAction.downloadSolution,
+      solutionId,
+      metadata: { fileName: document.fileName, fileSizeBytes: document.fileSizeBytes },
+      context
+    })
+
+    return {
+      document,
+      filePath
+    }
+  }
+
+  async deleteDocument({
+    accountId,
+    documentId,
+    payload,
+    context
+  }: {
+    accountId: string
+    documentId: string
+    payload?: DeleteDocumentReqBody
+    context?: RequestContext
+  }) {
+    const userObjectId = this.toObjectId(accountId)
+    const solutionId = this.toObjectId(documentId)
+    await this.ensureActiveVerifiedAccount(userObjectId)
+
+    const document = await this.getNotDeletedDocument(solutionId)
+    this.ensureCanOwnDocument(document, userObjectId, DOCUMENT_MESSAGES.DOCUMENT_DELETE_DENIED)
+
+    const now = new Date()
+    const deleteReason = payload?.deleteReason?.trim() || 'User deleted document'
+    const autoDeleteAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+
+    const deletedDocument = await databaseService.solutions.findOneAndUpdate(
+      { _id: solutionId },
+      {
+        $set: {
+          status: SolutionStatus.archived,
+          deletedAt: now,
+          deletedBy: userObjectId,
+          deleteReason,
+          autoDeleteAt,
+          updatedAt: now
+        }
+      },
+      { returnDocument: 'after' }
+    )
+
+    if (!deletedDocument) {
+      throw new ErrorWithStatus(DOCUMENT_MESSAGES.DOCUMENT_NOT_FOUND, HTTP_STATUS.NOT_FOUND)
+    }
+
+    await this.decreaseStorageUsage(userObjectId, document.fileSizeBytes)
+    await this.createActivityLog({
+      accountId: userObjectId,
+      action: ActivityAction.deleteSolution,
+      solutionId,
+      metadata: { deleteReason, fileName: document.fileName, fileSizeBytes: document.fileSizeBytes },
+      context
+    })
+
+    return {
+      _id: deletedDocument._id,
+      status: deletedDocument.status,
+      deletedAt: deletedDocument.deletedAt,
+      deletedBy: deletedDocument.deletedBy,
+      deleteReason: deletedDocument.deleteReason,
+      autoDeleteAt: deletedDocument.autoDeleteAt,
+      updatedAt: deletedDocument.updatedAt
     }
   }
 }

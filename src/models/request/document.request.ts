@@ -30,3 +30,7 @@ export interface UpdateDocumentReqBody {
   isPublic?: boolean | string
   language?: string
 }
+
+export interface DeleteDocumentReqBody {
+  deleteReason?: string
+}

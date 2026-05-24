@@ -21,7 +21,7 @@ interface SolutionCategoryTypeInput {
 export class SolutionCategory implements SolutionCategoryTypeInput {
   _id?: ObjectId
   createdBy: ObjectId
-  parentId: ObjectId
+  parentId?: ObjectId
   name: string
   slug: string
   description: string
@@ -38,7 +38,7 @@ export class SolutionCategory implements SolutionCategoryTypeInput {
     const now = new Date()
     this._id = solutionCategory._id
     this.createdBy = solutionCategory.createdBy || new ObjectId()
-    this.parentId = solutionCategory.parentId || new ObjectId()
+    this.parentId = solutionCategory.parentId
     this.name = solutionCategory.name
     this.slug = solutionCategory.slug
     this.description = solutionCategory.description || ''
@@ -47,7 +47,7 @@ export class SolutionCategory implements SolutionCategoryTypeInput {
     this.type = solutionCategory.type || SolutionCategoryType.custom
     this.acceptedExtensions = solutionCategory.acceptedExtensions || []
     this.sortOrder = solutionCategory.sortOrder || 0
-    this.isActive = solutionCategory.isActive || true
+    this.isActive = solutionCategory.isActive ?? true
     this.createdAt = solutionCategory.createdAt || now
     this.updatedAt = solutionCategory.updatedAt || now
   }

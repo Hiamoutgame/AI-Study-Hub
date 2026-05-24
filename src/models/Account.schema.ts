@@ -18,6 +18,11 @@ export interface AccountType {
   resetPasswordExpires?: Date
   lastLoginAt?: Date
   deletedAt?: Date
+  deletedBy?: ObjectId
+  deleteReason?: string
+  statusReason?: string
+  statusUpdatedBy?: ObjectId
+  statusUpdatedAt?: Date
   createdAt?: Date
   updatedAt?: Date
 }
@@ -38,7 +43,12 @@ export class Account implements AccountType {
   resetPasswordToken: string
   resetPasswordExpires: Date
   lastLoginAt: Date
-  deletedAt: Date
+  deletedAt?: Date
+  deletedBy?: ObjectId
+  deleteReason: string
+  statusReason: string
+  statusUpdatedBy?: ObjectId
+  statusUpdatedAt?: Date
   createdAt: Date
   updatedAt: Date
 
@@ -53,13 +63,18 @@ export class Account implements AccountType {
     this.role = account.role || UserRole.user
     this.provider = account.provider || AuthProvider.local
     this.providerId = account.providerId || ''
-    this.isActive = account.isActive || true
-    this.isEmailVerified = account.isEmailVerified || false
+    this.isActive = account.isActive ?? true
+    this.isEmailVerified = account.isEmailVerified ?? false
     this.emailVerifyToken = account.emailVerifyToken || ''
     this.resetPasswordToken = account.resetPasswordToken || ''
     this.resetPasswordExpires = account.resetPasswordExpires || now
     this.lastLoginAt = account.lastLoginAt || now
-    this.deletedAt = account.deletedAt || now
+    this.deletedAt = account.deletedAt
+    this.deletedBy = account.deletedBy
+    this.deleteReason = account.deleteReason || ''
+    this.statusReason = account.statusReason || ''
+    this.statusUpdatedBy = account.statusUpdatedBy
+    this.statusUpdatedAt = account.statusUpdatedAt
     this.createdAt = account.createdAt || now
     this.updatedAt = account.updatedAt || now
   }

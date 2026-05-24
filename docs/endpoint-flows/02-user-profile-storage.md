@@ -1,15 +1,15 @@
 # 02 - User Profile Và Storage
 
-Nhóm này gồm US15 và US16, xử lý profile cá nhân, đổi mật khẩu và xem dùng lượng lưu trữ. Code hiện tại đã có `PUT /users/me` và `PUT /users/me/password`; `GET /users/me` và `GET /users/me/storage` đang là planned theo API spec.
+Nhóm này gồm US15 và US16, xử lý profile cá nhân, đổi mật khẩu và xem dung lượng lưu trữ. Code hiện tại đã có đủ `GET /users/me`, `PUT /users/me`, `PUT /users/me/password` và `GET /users/me/storage`.
 
 ## Endpoint Map
 
 | US   | Method | Endpoint             | Auth   | Trang thai  |
 | ---- | ------ | -------------------- | ------ | ----------- |
-| US15 | GET    | `/users/me`          | Bearer | Planned     |
+| US15 | GET    | `/users/me`          | Bearer | Implemented |
 | US15 | PUT    | `/users/me`          | Bearer | Implemented |
 | US15 | PUT    | `/users/me/password` | Bearer | Implemented |
-| US16 | GET    | `/users/me/storage`  | Bearer | Planned     |
+| US16 | GET    | `/users/me/storage`  | Bearer | Implemented |
 
 ## Schema Và Collection Flow
 
@@ -25,7 +25,7 @@ Nhóm này gồm US15 và US16, xử lý profile cá nhân, đổi mật khẩu 
 3. Validator check field profile/password.
 4. Controller truyền `accountId`, body, file sang `userService`.
 5. Service check account tồn tại, active, email verified; sau đó update `accounts` hoặc đổi `passwordHash`.
-6. Storage endpoint planned sế query `storage_quotas`, tính `usagePercent`, và trả về quota hiện tại.
+6. Storage endpoint query `storage_quotas`, fallback free quota nếu chưa có record, tính `usagePercent`, và trả về quota hiện tại.
 
 ## Sơ đồ Luồng Xử lý
 
@@ -82,7 +82,7 @@ Nguồn: [Wikimedia Commons - Client-server model](https://commons.wikimedia.org
 - `accountId` lấy từ JWT, không lấy từ URL/body.
 - Username mới phải unique trong `accounts`.
 - Password chỉ đổi được với local account và current password đúng.
-- Storage quota tính bằng bytes; nếu chưa có quota, service sế có default free plan.
+- Storage quota tính bằng bytes; nếu chưa có quota, service có default free plan.
 
 ## Test Cases
 

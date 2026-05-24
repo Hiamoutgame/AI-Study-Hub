@@ -1,11 +1,16 @@
 import { ObjectId } from 'mongodb'
-import { AuthProvider } from '~/constants/enum'
+import { AuthProvider, StoragePlan } from '~/constants/enum'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { USER_MESSAGES } from '~/constants/message'
 import { ErrorWithStatus } from '~/models/Error'
 import { ChangePasswordReqBody, UpdateProfileReqBody } from '~/models/request/user.request'
+import { StorageQuota } from '~/models/StorageQuota.schema'
 import { hashPassword } from '~/utils/crypto'
 import databaseService from './database.service'
+
+const DEFAULT_TOTAL_BYTES = 500 * 1024 * 1024
+const DEFAULT_MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024
+const DEFAULT_MAX_FILES_COUNT = 100
 
 class UserService {
   private toObjectId(accountId: string) {
@@ -36,6 +41,68 @@ class UserService {
     }
 
     return `/uploads/avatars/${file.filename}`
+  }
+
+  private async getStorageQuota(accountId: ObjectId) {
+    const storageQuota = await databaseService.storageQuotas.findOne({ accountId })
+
+    return (
+      storageQuota ||
+      new StorageQuota({
+        accountId,
+        plan: StoragePlan.free,
+        totalBytes: DEFAULT_TOTAL_BYTES,
+        usedBytes: 0,
+        maxFileSizeBytes: DEFAULT_MAX_FILE_SIZE_BYTES,
+        maxFilesCount: DEFAULT_MAX_FILES_COUNT
+      })
+    )
+  }
+
+  private formatStorage(storageQuota: StorageQuota) {
+    const usagePercent =
+      storageQuota.totalBytes > 0 ? Number(((storageQuota.usedBytes / storageQuota.totalBytes) * 100).toFixed(2)) : 0
+
+    return {
+      plan: storageQuota.plan,
+      usedBytes: storageQuota.usedBytes,
+      totalBytes: storageQuota.totalBytes,
+      maxFileSizeBytes: storageQuota.maxFileSizeBytes,
+      maxFilesCount: storageQuota.maxFilesCount,
+      aiQueriesUsed: storageQuota.aiQueriesUsed,
+      aiQueriesLimit: storageQuota.aiQueriesLimit,
+      usagePercent,
+      quotaResetDate: storageQuota.quotaResetDate,
+      updatedAt: storageQuota.updatedAt
+    }
+  }
+
+  async getProfile(accountId: string) {
+    const _id = this.toObjectId(accountId)
+    const account = await this.getActiveVerifiedAccount(_id)
+    const storageQuota = await this.getStorageQuota(_id)
+
+    return {
+      _id: account._id,
+      email: account.email,
+      fullName: account.fullName,
+      username: account.username,
+      avatarUrl: account.avatarUrl,
+      role: account.role,
+      isEmailVerified: account.isEmailVerified,
+      isActive: account.isActive,
+      createdAt: account.createdAt,
+      lastLoginAt: account.lastLoginAt,
+      storage: this.formatStorage(storageQuota)
+    }
+  }
+
+  async getStorage(accountId: string) {
+    const _id = this.toObjectId(accountId)
+    await this.getActiveVerifiedAccount(_id)
+    const storageQuota = await this.getStorageQuota(_id)
+
+    return this.formatStorage(storageQuota)
   }
 
   async updateProfile({

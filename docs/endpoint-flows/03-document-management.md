@@ -7,11 +7,11 @@ Nhóm này gồm US03, US04, US05, US06, US07 và US08. Đây là core của AI 
 | US   | Method | Endpoint                        | Auth   | Trang thai           |
 | ---- | ------ | ------------------------------- | ------ | -------------------- |
 | US03 | POST   | `/documents`                    | Bearer | Implemented          |
-| US03 | GET    | `/documents/{id}/upload-status` | Bearer | Planned              |
+| US03 | GET    | `/documents/{id}/upload-status` | Bearer | Implemented          |
 | US04 | GET    | `/documents`                    | Bearer | Implemented          |
 | US04 | GET    | `/documents/{id}`               | Bearer | Implemented          |
-| US04 | GET    | `/documents/{id}/download`      | Bearer | Planned              |
-| US05 | DELETE | `/documents/{id}`               | Bearer | Planned              |
+| US04 | GET    | `/documents/{id}/download`      | Bearer | Implemented          |
+| US05 | DELETE | `/documents/{id}`               | Bearer | Implemented          |
 | US06 | PUT    | `/documents/{id}`               | Bearer | Implemented          |
 | US07 | GET    | `/documents?q=...`              | Bearer | Implemented via list |
 | US08 | GET    | `/documents?categoryId=...`     | Bearer | Implemented via list |
@@ -31,6 +31,9 @@ Nhóm này gồm US03, US04, US05, US06, US07 và US08. Đây là core của AI 
 4. List endpoint tạo Mongo filter theo owner/public, not deleted, search regex, tags, category, status, pagination.
 5. Detail endpoint check owner/public, tăng `viewCount`, join category/uploader/favorite/share count.
 6. Update endpoint chỉ owner mới được sửa metadata, sau đó ghi audit action `update_solution_meta`.
+7. Upload-status endpoint dùng quyền xem document, trả status/file metadata.
+8. Download endpoint dùng file local từ `storageKey`, tăng `downloadCount`, ghi `download_solution`.
+9. Delete endpoint soft delete document, set `deletedAt`, `deletedBy`, `deleteReason`, `autoDeleteAt`, giảm quota và ghi `delete_solution`.
 
 ## Sơ đồ Luồng Xử lý
 
@@ -88,8 +91,8 @@ Nguồn: [Wikimedia Commons - Cloud storage architecture](https://commons.wikime
 - Soft-deleted document bị loại khỏi list/detail.
 - Upload phải tồn trong quota và max file size của plan.
 - `categoryId` nếu có phải là ObjectId hợp lệ và category active.
-- `tags` update theo cơ chế ghi để hoàn toàn.
-- Xoá planned sế set `deletedAt`, `deletedBy`, `autoDeleteAt`, không hard delete.
+- `tags` update theo cơ chế ghi đè hoàn toàn.
+- Xoá tài liệu sẽ set `deletedAt`, `deletedBy`, `autoDeleteAt`, không hard delete file local ngay.
 
 ## Test Cases
 

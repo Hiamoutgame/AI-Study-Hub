@@ -32,6 +32,11 @@ interface SolutionType {
   ocrConfidence?: number
   ocrProcessedAt?: Date
   ocrErrorMessage?: string
+  flagCount?: number
+  flaggedAt?: Date
+  flaggedBy?: ObjectId
+  flagReason?: string
+  flagCategory?: string
   deletedAt?: Date
   deletedBy?: ObjectId
   deleteReason?: string
@@ -71,6 +76,11 @@ export class Solution implements SolutionType {
   ocrConfidence: number
   ocrProcessedAt?: Date
   ocrErrorMessage: string
+  flagCount: number
+  flaggedAt?: Date
+  flaggedBy?: ObjectId
+  flagReason: string
+  flagCategory: string
   deletedAt?: Date
   deletedBy?: ObjectId
   deleteReason: string
@@ -110,6 +120,11 @@ export class Solution implements SolutionType {
     this.ocrConfidence = solution.ocrConfidence || 0
     this.ocrProcessedAt = solution.ocrProcessedAt
     this.ocrErrorMessage = solution.ocrErrorMessage || ''
+    this.flagCount = solution.flagCount || 0
+    this.flaggedAt = solution.flaggedAt
+    this.flaggedBy = solution.flaggedBy
+    this.flagReason = solution.flagReason || ''
+    this.flagCategory = solution.flagCategory || ''
     this.deletedAt = solution.deletedAt
     this.deletedBy = solution.deletedBy
     this.deleteReason = solution.deleteReason || ''

@@ -39,7 +39,15 @@ export enum ActivityAction {
   favoriteAdd = 'favorite_add',
   favoriteRemove = 'favorite_remove',
   adminLockUser = 'admin_lock_user',
+  adminUpdateUserRole = 'admin_update_user_role',
+  adminUpdateUserQuota = 'admin_update_user_quota',
+  adminDeleteUser = 'admin_delete_user',
   adminDeleteSolution = 'admin_delete_solution',
+  adminFlagSolution = 'admin_flag_solution',
+  adminCreateCategory = 'admin_create_category',
+  adminUpdateCategory = 'admin_update_category',
+  adminDeleteCategory = 'admin_delete_category',
+  adminSendNotification = 'admin_send_notification',
   adminUpdateAiConfig = 'admin_update_ai_config'
 }
 
