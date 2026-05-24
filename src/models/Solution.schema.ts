@@ -43,7 +43,7 @@ interface SolutionType {
 export class Solution implements SolutionType {
   _id?: ObjectId
   uploaderId: ObjectId
-  categoryId: ObjectId
+  categoryId?: ObjectId
   title: string
   description: string
   tags: string[]
@@ -69,12 +69,12 @@ export class Solution implements SolutionType {
   ocrLanguage: string
   ocrText: string
   ocrConfidence: number
-  ocrProcessedAt: Date
+  ocrProcessedAt?: Date
   ocrErrorMessage: string
-  deletedAt: Date
-  deletedBy: ObjectId
+  deletedAt?: Date
+  deletedBy?: ObjectId
   deleteReason: string
-  autoDeleteAt: Date
+  autoDeleteAt?: Date
   createdAt: Date
   updatedAt: Date
 
@@ -82,7 +82,7 @@ export class Solution implements SolutionType {
     const now = new Date()
     this._id = solution._id
     this.uploaderId = solution.uploaderId
-    this.categoryId = solution.categoryId || new ObjectId()
+    this.categoryId = solution.categoryId
     this.title = solution.title
     this.description = solution.description || ''
     this.tags = solution.tags || []
@@ -108,12 +108,12 @@ export class Solution implements SolutionType {
     this.ocrLanguage = solution.ocrLanguage || 'vie'
     this.ocrText = solution.ocrText || ''
     this.ocrConfidence = solution.ocrConfidence || 0
-    this.ocrProcessedAt = solution.ocrProcessedAt || now
+    this.ocrProcessedAt = solution.ocrProcessedAt
     this.ocrErrorMessage = solution.ocrErrorMessage || ''
-    this.deletedAt = solution.deletedAt || now
-    this.deletedBy = solution.deletedBy || new ObjectId()
+    this.deletedAt = solution.deletedAt
+    this.deletedBy = solution.deletedBy
     this.deleteReason = solution.deleteReason || ''
-    this.autoDeleteAt = solution.autoDeleteAt || now
+    this.autoDeleteAt = solution.autoDeleteAt
     this.createdAt = solution.createdAt || now
     this.updatedAt = solution.updatedAt || now
   }

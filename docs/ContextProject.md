@@ -35,7 +35,7 @@ Sinh viên đang gặp khó khăn trong việc quản lý tài liệu học tậ
 
 Hệ thống **AI Study Hub** được xây dựng nhằm:
 
-- Cho phép **tạo và soạn thảo tài liệu** ngay bên trong hệ thống (tương tự Notion, Google Docs)
+- Cho phép **quản lý tài liệu học tập** (upload, phân loại, tìm kiếm) ngay bên trong hệ thống
 - **Tập trung hóa** tài liệu học tập, giảm thất lạc
 - **Tăng khả năng tìm kiếm** và truy cập tài liệu
 - Tạo **môi trường chia sẻ** tài liệu thuận tiện
@@ -60,7 +60,6 @@ Hệ thống **AI Study Hub** được xây dựng nhằm:
 - Tải xuống tài liệu
 - Xóa tài liệu
 - Chỉnh sửa thông tin tài liệu
-- Ghi chép nội dung tài liệu
 - Tìm kiếm tài liệu theo từ khóa
 - Lọc tài liệu theo môn học / danh mục
 

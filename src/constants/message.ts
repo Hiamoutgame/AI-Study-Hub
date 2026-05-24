@@ -72,3 +72,64 @@ export const ACCOUNT_MESSAGES = {
   ACCESS_TOKEN_IS_INVALID: 'Access token is invalid',
   AUTHORIZATION_HEADER_IS_INVALID: 'Authorization header is invalid'
 } as const
+
+export const USER_MESSAGES = {
+  USER_NOT_FOUND: 'User not found',
+  USER_IS_INACTIVE: 'User is inactive',
+  USER_NOT_VERIFIED: 'User not verified',
+  FULL_NAME_MUST_BE_A_STRING: 'Full name must be a string',
+  FULL_NAME_LENGTH_MUST_BE_FROM_1_TO_100: 'Full name length must be from 1 to 100',
+  USERNAME_MUST_BE_A_STRING: 'Username must be a string',
+  USERNAME_LENGTH_MUST_BE_FROM_1_TO_100: 'Username length must be from 1 to 100',
+  USERNAME_ALREADY_EXISTS: 'Username already exists',
+  AVATAR_FILE_TOO_LARGE: 'Avatar file must be less than or equal to 2MB',
+  AVATAR_FILE_TYPE_IS_INVALID: 'Avatar file must be a jpg, jpeg, or png image',
+  UPDATE_PROFILE_SUCCESS: 'Update profile success',
+  CURRENT_PASSWORD_IS_REQUIRED: 'Current password is required',
+  CURRENT_PASSWORD_MUST_BE_A_STRING: 'Current password must be a string',
+  CURRENT_PASSWORD_IS_INCORRECT: 'Current password is incorrect',
+  NEW_PASSWORD_IS_REQUIRED: 'New password is required',
+  NEW_PASSWORD_MUST_BE_A_STRING: 'New password must be a string',
+  NEW_PASSWORD_LENGTH_MUST_BE_FROM_8_TO_50: 'New password length must be from 8 to 50',
+  NEW_PASSWORD_MUST_BE_STRONG:
+    'New password must be at least 8 characters long and contain at least 1 lowercase letter, 1 uppercase letter, 1 number, and 1 symbol',
+  CONFIRM_PASSWORD_IS_REQUIRED: 'Confirm password is required',
+  CONFIRM_PASSWORD_MUST_BE_A_STRING: 'Confirm password must be a string',
+  CONFIRM_PASSWORD_LENGTH_MUST_BE_FROM_8_TO_50: 'Confirm password length must be from 8 to 50',
+  CONFIRM_PASSWORD_MUST_BE_STRONG:
+    'Confirm password must be at least 8 characters long and contain at least 1 lowercase letter, 1 uppercase letter, 1 number, and 1 symbol',
+  CONFIRM_PASSWORD_MUST_BE_THE_SAME_AS_NEW_PASSWORD: 'Confirm password must be the same as new password',
+  CHANGE_PASSWORD_SUCCESS: 'Change password success'
+} as const
+
+export const DOCUMENT_MESSAGES = {
+  FILE_IS_REQUIRED: 'Document file is required',
+  FILE_TOO_LARGE: 'Document file exceeds storage plan limit',
+  FILE_TYPE_IS_INVALID: 'Document file must be a pdf, docx, or txt file',
+  STORAGE_QUOTA_EXCEEDED: 'Storage quota exceeded',
+  TITLE_IS_REQUIRED: 'Title is required',
+  TITLE_MUST_BE_A_STRING: 'Title must be a string',
+  TITLE_LENGTH_MUST_BE_FROM_1_TO_200: 'Title length must be from 1 to 200',
+  DESCRIPTION_MUST_BE_A_STRING: 'Description must be a string',
+  DESCRIPTION_LENGTH_MUST_BE_LESS_THAN_1000: 'Description length must be less than 1000',
+  CATEGORY_ID_IS_INVALID: 'Category id is invalid',
+  CATEGORY_NOT_FOUND: 'Category not found',
+  TAGS_MUST_BE_AN_ARRAY_OR_STRING: 'Tags must be an array or comma separated string',
+  LANGUAGE_MUST_BE_A_STRING: 'Language must be a string',
+  LANGUAGE_LENGTH_MUST_BE_FROM_2_TO_20: 'Language length must be from 2 to 20',
+  IS_PUBLIC_MUST_BE_BOOLEAN: 'isPublic must be a boolean',
+  ENABLE_OCR_MUST_BE_BOOLEAN: 'enableOcr must be a boolean',
+  AI_STATUS_IS_INVALID: 'AI status is invalid',
+  SORT_BY_IS_INVALID: 'Sort by is invalid',
+  ORDER_IS_INVALID: 'Order is invalid',
+  PAGE_MUST_BE_A_POSITIVE_INTEGER: 'Page must be a positive integer',
+  LIMIT_MUST_BE_FROM_1_TO_100: 'Limit must be from 1 to 100',
+  DOCUMENT_ID_IS_INVALID: 'Document id is invalid',
+  DOCUMENT_NOT_FOUND: 'Document not found',
+  DOCUMENT_ACCESS_DENIED: 'You do not have permission to access this document',
+  DOCUMENT_UPDATE_DENIED: 'Only the owner can update this document',
+  UPLOAD_DOCUMENT_SUCCESS: 'Document upload success',
+  GET_DOCUMENTS_SUCCESS: 'Get documents success',
+  GET_DOCUMENT_DETAIL_SUCCESS: 'Get document detail success',
+  UPDATE_DOCUMENT_SUCCESS: 'Update document success'
+} as const

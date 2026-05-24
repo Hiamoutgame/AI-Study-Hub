@@ -86,17 +86,20 @@ Tất cả response đều bọc trong envelope chuẩn:
 
 ### 1.4 Mapping API ↔ Collection
 
-| API resource (path)    | MongoDB collection    |
-| ---------------------- | --------------------- |
-| `/users`, `/auth`      | `accounts`            |
-| `/documents`           | `solutions`           |
-| `/chat/sessions`       | `ai_chat_sessions`    |
-| `/chat/.../messages`   | `ai_messages`         |
-| `/categories`          | `solution_categories` |
-| `/admin/ai-settings`   | `ai_configurations`   |
-| `/admin/logs/system`   | `activity_logs`       |
-| `/users/me/bookmarks`  | `favorites`           |
-| `/documents/.../share` | `permission_links`    |
+| API resource (path)        | MongoDB collection      |
+| -------------------------- | ----------------------- |
+| `/users`, `/account`       | `accounts`              |
+| `/users/me/storage`        | `storage_quotas`        |
+| `/documents`               | `solutions`             |
+| `/categories`              | `solution_categories`   |
+| `/chat/sessions`           | `ai_chat_sessions`      |
+| `/chat/.../messages`       | `ai_messages`           |
+| _(internal RAG, no API)_   | `document_embeddings`   |
+| `/admin/ai-settings`       | `ai_configurations`     |
+| `/admin/logs/system`       | `activity_logs`         |
+| `/documents/.../share`     | `permission_links`      |
+| `/users/me/bookmarks`, `/documents/{id}/bookmarks` | `favorites` |
+| `/users/me/notifications`, `/admin/notifications`  | `notifications` |
 
 > **Quy ước ID:** Path param dùng `{id}` ngắn gọn, ID trong body/response là `_id` (MongoDB ObjectId) hoặc reference fields theo schema (`accountId`, `solutionId`, ...).
 
@@ -259,7 +262,7 @@ Tất cả response đều bọc trong envelope chuẩn:
 }
 ```
 
-> 🔒 `accessToken` có TTL 1 giờ. `refreshToken` có TTL 30 ngày, lưu trữ dưới dạng `httpOnly cookie` hoặc secure storage. Server cập nhật `accounts.lastLoginAt`.
+> 🔒 `accessToken` có TTL 1 giờ. Sau khi token hết hạn, người dùng cần đăng nhập lại. Server cập nhật `accounts.lastLoginAt`.
 
 ---
 
@@ -642,14 +645,13 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
     "status": "active",
     "aiStatus": "ready",
     "ocrStatus": "completed",
-    "ocrTextPreview": "Chương 1: Giới hạn và liên tục...",
     "isPublic": false,
     "isBookmarked": false,
     "viewCount": 42,
     "downloadCount": 7,
     "shareInfo": {
       "isShared": false,
-      "shareToken": null
+      "activeLinksCount": 0
     },
     "uploadedBy": {
       "_id": "64a1b2c3d4e5f6a7b8c9d001",
@@ -1523,10 +1525,10 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
   "data": {
     "accountId": "64a1b2c3d4e5f6a7b8c9d001",
     "plan": "free",
-    "usedBytes": 268959744,
-    "totalBytes": 1073741824,
-    "availableBytes": 804782080,
-    "usagePercent": 25.05,
+    "usedBytes": 125829120,
+    "totalBytes": 524288000,
+    "availableBytes": 398458880,
+    "usagePercent": 24.0,
     "maxFileSizeBytes": 20971520,
     "maxFilesCount": null,
     "aiQueriesUsed": 12,
@@ -1594,7 +1596,7 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
       "storage": {
         "plan": "free",
         "usedBytes": 125829120,
-        "totalBytes": 1073741824
+        "totalBytes": 524288000
       },
       "documentCount": 35,
       "createdAt": "2024-09-01T08:00:00.000Z",
@@ -1634,7 +1636,7 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
     "storage": {
       "plan": "free",
       "usedBytes": 125829120,
-      "totalBytes": 1073741824,
+      "totalBytes": 524288000,
       "aiQueriesUsed": 12,
       "aiQueriesLimit": 50
     },
@@ -2764,14 +2766,13 @@ Tất cả lỗi đều tuân theo cấu trúc nhất quán:
 
 | US   | Tên                          | Method | Endpoint                            |
 | ---- | ---------------------------- | ------ | ----------------------------------- |
-| US01 | Đăng ký                      | POST   | `/auth/register`                    |
-| US01 | Xác thực email               | GET    | `/auth/verify-email`                |
-| US01 | Gửi lại email xác thực       | POST   | `/auth/resend-verification`         |
-| US02 | Đăng nhập                    | POST   | `/auth/login`                       |
-| US02 | Đăng xuất                    | POST   | `/auth/logout`                      |
-| US02 | Làm mới token                | POST   | `/auth/refresh-token`               |
-| US02 | Quên mật khẩu                | POST   | `/auth/forgot-password`             |
-| US02 | Đặt lại mật khẩu             | POST   | `/auth/reset-password`              |
+| US01 | Đăng ký                      | POST   | `/account/register`                 |
+| US01 | Xác thực email               | GET    | `/account/verify-email`             |
+| US01 | Gửi lại email xác thực       | POST   | `/account/resend-verification`      |
+| US02 | Đăng nhập                    | POST   | `/account/login`                    |
+| US02 | Đăng xuất                    | POST   | `/account/logout`                   |
+| US02 | Quên mật khẩu                | POST   | `/account/forgot-password`          |
+| US02 | Đặt lại mật khẩu             | POST   | `/account/reset-password`           |
 | US03 | Upload tài liệu              | POST   | `/documents`                        |
 | US03 | Kiểm tra trạng thái upload   | GET    | `/documents/{id}/upload-status`     |
 | US04 | Xem danh sách tài liệu       | GET    | `/documents`                        |
@@ -2849,7 +2850,7 @@ Cắt gọn theo user stories thực tế — bỏ các collection vượt scope
 | **`solutions` OCR fields**         | "Cần bổ sung vào schema"           | **Đã add chính thức** (`ocrStatus`, `ocrText`, `ocrLanguage`, `ocrConfidence`, `ocrProcessedAt`, `ocrErrorMessage`) |
 | **Notification target**            | `all` / `recipientIds` / `groupId` | `all` / `recipientIds` (bỏ broadcast theo group)                                                                    |
 | **Notification types**             | có `comment_*`, `group_*`          | bỏ các type tương ứng collection đã xoá                                                                             |
-| **Tổng API endpoints**             | 65                                 | **~62** (gỡ các endpoint group/comment, gộp OCR vào solutions)                                                      |
+| **Tổng API endpoints**             | 65                                 | **64** (gỡ các endpoint group/comment, gộp OCR vào solutions, bỏ refresh-token)                                     |
 
 ---
 
