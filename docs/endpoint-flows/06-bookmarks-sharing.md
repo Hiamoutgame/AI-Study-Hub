@@ -36,26 +36,30 @@ sequenceDiagram
   actor Client
   participant Route as bookmark/share routes
   participant Auth as accessTokenValidator
+  participant Controller as sharingController
   participant Service as sharingService
-  database Solutions as solutions
-  database Favorites as favorites
-  database Links as permission_links
-  database Notifications as notifications
+  participant Solutions as solutions
+  participant Favorites as favorites
+  participant Links as permission_links
+  participant Notifications as notifications
 
   Client->>Route: POST /documents/{id}/share
-  Route->>Auth: validate owner token
-  Route->>Service: createShareLink(accountId, documentId, payload)
+  Route->>Auth: validate access token
+  Auth->>Route: next() with decoded user_id
+  Route->>Controller: wrapAsync(createShareLinkController)
+  Controller->>Service: createShareLink(accountId, documentId, payload)
   Service->>Solutions: find document + check owner
   Service->>Links: insert PermissionLink token
   Service->>Notifications: optional notify recipients
-  Service-->>Client: share token/link
+  Service-->>Controller: share token/link data
+  Controller-->>Client: 201 share token/link
 
   Client->>Route: GET /shared/{token}
   Route->>Service: resolveShareToken(token)
   Service->>Links: find active link
   Service->>Solutions: load shared document
   Service->>Links: increment currentUses
-  Service-->>Client: shared document view
+  Service-->>Client: 200 shared document view
 ```
 
 ## Ảnh Tham khảo

@@ -30,20 +30,24 @@ sequenceDiagram
   actor Admin
   participant Route as admin stats routes
   participant Auth as admin auth
-  participant Service as dashboardService
-  database Accounts as accounts
-  database Solutions as solutions
-  database Logs as activity_logs
-  database Quotas as storage_quotas
+  participant Controller as adminDashboardController
+  participant Service as adminDashboardService
+  participant Accounts as accounts
+  participant Solutions as solutions
+  participant Logs as activity_logs
+  participant Quotas as storage_quotas
 
   Admin->>Route: GET /admin/dashboard?period=month
   Route->>Auth: bearer + admin role
-  Route->>Service: getDashboard(period)
+  Auth->>Route: next() with decoded admin_id
+  Route->>Controller: wrapAsync(getDashboardController)
+  Controller->>Service: getDashboard(period)
   Service->>Accounts: count users by status
   Service->>Solutions: aggregate documents/status/storage
   Service->>Quotas: aggregate usedBytes/totalBytes
   Service->>Logs: aggregate recent activities
-  Service-->>Admin: dashboard summary
+  Service-->>Controller: dashboard summary
+  Controller-->>Admin: 200 dashboard stats
 ```
 
 ## Ảnh Tham khảo

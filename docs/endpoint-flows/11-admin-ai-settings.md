@@ -32,22 +32,30 @@ sequenceDiagram
   actor Admin
   participant Route as ai settings routes
   participant Auth as admin auth
+  participant Controller as adminAiSettingsController
   participant Service as aiSettingsService
-  database Configs as ai_configurations
-  database Logs as activity_logs
-  database Messages as ai_messages
+  participant Configs as ai_configurations
+  participant Logs as activity_logs
+  participant Messages as ai_messages
 
   Admin->>Route: PUT /admin/ai-settings
   Route->>Auth: bearer + admin role
-  Route->>Service: updateSettings(adminId, payload)
+  Auth->>Route: next() with decoded admin_id
+  Route->>Controller: wrapAsync(updateSettingsController)
+  Controller->>Service: updateSettings(adminId, payload)
   Service->>Configs: validate keys and update records
   Service->>Logs: insert admin_update_ai_config
-  Service-->>Admin: updated keys + timestamp
+  Service-->>Controller: updated keys + timestamp
+  Controller-->>Admin: 200 updated config
 
   Admin->>Route: GET /admin/ai-settings/usage
-  Route->>Service: getUsage(period)
+  Route->>Auth: bearer + admin role
+  Auth->>Route: next()
+  Route->>Controller: wrapAsync(getUsageController)
+  Controller->>Service: getUsage(period)
   Service->>Messages: aggregate token usage
-  Service-->>Admin: usage breakdown
+  Service-->>Controller: usage breakdown
+  Controller-->>Admin: 200 usage stats
 ```
 
 ## Ảnh Tham khảo

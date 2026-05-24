@@ -52,8 +52,7 @@ flowchart TD
 
   Client --> Express --> Routes --> Middlewares --> Controllers --> Services --> Models --> DB
   Middlewares -->|EntityErr / ErrorWithStatus| ErrorHandler
-  Controllers -->|throw error| ErrorHandler
-  Services -->|throw business error| ErrorHandler
+  Controllers -->|catch error via wrapAsync| ErrorHandler
   ErrorHandler --> Client
   DB --> Services --> Controllers --> Client
 ```

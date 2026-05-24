@@ -40,7 +40,7 @@ sequenceDiagram
   participant Validator as account.middlewares
   participant Controller as account.controller
   participant Service as accountService
-  database Accounts as accounts
+  participant Accounts as accounts
   participant JWT as jwt.ts
   participant ErrorHandler as defautHandler
 
@@ -57,7 +57,12 @@ sequenceDiagram
   Service->>Accounts: update lastLoginAt
   Service-->>Controller: token + public account
   Controller-->>Client: 200 message + data
-  Service-->>ErrorHandler: ErrorWithStatus on invalid credential/token rule
+
+  alt Error Case
+    Service-->>Controller: throw ErrorWithStatus
+    Controller-->>ErrorHandler: error bubble up via wrapAsync
+    ErrorHandler-->>Client: 422/401 response
+  end
 ```
 
 ## Ảnh Tham khảo

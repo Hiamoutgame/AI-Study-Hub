@@ -36,25 +36,33 @@ sequenceDiagram
   actor Admin
   participant Route as admin document/category routes
   participant Auth as admin auth
+  participant Controller as adminDocumentCategoryController
   participant Service as adminDocumentCategoryService
-  database Solutions as solutions
-  database Categories as solution_categories
-  database Logs as activity_logs
-  database Notifications as notifications
+  participant Solutions as solutions
+  participant Categories as solution_categories
+  participant Logs as activity_logs
+  participant Notifications as notifications
 
   Admin->>Route: POST /admin/documents/{id}/flag
   Route->>Auth: bearer + admin role
-  Route->>Service: flagDocument(adminId, documentId, reason)
+  Auth->>Route: next() with decoded admin_id
+  Route->>Controller: wrapAsync(flagDocumentController)
+  Controller->>Service: flagDocument(adminId, documentId, reason)
   Service->>Solutions: find document
   Service->>Solutions: update violation metadata/status
   Service->>Notifications: notify uploader
   Service->>Logs: insert admin audit action
-  Service-->>Admin: flagged document response
+  Service-->>Controller: flagged document response
+  Controller-->>Admin: 200 flagged document
 
   Admin->>Route: POST /admin/categories
-  Route->>Service: createCategory(payload)
+  Route->>Auth: bearer + admin role
+  Auth->>Route: next()
+  Route->>Controller: wrapAsync(createCategoryController)
+  Controller->>Service: createCategory(payload)
   Service->>Categories: validate slug unique + insert
-  Service-->>Admin: category data
+  Service-->>Controller: category data
+  Controller-->>Admin: 201 category data
 ```
 
 ## Ảnh Tham khảo

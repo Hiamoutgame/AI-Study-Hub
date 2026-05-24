@@ -38,16 +38,19 @@ sequenceDiagram
   participant Validator as user.middlewares
   participant Controller as user.controller
   participant Service as userService
-  database Accounts as accounts
-  database Quotas as storage_quotas
+  participant Accounts as accounts
+  participant Quotas as storage_quotas
 
   Client->>Route: PUT /users/me
   Route->>Auth: validate Authorization header
-  Auth-->>Route: decoded user_id
+  Auth->>Auth: decode & validate token
+  Auth->>Route: next() with req.decoded_authorization
   Route->>Upload: optional avatar multipart
-  Upload-->>Route: req.file
+  Upload->>Upload: save file to req.file
+  Upload->>Route: next()
   Route->>Validator: validate fullName/username
-  Validator-->>Controller: next()
+  Validator->>Route: next()
+  Route->>Controller: wrapAsync(updateProfileController)
   Controller->>Service: updateProfile(accountId, body, avatar)
   Service->>Accounts: find account by _id
   Service->>Accounts: check username uniqueness
@@ -58,11 +61,14 @@ sequenceDiagram
 
   Client->>Route: GET /users/me/storage
   Route->>Auth: validate access token
-  Auth-->>Controller: decoded user_id
+  Auth->>Auth: decode & validate token
+  Auth->>Route: next() with req.decoded_authorization
+  Route->>Controller: wrapAsync(getStorageController)
   Controller->>Service: getStorage(accountId)
   Service->>Quotas: findOne({ accountId })
   Quotas-->>Service: quota document
-  Service-->>Client: plan + usedBytes + totalBytes + usagePercent
+  Service-->>Controller: quota data
+  Controller-->>Client: 200 plan + usedBytes + totalBytes + usagePercent
 ```
 
 ## Ảnh Tham khảo

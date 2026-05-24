@@ -36,14 +36,17 @@ Nhóm này gồm US03, US04, US05, US06, US07 và US08. Đây là core của AI 
 
 ```mermaid
 flowchart TD
-  Upload[POST /documents] --> Multer[uploadDocumentFile]
+  Upload[POST /documents] --> Auth[accessTokenValidator]
+  Auth --> Multer[uploadDocumentFile]
   Multer --> Validate[uploadDocumentValidator]
-  Validate --> Service[documentService]
-  Service --> Quota[storage_quotas]
-  Service --> Category[solution_categories]
-  Service --> Solution[solutions]
-  Service --> Log[activity_logs]
-  Solution --> Response[201 document data]
+  Validate --> Controller[documentController]
+  Controller --> Service[documentService]
+  Service --> Quota[(storage_quotas)]
+  Service --> Category[(solution_categories)]
+  Service --> Solution[(solutions)]
+  Service --> Log[(activity_logs)]
+  Solution -.-> Controller
+  Controller --> Response[201 document data]
 ```
 
 ```mermaid
@@ -55,14 +58,15 @@ sequenceDiagram
   participant Validator as document.middlewares
   participant Controller as document.controller
   participant Service as documentService
-  database Solutions as solutions
-  database Quotas as storage_quotas
-  database Logs as activity_logs
+  participant Solutions as solutions
+  participant Quotas as storage_quotas
+  participant Logs as activity_logs
 
   Client->>Route: POST /documents multipart/form-data
   Route->>Auth: decode access token
   Route->>Upload: save file locally
   Route->>Validator: validate body fields
+  Validator-->>Controller: next()
   Controller->>Service: uploadDocument(accountId, body, file)
   Service->>Quotas: check plan and available bytes
   Service->>Solutions: insert new Solution

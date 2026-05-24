@@ -34,16 +34,20 @@ sequenceDiagram
   participant Route as documentRouter
   participant Auth as accessTokenValidator
   participant Validator as documentIdValidator
+  participant Controller as ocrController
   participant Service as ocrPreviewService
-  database Solutions as solutions
-  database Embeddings as document_embeddings
-  database Logs as activity_logs
+  participant Solutions as solutions
+  participant Embeddings as document_embeddings
+  participant Logs as activity_logs
   participant OCR as OCR provider/worker
 
   Client->>Route: POST /documents/{id}/ocr
-  Route->>Auth: validate token
+  Route->>Auth: validate access token
+  Auth->>Route: next() with decoded user_id
   Route->>Validator: validate ObjectId
-  Route->>Service: requestOcr(accountId, documentId)
+  Validator->>Route: next()
+  Route->>Controller: wrapAsync(requestOcrController)
+  Controller->>Service: requestOcr(accountId, documentId)
   Service->>Solutions: find document + check access
   Service->>Solutions: set ocrStatus processing
   Service->>Logs: insert ocr_start
@@ -51,7 +55,8 @@ sequenceDiagram
   OCR-->>Service: text + confidence or error
   Service->>Solutions: update ocr fields
   Service->>Embeddings: optional rebuild searchable chunks
-  Service-->>Client: 202/200 OCR status
+  Service-->>Controller: OCR status
+  Controller-->>Client: 202 OCR processing
 ```
 
 ## Ảnh Tham khảo

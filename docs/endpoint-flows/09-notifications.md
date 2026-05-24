@@ -34,22 +34,29 @@ sequenceDiagram
   actor User
   participant Route as notification routes
   participant Auth as access/admin validators
+  participant Controller as notificationController
   participant Service as notificationService
-  database Accounts as accounts
-  database Notifications as notifications
+  participant Accounts as accounts
+  participant Notifications as notifications
 
   Admin->>Route: POST /admin/notifications
   Route->>Auth: validate admin role
-  Route->>Service: sendNotification(payload)
+  Auth->>Route: next() with decoded admin_id
+  Route->>Controller: wrapAsync(sendNotificationController)
+  Controller->>Service: sendNotification(payload)
   Service->>Accounts: resolve active recipients
   Service->>Notifications: insert many recipient notifications
-  Service-->>Admin: fan-out result
+  Service-->>Controller: fan-out result
+  Controller-->>Admin: 201 notification fan-out complete
 
   User->>Route: PUT /users/me/notifications/{id}/read
   Route->>Auth: validate access token
-  Route->>Service: markRead(accountId, notificationId)
+  Auth->>Route: next() with decoded user_id
+  Route->>Controller: wrapAsync(markReadController)
+  Controller->>Service: markRead(accountId, notificationId)
   Service->>Notifications: updateOne({ _id, accountId })
-  Service-->>User: read status
+  Service-->>Controller: read status
+  Controller-->>User: 200 notification marked read
 ```
 
 ## Ảnh Tham khảo

@@ -31,23 +31,31 @@ sequenceDiagram
   actor Admin
   participant Route as admin log routes
   participant Auth as admin auth
+  participant Controller as adminLogsController
   participant Service as logService
-  database Solutions as solutions
-  database Logs as activity_logs
-  database Accounts as accounts
+  participant Solutions as solutions
+  participant Logs as activity_logs
+  participant Accounts as accounts
 
   Admin->>Route: GET /admin/logs/ocr?ocrStatus=failed
   Route->>Auth: bearer + admin role
-  Route->>Service: getOcrLogs(query)
+  Auth->>Route: next() with decoded admin_id
+  Route->>Controller: wrapAsync(getOcrLogsController)
+  Controller->>Service: getOcrLogs(query)
   Service->>Solutions: find OCR fields by filter
   Service->>Accounts: join uploader info
-  Service-->>Admin: OCR log page
+  Service-->>Controller: OCR log page
+  Controller-->>Admin: 200 OCR logs
 
   Admin->>Route: GET /admin/logs/audit
-  Route->>Service: getAuditLogs(query)
+  Route->>Auth: bearer + admin role
+  Auth->>Route: next()
+  Route->>Controller: wrapAsync(getAuditLogsController)
+  Controller->>Service: getAuditLogs(query)
   Service->>Logs: find admin action logs
   Service->>Accounts: join admin info
-  Service-->>Admin: audit log page
+  Service-->>Controller: audit log page
+  Controller-->>Admin: 200 audit logs
 ```
 
 ## Ảnh Tham khảo

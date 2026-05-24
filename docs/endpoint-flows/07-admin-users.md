@@ -35,20 +35,25 @@ sequenceDiagram
   actor Admin
   participant Route as adminUserRouter
   participant Auth as accessTokenValidator
-  participant Role as adminRoleValidator
+  participant AdminRole as adminRoleValidator
+  participant Controller as adminUserController
   participant Service as adminUserService
-  database Accounts as accounts
-  database Quotas as storage_quotas
-  database Logs as activity_logs
+  participant Accounts as accounts
+  participant Quotas as storage_quotas
+  participant Logs as activity_logs
 
   Admin->>Route: PUT /admin/users/{id}/status
-  Route->>Auth: decode access token
-  Auth->>Role: load admin account
-  Role->>Accounts: verify role admin
-  Route->>Service: updateUserStatus(adminId, targetId, payload)
+  Route->>Auth: validate access token
+  Auth->>Route: next() with decoded user_id
+  Route->>AdminRole: verify admin role
+  AdminRole->>Accounts: check role = admin
+  AdminRole->>Route: next()
+  Route->>Controller: wrapAsync(updateUserStatusController)
+  Controller->>Service: updateUserStatus(adminId, targetId, payload)
   Service->>Accounts: update isActive/deletedAt
-  Service->>Logs: insert admin_lock_user or audit action
-  Service-->>Admin: updated user status
+  Service->>Logs: insert admin_lock_user audit action
+  Service-->>Controller: updated user status
+  Controller-->>Admin: 200 updated user status
 ```
 
 ## Ảnh Tham khảo

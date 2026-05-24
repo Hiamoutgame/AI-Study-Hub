@@ -39,15 +39,16 @@ sequenceDiagram
   participant Auth as accessTokenValidator
   participant Controller as ai.controller
   participant Service as aiService
-  database Sessions as ai_chat_sessions
-  database Messages as ai_messages
-  database Embeddings as document_embeddings
-  database Configs as ai_configurations
+  participant Sessions as ai_chat_sessions
+  participant Messages as ai_messages
+  participant Embeddings as document_embeddings
+  participant Configs as ai_configurations
   participant AI as AI provider
 
   Client->>Route: POST /chat/sessions/{id}/messages
   Route->>Auth: validate access token
-  Route->>Controller: wrapAsync controller
+  Auth->>Route: next() with decoded user_id
+  Route->>Controller: wrapAsync(sendMessageController)
   Controller->>Service: sendMessage(accountId, sessionId, message)
   Service->>Sessions: verify owner session
   Service->>Messages: insert user message
