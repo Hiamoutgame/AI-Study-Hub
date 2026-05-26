@@ -16,13 +16,15 @@ const app = express()
 
 app.use(
   cors({
-    origin: (origin, callback) => {
-      if (!origin || CORS_ORIGINS.includes(origin)) {
-        return callback(null, true)
-      }
+    origin: CORS_ORIGINS.includes('*')
+      ? true
+      : (origin, callback) => {
+          if (!origin || CORS_ORIGINS.includes(origin)) {
+            return callback(null, true)
+          }
 
-      return callback(new Error('Not allowed by CORS'))
-    },
+          return callback(new Error('Not allowed by CORS'))
+        },
     credentials: true
   })
 )
