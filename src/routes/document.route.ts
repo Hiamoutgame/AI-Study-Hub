@@ -8,6 +8,13 @@ import {
   updateDocumentController,
   uploadDocumentController
 } from '~/controllers/document.controller'
+import {
+  addBookmarkController,
+  createShareLinkController,
+  getShareLinksController,
+  removeBookmarkController,
+  revokeShareLinkController
+} from '~/controllers/sharing.controller'
 import { accessTokenValidator } from '~/middlewares/account.middlewares'
 import {
   documentIdValidator,
@@ -15,6 +22,7 @@ import {
   updateDocumentValidator,
   uploadDocumentValidator
 } from '~/middlewares/document.middlewares'
+import { bookmarkNoteValidator, createShareLinkValidator, shareIdValidator } from '~/middlewares/sharing.middlewares'
 import { uploadDocumentFile } from '~/middlewares/upload.middlewares'
 import { wrapAsync } from '~/utils/handler'
 
@@ -177,6 +185,164 @@ documentRouter.post(
  *               $ref: '#/components/schemas/ValidationErrorResponse'
  */
 documentRouter.get('/', accessTokenValidator, getDocumentsValidator, wrapAsync(getDocumentsController))
+
+/**
+ * @swagger
+ * /documents/{id}/bookmarks:
+ *   post:
+ *     summary: Add a document bookmark
+ *     tags: [Bookmarks]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { $ref: '#/components/schemas/ObjectId' }
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               note:
+ *                 type: string
+ *                 maxLength: 300
+ *     responses:
+ *       201:
+ *         description: Bookmark saved
+ *       403:
+ *         description: Document access denied
+ *       404:
+ *         description: Document not found
+ *   delete:
+ *     summary: Remove a document bookmark
+ *     tags: [Bookmarks]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { $ref: '#/components/schemas/ObjectId' }
+ *     responses:
+ *       200:
+ *         description: Bookmark removed
+ */
+documentRouter.post(
+  '/:id/bookmarks',
+  accessTokenValidator,
+  documentIdValidator,
+  bookmarkNoteValidator,
+  wrapAsync(addBookmarkController)
+)
+documentRouter.delete(
+  '/:id/bookmarks',
+  accessTokenValidator,
+  documentIdValidator,
+  wrapAsync(removeBookmarkController)
+)
+
+/**
+ * @swagger
+ * /documents/{id}/share:
+ *   post:
+ *     summary: Create a public document share link
+ *     tags: [Sharing]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { $ref: '#/components/schemas/ObjectId' }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [permissionLevel]
+ *             properties:
+ *               permissionLevel:
+ *                 type: string
+ *                 enum: [viewer, commenter, downloader, editor, co_owner]
+ *               canDownload:
+ *                 type: boolean
+ *               canComment:
+ *                 type: boolean
+ *               requiresLogin:
+ *                 type: boolean
+ *               passwordHash:
+ *                 type: string
+ *               maxUses:
+ *                 type: integer
+ *                 nullable: true
+ *               expiresInDays:
+ *                 type: integer
+ *                 nullable: true
+ *               note:
+ *                 type: string
+ *                 maxLength: 300
+ *     responses:
+ *       201:
+ *         description: Share link created
+ *       403:
+ *         description: Only document owner can manage share links
+ *   get:
+ *     summary: List document share links
+ *     tags: [Sharing]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { $ref: '#/components/schemas/ObjectId' }
+ *     responses:
+ *       200:
+ *         description: Share links returned
+ */
+documentRouter.post(
+  '/:id/share',
+  accessTokenValidator,
+  documentIdValidator,
+  createShareLinkValidator,
+  wrapAsync(createShareLinkController)
+)
+documentRouter.get('/:id/share', accessTokenValidator, documentIdValidator, wrapAsync(getShareLinksController))
+
+/**
+ * @swagger
+ * /documents/{id}/share/{shareId}:
+ *   delete:
+ *     summary: Revoke a document share link
+ *     tags: [Sharing]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { $ref: '#/components/schemas/ObjectId' }
+ *       - in: path
+ *         name: shareId
+ *         required: true
+ *         schema: { $ref: '#/components/schemas/ObjectId' }
+ *     responses:
+ *       200:
+ *         description: Share link revoked
+ *       404:
+ *         description: Share link not found
+ */
+documentRouter.delete(
+  '/:id/share/:shareId',
+  accessTokenValidator,
+  documentIdValidator,
+  shareIdValidator,
+  wrapAsync(revokeShareLinkController)
+)
 
 /**
  * @swagger

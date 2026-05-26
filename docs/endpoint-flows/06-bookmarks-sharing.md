@@ -2,17 +2,19 @@
 
 Nhóm này gồm US17 và US18. Bookmark giúp user lưu tài liệu quan trọng; sharing tạo public token/link để người khác truy cập tài liệu theo permission.
 
+Ghi chú v1: `/shared/{token}` là public-only theo token. Các field `requiresLogin` và `passwordHash` vẫn được lưu để mở rộng sau, nhưng chưa enforce ở endpoint public trong v1.
+
 ## Endpoint Map
 
 | US   | Method | Endpoint                          | Auth        | Trang thai |
 | ---- | ------ | --------------------------------- | ----------- | ---------- |
-| US18 | POST   | `/documents/{id}/bookmarks`       | Bearer      | Planned    |
-| US18 | DELETE | `/documents/{id}/bookmarks`       | Bearer      | Planned    |
-| US18 | GET    | `/users/me/bookmarks`             | Bearer      | Planned    |
-| US17 | POST   | `/documents/{id}/share`           | Bearer      | Planned    |
-| US17 | GET    | `/documents/{id}/share`           | Bearer      | Planned    |
-| US17 | DELETE | `/documents/{id}/share/{shareId}` | Bearer      | Planned    |
-| US17 | GET    | `/shared/{token}`                 | Optional/No | Planned    |
+| US18 | POST   | `/documents/{id}/bookmarks`       | Bearer      | Done       |
+| US18 | DELETE | `/documents/{id}/bookmarks`       | Bearer      | Done       |
+| US18 | GET    | `/users/me/bookmarks`             | Bearer      | Done       |
+| US17 | POST   | `/documents/{id}/share`           | Bearer      | Done       |
+| US17 | GET    | `/documents/{id}/share`           | Bearer      | Done       |
+| US17 | DELETE | `/documents/{id}/share/{shareId}` | Bearer      | Done       |
+| US17 | GET    | `/shared/{token}`                 | Public      | Done       |
 
 ## Schema Và Collection Flow
 
@@ -26,7 +28,7 @@ Nhóm này gồm US17 và US18. Bookmark giúp user lưu tài liệu quan trọn
 2. Add bookmark insert `favorites` nếu chưa tồn tại; remove bookmark delete theo `accountId + solutionId`.
 3. Share endpoint chỉ owner/co-owner planned mới được tạo link.
 4. Tạo `PermissionLink` với token, permission level, expiry/max uses nếu có.
-5. Public `/shared/{token}` validate token active, expiry, usage count, password/login requirement nếu có.
+5. Public `/shared/{token}` validate token active, expiry, usage count. V1 chưa enforce password/login requirement.
 6. Khi share/revoke có thể tạo notification và activity log.
 
 ## Sơ đồ Luồng Xử lý
@@ -73,7 +75,7 @@ Nguồn: [Wikimedia Commons - Client-server model](https://commons.wikimedia.org
 - Bookmark không nên duplicate: dùng unique logic theo `accountId + solutionId`.
 - User chỉ bookmark document mình có quyền xem.
 - Share token phải random, không suy đoán được.
-- Revoke share chỉ owner/link creator/admin được thực hiện.
+- Revoke share v1 chỉ document owner được thực hiện.
 
 ## Test Cases
 

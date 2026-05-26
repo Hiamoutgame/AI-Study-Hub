@@ -142,6 +142,44 @@ export const DOCUMENT_MESSAGES = {
   DELETE_DOCUMENT_SUCCESS: 'Delete document success'
 } as const
 
+export const BOOKMARK_MESSAGES = {
+  NOTE_MUST_BE_A_STRING: 'Bookmark note must be a string',
+  NOTE_LENGTH_MUST_BE_LESS_THAN_300: 'Bookmark note length must be less than 300',
+  PAGE_MUST_BE_A_POSITIVE_INTEGER: 'Page must be a positive integer',
+  LIMIT_MUST_BE_FROM_1_TO_100: 'Limit must be from 1 to 100',
+  BOOKMARK_NOT_FOUND: 'Bookmark not found',
+  ADD_BOOKMARK_SUCCESS: 'Add bookmark success',
+  REMOVE_BOOKMARK_SUCCESS: 'Remove bookmark success',
+  GET_BOOKMARKS_SUCCESS: 'Get bookmarks success'
+} as const
+
+export const SHARING_MESSAGES = {
+  SHARE_ID_IS_INVALID: 'Share id is invalid',
+  SHARE_TOKEN_IS_REQUIRED: 'Share token is required',
+  SHARE_TOKEN_MUST_BE_A_STRING: 'Share token must be a string',
+  SHARE_TOKEN_LENGTH_MUST_BE_LESS_THAN_200: 'Share token length must be less than 200',
+  PERMISSION_LEVEL_IS_REQUIRED: 'Permission level is required',
+  PERMISSION_LEVEL_IS_INVALID: 'Permission level is invalid',
+  CAN_DOWNLOAD_MUST_BE_BOOLEAN: 'canDownload must be a boolean',
+  CAN_COMMENT_MUST_BE_BOOLEAN: 'canComment must be a boolean',
+  REQUIRES_LOGIN_MUST_BE_BOOLEAN: 'requiresLogin must be a boolean',
+  PASSWORD_HASH_MUST_BE_A_STRING: 'passwordHash must be a string',
+  PASSWORD_HASH_LENGTH_MUST_BE_LESS_THAN_200: 'passwordHash length must be less than 200',
+  MAX_USES_MUST_BE_A_POSITIVE_INTEGER: 'maxUses must be a positive integer',
+  EXPIRES_IN_DAYS_MUST_BE_A_NON_NEGATIVE_INTEGER: 'expiresInDays must be a non-negative integer',
+  NOTE_MUST_BE_A_STRING: 'Share note must be a string',
+  NOTE_LENGTH_MUST_BE_LESS_THAN_300: 'Share note length must be less than 300',
+  SHARE_LINK_OWNER_REQUIRED: 'Only the document owner can manage share links',
+  SHARE_LINK_NOT_FOUND: 'Share link not found',
+  SHARE_LINK_EXPIRED: 'Share link expired',
+  SHARE_LINK_USAGE_LIMIT_REACHED: 'Share link usage limit reached',
+  SHARE_TOKEN_GENERATION_FAILED: 'Could not generate share token',
+  CREATE_SHARE_LINK_SUCCESS: 'Create share link success',
+  GET_SHARE_LINKS_SUCCESS: 'Get share links success',
+  REVOKE_SHARE_LINK_SUCCESS: 'Revoke share link success',
+  GET_SHARED_DOCUMENT_SUCCESS: 'Get shared document success'
+} as const
+
 export const ADMIN_MESSAGES = {
   ADMIN_ROLE_REQUIRED: 'Admin role is required',
   ADMIN_NOT_FOUND: 'Admin account not found',

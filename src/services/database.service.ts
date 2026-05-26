@@ -27,6 +27,7 @@ class DatabaseService {
   async connect() {
     try {
       await this.dbName.command({ ping: 1 })
+      await this.createIndexes()
       console.log('You successfully connected to MongoDB!')
     } catch (error) {
       console.log('DATABASE_URL', DATABASE_URL)
@@ -34,6 +35,14 @@ class DatabaseService {
       throw error
     }
   }
+
+  private async createIndexes() {
+    await Promise.all([
+      this.favorites.createIndex({ accountId: 1, solutionId: 1 }, { unique: true }),
+      this.permissionLinks.createIndex({ token: 1 }, { unique: true })
+    ])
+  }
+
   get accounts(): Collection<Account> {
     return this.dbName.collection('accounts')
   }

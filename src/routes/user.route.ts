@@ -6,8 +6,10 @@ import {
   updateProfileController
 } from '~/controllers/user.controller'
 import { getMyNotificationsController, markMyNotificationReadController } from '~/controllers/notification.controller'
+import { getMyBookmarksController } from '~/controllers/sharing.controller'
 import { accessTokenValidator } from '~/middlewares/account.middlewares'
 import { getMyNotificationsValidator, notificationIdValidator } from '~/middlewares/notification.middlewares'
+import { getBookmarksValidator } from '~/middlewares/sharing.middlewares'
 import { uploadAvatar } from '~/middlewares/upload.middlewares'
 import { changePasswordValidator, updateProfileValidator } from '~/middlewares/user.middlewares'
 import { wrapAsync } from '~/utils/handler'
@@ -87,6 +89,40 @@ userRouter.get('/me', accessTokenValidator, wrapAsync(getProfileController))
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 userRouter.get('/me/storage', accessTokenValidator, wrapAsync(getStorageController))
+
+/**
+ * @swagger
+ * /users/me/bookmarks:
+ *   get:
+ *     summary: Get current user bookmarks
+ *     tags: [Bookmarks]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, default: 1 }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, default: 20 }
+ *     responses:
+ *       200:
+ *         description: Bookmarks returned
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                 meta:
+ *                   $ref: '#/components/schemas/PaginationMeta'
+ */
+userRouter.get('/me/bookmarks', accessTokenValidator, getBookmarksValidator, wrapAsync(getMyBookmarksController))
 
 /**
  * @swagger
