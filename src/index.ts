@@ -1,5 +1,6 @@
 import express from 'express'
-import { Base, BASE_URL } from './constants/base'
+import cors from 'cors'
+import { Base, BASE_URL, CORS_ORIGINS } from './constants/base'
 import swaggerUi from 'swagger-ui-express'
 import { swaggerDocs } from './swagger'
 import databaseService from './services/database.service'
@@ -13,6 +14,18 @@ import { defautHandler } from './middlewares/error.middlewares'
 databaseService.connect()
 const app = express()
 
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || CORS_ORIGINS.includes(origin)) {
+        return callback(null, true)
+      }
+
+      return callback(new Error('Not allowed by CORS'))
+    },
+    credentials: true
+  })
+)
 app.use(express.json())
 app.use('/uploads', express.static('uploads'))
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs))

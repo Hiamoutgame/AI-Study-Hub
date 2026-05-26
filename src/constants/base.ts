@@ -9,3 +9,7 @@ export const DATABASE_URL =
   `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@cluster0.8rbfzkl.mongodb.net/?appName=Cluster0` as string
 export const DB_NAME = process.env.DB_NAME as string
 export const DNS_SERVERS = process.env.DNS_SERVERS as string
+export const CORS_ORIGINS = (process.env.CORS_ORIGINS as string)
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean)
