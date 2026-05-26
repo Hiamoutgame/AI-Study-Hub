@@ -139,6 +139,8 @@ class AccountService {
     const accessToken = await signToken({
       payload: {
         user_id: account._id?.toString(),
+        role: account.role,
+        email: account.email,
         token_type: TokenType.AccessToken
       },
       privateKey: process.env.JWT_PRIVATE_KEY as string,
