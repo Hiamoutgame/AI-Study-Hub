@@ -86,20 +86,20 @@ Tất cả response đều bọc trong envelope chuẩn:
 
 ### 1.4 Mapping API ↔ Collection
 
-| API resource (path)        | MongoDB collection      |
-| -------------------------- | ----------------------- |
-| `/users`, `/account`       | `accounts`              |
-| `/users/me/storage`        | `storage_quotas`        |
-| `/documents`               | `solutions`             |
-| `/categories`              | `solution_categories`   |
-| `/chat/sessions`           | `ai_chat_sessions`      |
-| `/chat/.../messages`       | `ai_messages`           |
-| _(internal RAG, no API)_   | `document_embeddings`   |
-| `/admin/ai-settings`       | `ai_configurations`     |
-| `/admin/logs/system`       | `activity_logs`         |
-| `/documents/.../share`     | `permission_links`      |
-| `/users/me/bookmarks`, `/documents/{id}/bookmarks` | `favorites` |
-| `/users/me/notifications`, `/admin/notifications`  | `notifications` |
+| API resource (path)                                | MongoDB collection    |
+| -------------------------------------------------- | --------------------- |
+| `/users`, `/account`                               | `accounts`            |
+| `/users/me/storage`                                | `storage_quotas`      |
+| `/documents`                                       | `solutions`           |
+| `/categories`                                      | `solution_categories` |
+| `/chat/sessions`                                   | `ai_chat_sessions`    |
+| `/chat/.../messages`                               | `ai_messages`         |
+| _(internal RAG, no API)_                           | `document_embeddings` |
+| `/admin/ai-settings`                               | `ai_configurations`   |
+| `/admin/logs/system`                               | `activity_logs`       |
+| `/documents/.../share`                             | `permission_links`    |
+| `/users/me/bookmarks`, `/documents/{id}/bookmarks` | `favorites`           |
+| `/users/me/notifications`, `/admin/notifications`  | `notifications`       |
 
 > **Quy ước ID:** Path param dùng `{id}` ngắn gọn, ID trong body/response là `_id` (MongoDB ObjectId) hoặc reference fields theo schema (`accountId`, `solutionId`, ...).
 

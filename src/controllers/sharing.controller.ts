@@ -3,11 +3,7 @@ import { ParamsDictionary } from 'express-serve-static-core'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { BOOKMARK_MESSAGES, SHARING_MESSAGES } from '~/constants/message'
 import { TokenPayLoad } from '~/models/request/account.request'
-import {
-  AddBookmarkReqBody,
-  CreateShareLinkReqBody,
-  GetBookmarksQuery
-} from '~/models/request/sharing.request'
+import { AddBookmarkReqBody, CreateShareLinkReqBody, GetBookmarksQuery } from '~/models/request/sharing.request'
 import sharingService from '~/services/sharing.service'
 
 const getAccountId = (req: Request) => {

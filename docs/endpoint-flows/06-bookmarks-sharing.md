@@ -6,15 +6,15 @@ Ghi chú v1: `/shared/{token}` là public-only theo token. Các field `requiresL
 
 ## Endpoint Map
 
-| US   | Method | Endpoint                          | Auth        | Trang thai |
-| ---- | ------ | --------------------------------- | ----------- | ---------- |
-| US18 | POST   | `/documents/{id}/bookmarks`       | Bearer      | Done       |
-| US18 | DELETE | `/documents/{id}/bookmarks`       | Bearer      | Done       |
-| US18 | GET    | `/users/me/bookmarks`             | Bearer      | Done       |
-| US17 | POST   | `/documents/{id}/share`           | Bearer      | Done       |
-| US17 | GET    | `/documents/{id}/share`           | Bearer      | Done       |
-| US17 | DELETE | `/documents/{id}/share/{shareId}` | Bearer      | Done       |
-| US17 | GET    | `/shared/{token}`                 | Public      | Done       |
+| US   | Method | Endpoint                          | Auth   | Trang thai |
+| ---- | ------ | --------------------------------- | ------ | ---------- |
+| US18 | POST   | `/documents/{id}/bookmarks`       | Bearer | Done       |
+| US18 | DELETE | `/documents/{id}/bookmarks`       | Bearer | Done       |
+| US18 | GET    | `/users/me/bookmarks`             | Bearer | Done       |
+| US17 | POST   | `/documents/{id}/share`           | Bearer | Done       |
+| US17 | GET    | `/documents/{id}/share`           | Bearer | Done       |
+| US17 | DELETE | `/documents/{id}/share/{shareId}` | Bearer | Done       |
+| US17 | GET    | `/shared/{token}`                 | Public | Done       |
 
 ## Schema Và Collection Flow
 

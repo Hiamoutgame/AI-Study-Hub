@@ -237,12 +237,7 @@ documentRouter.post(
   bookmarkNoteValidator,
   wrapAsync(addBookmarkController)
 )
-documentRouter.delete(
-  '/:id/bookmarks',
-  accessTokenValidator,
-  documentIdValidator,
-  wrapAsync(removeBookmarkController)
-)
+documentRouter.delete('/:id/bookmarks', accessTokenValidator, documentIdValidator, wrapAsync(removeBookmarkController))
 
 /**
  * @swagger

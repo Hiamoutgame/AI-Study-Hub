@@ -28,12 +28,12 @@
 
 ### Actors của hệ thống
 
-| Actor              | Mô tả                                                                       |
-| ------------------ | --------------------------------------------------------------------------- |
-| **Guest**          | Chưa đăng nhập, chỉ xem tài liệu public hoặc truy cập qua share link        |
-| **User**           | Sinh viên — upload, quản lý, chia sẻ tài liệu, chat AI                       |
-| **Admin**          | Quản trị hệ thống — quản lý users, tài liệu, danh mục, cấu hình AI, log     |
-| **ChatbotService** | Service nội bộ — xử lý embedding, semantic search, sinh phản hồi chat       |
+| Actor              | Mô tả                                                                   |
+| ------------------ | ----------------------------------------------------------------------- |
+| **Guest**          | Chưa đăng nhập, chỉ xem tài liệu public hoặc truy cập qua share link    |
+| **User**           | Sinh viên — upload, quản lý, chia sẻ tài liệu, chat AI                  |
+| **Admin**          | Quản trị hệ thống — quản lý users, tài liệu, danh mục, cấu hình AI, log |
+| **ChatbotService** | Service nội bộ — xử lý embedding, semantic search, sinh phản hồi chat   |
 
 ### Nhóm chức năng (lean)
 
@@ -58,28 +58,28 @@
 
 ### Mapping kiểu dữ liệu
 
-| SQL / Khái niệm cũ  | Mongoose / MongoDB tương đương          | Ghi chú                                            |
-| ------------------- | --------------------------------------- | -------------------------------------------------- |
-| `UUID (PK)`         | `ObjectId` (tự sinh `_id`)              | Mongoose tự tạo `_id` cho mọi document             |
-| `VARCHAR(n)`        | `String`                                | Validate qua `maxlength`, `minlength`              |
-| `TEXT`              | `String`                                | Không giới hạn độ dài                              |
-| `INT / BIGINT`      | `Number`                                | Validate qua `min`, `max`                          |
-| `BOOLEAN`           | `Boolean`                               |                                                    |
-| `TIMESTAMP`         | `Date`                                  | Dùng `Date.now` làm default                        |
-| `ENUM`              | `String` + `enum: [...]`                | Mongoose enum validation                           |
-| `JSONB / JSON`      | `Object` / subdocument                  | MongoDB native document                            |
-| `VECTOR(1536)`      | `[Number]`                              | Dùng Atlas Vector Search hoặc Qdrant               |
-| `FK → Table.id`     | `{ type: ObjectId, ref: 'collection' }` | Populate khi cần                                   |
-| `UNIQUE constraint` | `unique: true`                          |                                                    |
-| `NOT NULL`          | `required: true`                        |                                                    |
-| `DEFAULT value`     | `default: value`                        |                                                    |
+| SQL / Khái niệm cũ  | Mongoose / MongoDB tương đương          | Ghi chú                                |
+| ------------------- | --------------------------------------- | -------------------------------------- |
+| `UUID (PK)`         | `ObjectId` (tự sinh `_id`)              | Mongoose tự tạo `_id` cho mọi document |
+| `VARCHAR(n)`        | `String`                                | Validate qua `maxlength`, `minlength`  |
+| `TEXT`              | `String`                                | Không giới hạn độ dài                  |
+| `INT / BIGINT`      | `Number`                                | Validate qua `min`, `max`              |
+| `BOOLEAN`           | `Boolean`                               |                                        |
+| `TIMESTAMP`         | `Date`                                  | Dùng `Date.now` làm default            |
+| `ENUM`              | `String` + `enum: [...]`                | Mongoose enum validation               |
+| `JSONB / JSON`      | `Object` / subdocument                  | MongoDB native document                |
+| `VECTOR(1536)`      | `[Number]`                              | Dùng Atlas Vector Search hoặc Qdrant   |
+| `FK → Table.id`     | `{ type: ObjectId, ref: 'collection' }` | Populate khi cần                       |
+| `UNIQUE constraint` | `unique: true`                          |                                        |
+| `NOT NULL`          | `required: true`                        |                                        |
+| `DEFAULT value`     | `default: value`                        |                                        |
 
 ### Soft Delete
 
 Các collection quan trọng (`accounts`, `solutions`) dùng `deletedAt: Date` (null = active):
 
 ```javascript
-Model.find({ deletedAt: null, ...otherConditions });
+Model.find({ deletedAt: null, ...otherConditions })
 ```
 
 Riêng `solutions` còn `autoDeleteAt: Date` cho cơ chế thùng rác (mặc định +30 ngày sau khi soft-delete).
@@ -94,20 +94,20 @@ Riêng `solutions` còn `autoDeleteAt: Date` cho cơ chế thùng rác (mặc đ
 
 ## 3. Danh Sách Collections
 
-| STT | Collection              | Nhóm      | Mô tả ngắn                                          |
-| --- | ----------------------- | --------- | --------------------------------------------------- |
-| 1   | **accounts**            | Identity  | Tài khoản người dùng (user + admin)                 |
-| 2   | **storage_quotas**      | Identity  | Dung lượng & AI quota theo từng account             |
-| 3   | **activity_logs**       | Identity  | Nhật ký hành động (audit + OCR log)                 |
-| 4   | **solutions**           | Document  | Tài liệu học tập (entity trung tâm) — đã gộp recycle |
-| 5   | **solution_categories** | Document  | Danh mục tài liệu (môn học, định dạng…)             |
-| 6   | **ai_chat_sessions**    | AI        | Phiên chat AI với tài liệu                          |
-| 7   | **ai_messages**         | AI        | Tin nhắn trong phiên chat                           |
-| 8   | **document_embeddings** | AI        | Vector embedding phục vụ RAG                        |
-| 9   | **ai_configurations**   | AI        | Cấu hình động (model, prompt, rate limit…)          |
-| 10  | **permission_links**    | Sharing   | Link chia sẻ tài liệu (US17)                        |
-| 11  | **favorites**           | UX        | Bookmark tài liệu (US18)                            |
-| 12  | **notifications**       | UX        | Thông báo hệ thống (US22)                           |
+| STT | Collection              | Nhóm     | Mô tả ngắn                                           |
+| --- | ----------------------- | -------- | ---------------------------------------------------- |
+| 1   | **accounts**            | Identity | Tài khoản người dùng (user + admin)                  |
+| 2   | **storage_quotas**      | Identity | Dung lượng & AI quota theo từng account              |
+| 3   | **activity_logs**       | Identity | Nhật ký hành động (audit + OCR log)                  |
+| 4   | **solutions**           | Document | Tài liệu học tập (entity trung tâm) — đã gộp recycle |
+| 5   | **solution_categories** | Document | Danh mục tài liệu (môn học, định dạng…)              |
+| 6   | **ai_chat_sessions**    | AI       | Phiên chat AI với tài liệu                           |
+| 7   | **ai_messages**         | AI       | Tin nhắn trong phiên chat                            |
+| 8   | **document_embeddings** | AI       | Vector embedding phục vụ RAG                         |
+| 9   | **ai_configurations**   | AI       | Cấu hình động (model, prompt, rate limit…)           |
+| 10  | **permission_links**    | Sharing  | Link chia sẻ tài liệu (US17)                         |
+| 11  | **favorites**           | UX       | Bookmark tài liệu (US18)                             |
+| 12  | **notifications**       | UX       | Thông báo hệ thống (US22)                            |
 
 > **Đã bỏ so với v2.0:** `groups`, `group_memberships`, `history_solutions`, `recycle_bins`, `comment_notes`, `permissions`. Xem [Changelog](#10-changelog-v20--v21).
 
@@ -121,47 +121,50 @@ Riêng `solutions` còn `autoDeleteAt: Date` cho cơ chế thùng rác (mặc đ
 
 > Lưu trữ thông tin tài khoản tất cả người dùng (User và Admin). Guest không có account.
 
-| Field                  | Mongoose Type | Ràng buộc                                                | Mô tả                       |
-| ---------------------- | ------------- | -------------------------------------------------------- | --------------------------- |
-| `_id`                  | `ObjectId`    | auto                                                     | Khóa chính                  |
-| `email`                | `String`      | required, unique, lowercase, trim                        | Email đăng nhập             |
-| `passwordHash`         | `String`      | required (nullable nếu OAuth)                            | Mật khẩu hash (bcrypt)      |
-| `fullName`             | `String`      | required, maxlength: 150                                 | Họ và tên                   |
-| `username`             | `String`      | required, unique, maxlength: 100                         | Tên hiển thị                |
-| `avatarUrl`            | `String`      | —                                                        | URL ảnh đại diện            |
-| `role`                 | `String`      | enum: `['user','admin']`, default: `'user'`              | Vai trò                     |
-| `provider`             | `String`      | enum: `['local','google','github']`, default: `'local'`  | OAuth provider              |
-| `providerId`           | `String`      | —                                                        | ID từ OAuth provider        |
-| `isActive`             | `Boolean`     | default: `true`                                          | Còn hoạt động               |
-| `isEmailVerified`      | `Boolean`     | default: `false`                                         | Đã xác thực email           |
-| `emailVerifyToken`     | `String`      | —                                                        | Token xác thực email        |
-| `resetPasswordToken`   | `String`      | —                                                        | Token reset mật khẩu        |
-| `resetPasswordExpires` | `Date`        | —                                                        | Hạn token reset             |
-| `lastLoginAt`          | `Date`        | —                                                        | Lần đăng nhập gần nhất      |
-| `deletedAt`            | `Date`        | default: `null`                                          | Soft delete                 |
-| `createdAt`            | `Date`        | auto (timestamps)                                        |                             |
-| `updatedAt`            | `Date`        | auto (timestamps)                                        |                             |
+| Field                  | Mongoose Type | Ràng buộc                                               | Mô tả                  |
+| ---------------------- | ------------- | ------------------------------------------------------- | ---------------------- |
+| `_id`                  | `ObjectId`    | auto                                                    | Khóa chính             |
+| `email`                | `String`      | required, unique, lowercase, trim                       | Email đăng nhập        |
+| `passwordHash`         | `String`      | required (nullable nếu OAuth)                           | Mật khẩu hash (bcrypt) |
+| `fullName`             | `String`      | required, maxlength: 150                                | Họ và tên              |
+| `username`             | `String`      | required, unique, maxlength: 100                        | Tên hiển thị           |
+| `avatarUrl`            | `String`      | —                                                       | URL ảnh đại diện       |
+| `role`                 | `String`      | enum: `['user','admin']`, default: `'user'`             | Vai trò                |
+| `provider`             | `String`      | enum: `['local','google','github']`, default: `'local'` | OAuth provider         |
+| `providerId`           | `String`      | —                                                       | ID từ OAuth provider   |
+| `isActive`             | `Boolean`     | default: `true`                                         | Còn hoạt động          |
+| `isEmailVerified`      | `Boolean`     | default: `false`                                        | Đã xác thực email      |
+| `emailVerifyToken`     | `String`      | —                                                       | Token xác thực email   |
+| `resetPasswordToken`   | `String`      | —                                                       | Token reset mật khẩu   |
+| `resetPasswordExpires` | `Date`        | —                                                       | Hạn token reset        |
+| `lastLoginAt`          | `Date`        | —                                                       | Lần đăng nhập gần nhất |
+| `deletedAt`            | `Date`        | default: `null`                                         | Soft delete            |
+| `createdAt`            | `Date`        | auto (timestamps)                                       |                        |
+| `updatedAt`            | `Date`        | auto (timestamps)                                       |                        |
 
 **Mongoose schema mẫu:**
 
 ```javascript
-const accountSchema = new Schema({
-  email:                { type: String, required: true, unique: true, lowercase: true, trim: true },
-  passwordHash:         { type: String },
-  fullName:             { type: String, required: true, maxlength: 150 },
-  username:             { type: String, required: true, unique: true, maxlength: 100 },
-  avatarUrl:            { type: String },
-  role:                 { type: String, enum: ['user', 'admin'], default: 'user' },
-  provider:             { type: String, enum: ['local', 'google', 'github'], default: 'local' },
-  providerId:           { type: String },
-  isActive:             { type: Boolean, default: true },
-  isEmailVerified:      { type: Boolean, default: false },
-  emailVerifyToken:     { type: String },
-  resetPasswordToken:   { type: String },
-  resetPasswordExpires: { type: Date },
-  lastLoginAt:          { type: Date },
-  deletedAt:            { type: Date, default: null },
-}, { timestamps: true });
+const accountSchema = new Schema(
+  {
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    passwordHash: { type: String },
+    fullName: { type: String, required: true, maxlength: 150 },
+    username: { type: String, required: true, unique: true, maxlength: 100 },
+    avatarUrl: { type: String },
+    role: { type: String, enum: ['user', 'admin'], default: 'user' },
+    provider: { type: String, enum: ['local', 'google', 'github'], default: 'local' },
+    providerId: { type: String },
+    isActive: { type: Boolean, default: true },
+    isEmailVerified: { type: Boolean, default: false },
+    emailVerifyToken: { type: String },
+    resetPasswordToken: { type: String },
+    resetPasswordExpires: { type: Date },
+    lastLoginAt: { type: Date },
+    deletedAt: { type: Date, default: null }
+  },
+  { timestamps: true }
+)
 ```
 
 **Quan hệ:**
@@ -210,17 +213,17 @@ const accountSchema = new Schema({
 
 > Nhật ký mọi hành động người dùng — phục vụ audit trail, debug, thống kê, và log OCR (US25). **Append-only**, không update/delete.
 
-| Field        | Mongoose Type | Ràng buộc                                                | Mô tả                                 |
-| ------------ | ------------- | -------------------------------------------------------- | ------------------------------------- |
-| `_id`        | `ObjectId`    | auto                                                     |                                       |
-| `accountId`  | `ObjectId`    | ref: `'accounts'`                                        | Người thực hiện (null = Guest/system) |
-| `action`     | `String`      | required, maxlength: 100                                 | Hành động (xem danh sách bên dưới)    |
-| `entityType` | `String`      | enum: `['solution','account','session','category']`      | Loại entity                           |
-| `entityId`   | `ObjectId`    | —                                                        | ID entity liên quan                   |
-| `metadata`   | `Object`      | —                                                        | Dữ liệu bổ sung (vd: lý do, status)   |
-| `ipAddress`  | `String`      | —                                                        | IP                                    |
-| `userAgent`  | `String`      | —                                                        | Browser/device                        |
-| `createdAt`  | `Date`        | default: `Date.now`                                      | Thời điểm                             |
+| Field        | Mongoose Type | Ràng buộc                                           | Mô tả                                 |
+| ------------ | ------------- | --------------------------------------------------- | ------------------------------------- |
+| `_id`        | `ObjectId`    | auto                                                |                                       |
+| `accountId`  | `ObjectId`    | ref: `'accounts'`                                   | Người thực hiện (null = Guest/system) |
+| `action`     | `String`      | required, maxlength: 100                            | Hành động (xem danh sách bên dưới)    |
+| `entityType` | `String`      | enum: `['solution','account','session','category']` | Loại entity                           |
+| `entityId`   | `ObjectId`    | —                                                   | ID entity liên quan                   |
+| `metadata`   | `Object`      | —                                                   | Dữ liệu bổ sung (vd: lý do, status)   |
+| `ipAddress`  | `String`      | —                                                   | IP                                    |
+| `userAgent`  | `String`      | —                                                   | Browser/device                        |
+| `createdAt`  | `Date`        | default: `Date.now`                                 | Thời điểm                             |
 
 **Các action phổ biến:**
 
@@ -242,47 +245,47 @@ admin_lock_user, admin_delete_solution, admin_update_ai_config
 
 > Entity trung tâm — đại diện cho một tài liệu được upload. Bao gồm metadata file, cloud storage, trạng thái OCR/AI, **và logic recycle bin (gộp từ `recycle_bins` cũ)**.
 
-| Field             | Mongoose Type | Ràng buộc                                                                | Mô tả                                                   |
-| ----------------- | ------------- | ------------------------------------------------------------------------ | ------------------------------------------------------- |
-| `_id`             | `ObjectId`    | auto                                                                     | Khóa chính                                              |
-| `uploaderId`      | `ObjectId`    | ref: `'accounts'`, required                                              | Người upload                                            |
-| `categoryId`      | `ObjectId`    | ref: `'solution_categories'`                                             | Danh mục                                                |
-| `title`           | `String`      | required, maxlength: 500                                                 | Tên tài liệu                                            |
-| `description`     | `String`      | —                                                                        | Mô tả nội dung                                          |
-| `tags`            | `[String]`    | default: `[]`                                                            | Nhãn/từ khóa (NoSQL-friendly)                           |
-| `fileName`        | `String`      | required                                                                 | Tên file gốc                                            |
-| `fileExtension`   | `String`      | required, maxlength: 20                                                  | `.pdf`, `.docx`, `.txt`…                                |
-| `fileSizeBytes`   | `Number`      | required, min: 0                                                         | Kích thước (bytes)                                      |
-| `mimeType`        | `String`      | required                                                                 | MIME type                                               |
-| `storageProvider` | `String`      | enum: `['s3','cloudinary','gcs']`, default: `'s3'`                       | Cloud provider                                          |
-| `storageBucket`   | `String`      | required                                                                 | Tên bucket                                              |
-| `storageKey`      | `String`      | required                                                                 | Key/path trên cloud                                     |
-| `publicUrl`       | `String`      | —                                                                        | URL công khai                                           |
-| `thumbnailUrl`    | `String`      | —                                                                        | Ảnh preview                                             |
-| `status`          | `String`      | enum: `['active','processing','error','archived']`, default: `'active'`  | Trạng thái file                                         |
-| `isPublic`        | `Boolean`     | default: `false`                                                         | Công khai không                                         |
-| `viewCount`       | `Number`      | default: `0`                                                             | Lượt xem                                                |
-| `downloadCount`   | `Number`      | default: `0`                                                             | Lượt tải                                                |
-| `language`        | `String`      | default: `'vi'`                                                          | Ngôn ngữ                                                |
-| `pageCount`       | `Number`      | —                                                                        | Số trang                                                |
-| `checksum`        | `String`      | —                                                                        | MD5/SHA — chống trùng lặp                               |
-| **AI fields**     |               |                                                                          |                                                         |
-| `aiStatus`        | `String`      | enum: `['pending','processing','ready','failed']`, default: `'pending'`  | Trạng thái embedding                                    |
-| `aiErrorMessage`  | `String`      | —                                                                        | Lỗi AI (nếu có)                                         |
-| **OCR fields**    |               |                                                                          |                                                         |
-| `ocrStatus`       | `String`      | enum: `['pending','processing','completed','failed']`, default: `'pending'` | Trạng thái OCR                                       |
-| `ocrLanguage`     | `String`      | default: `'vie'`                                                         | Ngôn ngữ OCR                                            |
-| `ocrText`         | `String`      | —                                                                        | Text trích xuất (cho search)                            |
-| `ocrConfidence`   | `Number`      | min: 0, max: 1                                                           | Độ tin cậy                                              |
-| `ocrProcessedAt`  | `Date`        | —                                                                        | Thời điểm OCR xong                                      |
-| `ocrErrorMessage` | `String`      | —                                                                        | Lỗi OCR                                                 |
-| **Recycle bin** (gộp từ `recycle_bins`)            |             |                                                                                                                  |
-| `deletedAt`       | `Date`        | default: `null`                                                          | Soft delete → vào thùng rác                             |
-| `deletedBy`       | `ObjectId`    | ref: `'accounts'`                                                        | Ai xóa                                                  |
-| `deleteReason`    | `String`      | —                                                                        | Lý do xóa (nếu admin xóa)                               |
-| `autoDeleteAt`    | `Date`        | —                                                                        | Hạn xóa vĩnh viễn (mặc định `deletedAt + 30d`)          |
-| `createdAt`       | `Date`        | auto (timestamps)                                                        |                                                         |
-| `updatedAt`       | `Date`        | auto (timestamps)                                                        |                                                         |
+| Field                                   | Mongoose Type | Ràng buộc                                                                   | Mô tả                                          |
+| --------------------------------------- | ------------- | --------------------------------------------------------------------------- | ---------------------------------------------- |
+| `_id`                                   | `ObjectId`    | auto                                                                        | Khóa chính                                     |
+| `uploaderId`                            | `ObjectId`    | ref: `'accounts'`, required                                                 | Người upload                                   |
+| `categoryId`                            | `ObjectId`    | ref: `'solution_categories'`                                                | Danh mục                                       |
+| `title`                                 | `String`      | required, maxlength: 500                                                    | Tên tài liệu                                   |
+| `description`                           | `String`      | —                                                                           | Mô tả nội dung                                 |
+| `tags`                                  | `[String]`    | default: `[]`                                                               | Nhãn/từ khóa (NoSQL-friendly)                  |
+| `fileName`                              | `String`      | required                                                                    | Tên file gốc                                   |
+| `fileExtension`                         | `String`      | required, maxlength: 20                                                     | `.pdf`, `.docx`, `.txt`…                       |
+| `fileSizeBytes`                         | `Number`      | required, min: 0                                                            | Kích thước (bytes)                             |
+| `mimeType`                              | `String`      | required                                                                    | MIME type                                      |
+| `storageProvider`                       | `String`      | enum: `['s3','cloudinary','gcs']`, default: `'s3'`                          | Cloud provider                                 |
+| `storageBucket`                         | `String`      | required                                                                    | Tên bucket                                     |
+| `storageKey`                            | `String`      | required                                                                    | Key/path trên cloud                            |
+| `publicUrl`                             | `String`      | —                                                                           | URL công khai                                  |
+| `thumbnailUrl`                          | `String`      | —                                                                           | Ảnh preview                                    |
+| `status`                                | `String`      | enum: `['active','processing','error','archived']`, default: `'active'`     | Trạng thái file                                |
+| `isPublic`                              | `Boolean`     | default: `false`                                                            | Công khai không                                |
+| `viewCount`                             | `Number`      | default: `0`                                                                | Lượt xem                                       |
+| `downloadCount`                         | `Number`      | default: `0`                                                                | Lượt tải                                       |
+| `language`                              | `String`      | default: `'vi'`                                                             | Ngôn ngữ                                       |
+| `pageCount`                             | `Number`      | —                                                                           | Số trang                                       |
+| `checksum`                              | `String`      | —                                                                           | MD5/SHA — chống trùng lặp                      |
+| **AI fields**                           |               |                                                                             |                                                |
+| `aiStatus`                              | `String`      | enum: `['pending','processing','ready','failed']`, default: `'pending'`     | Trạng thái embedding                           |
+| `aiErrorMessage`                        | `String`      | —                                                                           | Lỗi AI (nếu có)                                |
+| **OCR fields**                          |               |                                                                             |                                                |
+| `ocrStatus`                             | `String`      | enum: `['pending','processing','completed','failed']`, default: `'pending'` | Trạng thái OCR                                 |
+| `ocrLanguage`                           | `String`      | default: `'vie'`                                                            | Ngôn ngữ OCR                                   |
+| `ocrText`                               | `String`      | —                                                                           | Text trích xuất (cho search)                   |
+| `ocrConfidence`                         | `Number`      | min: 0, max: 1                                                              | Độ tin cậy                                     |
+| `ocrProcessedAt`                        | `Date`        | —                                                                           | Thời điểm OCR xong                             |
+| `ocrErrorMessage`                       | `String`      | —                                                                           | Lỗi OCR                                        |
+| **Recycle bin** (gộp từ `recycle_bins`) |               |                                                                             |
+| `deletedAt`                             | `Date`        | default: `null`                                                             | Soft delete → vào thùng rác                    |
+| `deletedBy`                             | `ObjectId`    | ref: `'accounts'`                                                           | Ai xóa                                         |
+| `deleteReason`                          | `String`      | —                                                                           | Lý do xóa (nếu admin xóa)                      |
+| `autoDeleteAt`                          | `Date`        | —                                                                           | Hạn xóa vĩnh viễn (mặc định `deletedAt + 30d`) |
+| `createdAt`                             | `Date`        | auto (timestamps)                                                           |                                                |
+| `updatedAt`                             | `Date`        | auto (timestamps)                                                           |                                                |
 
 **Quan hệ:**
 
@@ -301,22 +304,22 @@ admin_lock_user, admin_delete_solution, admin_update_ai_config
 
 > Danh mục tài liệu (theo môn học hoặc định dạng). Hỗ trợ cây phân cấp (parent-child).
 
-| Field                | Mongoose Type | Ràng buộc                                                | Mô tả                       |
-| -------------------- | ------------- | -------------------------------------------------------- | --------------------------- |
-| `_id`                | `ObjectId`    | auto                                                     |                             |
-| `createdBy`          | `ObjectId`    | ref: `'accounts'`                                        | null = system category      |
-| `parentId`           | `ObjectId`    | ref: `'solution_categories'`, default: `null`            | Category cha (self-ref)     |
-| `name`               | `String`      | required, maxlength: 100                                 | Tên danh mục                |
-| `slug`               | `String`      | required, unique                                         | URL slug                    |
-| `description`        | `String`      | —                                                        |                             |
-| `icon`               | `String`      | —                                                        | Icon class/emoji            |
-| `color`              | `String`      | default: `'#999999'`                                     | Hex color                   |
-| `type`               | `String`      | enum: `['system','custom']`, default: `'custom'`         |                             |
-| `acceptedExtensions` | `[String]`    | default: `[]`                                            | VD: `[".pdf", ".docx"]`     |
-| `sortOrder`          | `Number`      | default: `0`                                             |                             |
-| `isActive`           | `Boolean`     | default: `true`                                          |                             |
-| `createdAt`          | `Date`        | auto (timestamps)                                        |                             |
-| `updatedAt`          | `Date`        | auto (timestamps)                                        |                             |
+| Field                | Mongoose Type | Ràng buộc                                        | Mô tả                   |
+| -------------------- | ------------- | ------------------------------------------------ | ----------------------- |
+| `_id`                | `ObjectId`    | auto                                             |                         |
+| `createdBy`          | `ObjectId`    | ref: `'accounts'`                                | null = system category  |
+| `parentId`           | `ObjectId`    | ref: `'solution_categories'`, default: `null`    | Category cha (self-ref) |
+| `name`               | `String`      | required, maxlength: 100                         | Tên danh mục            |
+| `slug`               | `String`      | required, unique                                 | URL slug                |
+| `description`        | `String`      | —                                                |                         |
+| `icon`               | `String`      | —                                                | Icon class/emoji        |
+| `color`              | `String`      | default: `'#999999'`                             | Hex color               |
+| `type`               | `String`      | enum: `['system','custom']`, default: `'custom'` |                         |
+| `acceptedExtensions` | `[String]`    | default: `[]`                                    | VD: `[".pdf", ".docx"]` |
+| `sortOrder`          | `Number`      | default: `0`                                     |                         |
+| `isActive`           | `Boolean`     | default: `true`                                  |                         |
+| `createdAt`          | `Date`        | auto (timestamps)                                |                         |
+| `updatedAt`          | `Date`        | auto (timestamps)                                |                         |
 
 **Quan hệ:**
 
@@ -329,22 +332,22 @@ admin_lock_user, admin_delete_solution, admin_update_ai_config
 
 > Phiên hội thoại giữa người dùng và AI về một hoặc nhiều tài liệu.
 
-| Field                  | Mongoose Type | Ràng buộc                                                                          | Mô tả                            |
-| ---------------------- | ------------- | ---------------------------------------------------------------------------------- | -------------------------------- |
-| `_id`                  | `ObjectId`    | auto                                                                               |                                  |
-| `accountId`            | `ObjectId`    | ref: `'accounts'`, required                                                        | Người dùng                       |
-| `solutionId`           | `ObjectId`    | ref: `'solutions'`                                                                 | Tài liệu trọng tâm (nullable)    |
-| `title`                | `String`      | default: `'Cuộc hội thoại mới'`                                                    | Tiêu đề                          |
-| `sessionType`          | `String`      | enum: `['document_qa','general','search_assist']`, default: `'document_qa'`        |                                  |
-| `modelUsed`            | `String`      | default: `'claude-3-sonnet'`                                                       | AI model                         |
-| `totalTokensUsed`      | `Number`      | default: `0`                                                                       | Tổng token                       |
-| `messageCount`         | `Number`      | default: `0`                                                                       | Số tin nhắn                      |
-| `contextDocumentIds`   | `[ObjectId]`  | ref: `'solutions'`, default: `[]`                                                  | Multi-doc context                |
-| `systemPromptVersion`  | `String`      | —                                                                                  | Phiên bản system prompt          |
-| `lastMessageAt`        | `Date`        | —                                                                                  |                                  |
-| `isArchived`           | `Boolean`     | default: `false`                                                                   |                                  |
-| `createdAt`            | `Date`        | auto (timestamps)                                                                  |                                  |
-| `updatedAt`            | `Date`        | auto (timestamps)                                                                  |                                  |
+| Field                 | Mongoose Type | Ràng buộc                                                                   | Mô tả                         |
+| --------------------- | ------------- | --------------------------------------------------------------------------- | ----------------------------- |
+| `_id`                 | `ObjectId`    | auto                                                                        |                               |
+| `accountId`           | `ObjectId`    | ref: `'accounts'`, required                                                 | Người dùng                    |
+| `solutionId`          | `ObjectId`    | ref: `'solutions'`                                                          | Tài liệu trọng tâm (nullable) |
+| `title`               | `String`      | default: `'Cuộc hội thoại mới'`                                             | Tiêu đề                       |
+| `sessionType`         | `String`      | enum: `['document_qa','general','search_assist']`, default: `'document_qa'` |                               |
+| `modelUsed`           | `String`      | default: `'claude-3-sonnet'`                                                | AI model                      |
+| `totalTokensUsed`     | `Number`      | default: `0`                                                                | Tổng token                    |
+| `messageCount`        | `Number`      | default: `0`                                                                | Số tin nhắn                   |
+| `contextDocumentIds`  | `[ObjectId]`  | ref: `'solutions'`, default: `[]`                                           | Multi-doc context             |
+| `systemPromptVersion` | `String`      | —                                                                           | Phiên bản system prompt       |
+| `lastMessageAt`       | `Date`        | —                                                                           |                               |
+| `isArchived`          | `Boolean`     | default: `false`                                                            |                               |
+| `createdAt`           | `Date`        | auto (timestamps)                                                           |                               |
+| `updatedAt`           | `Date`        | auto (timestamps)                                                           |                               |
 
 **Quan hệ:**
 
@@ -358,21 +361,21 @@ admin_lock_user, admin_delete_solution, admin_update_ai_config
 
 > Từng tin nhắn trong phiên AI — gồm câu hỏi của user và câu trả lời của AI.
 
-| Field              | Mongoose Type | Ràng buộc                                                | Mô tả                                |
-| ------------------ | ------------- | -------------------------------------------------------- | ------------------------------------ |
-| `_id`              | `ObjectId`    | auto                                                     |                                      |
-| `sessionId`        | `ObjectId`    | ref: `'ai_chat_sessions'`, required                      | Thuộc phiên nào                      |
-| `role`             | `String`      | enum: `['user','assistant','system']`, required          | Vai trò                              |
-| `content`          | `String`      | required                                                 | Nội dung                             |
-| `tokensUsed`       | `Number`      | default: `0`                                             | Token dùng                           |
-| `model`            | `String`      | —                                                        | Model xử lý                          |
-| `citedChunks`      | `[Object]`    | default: `[]`                                            | Trích đoạn từ tài liệu               |
-| `citedSolutionIds` | `[ObjectId]`  | ref: `'solutions'`, default: `[]`                        | Tài liệu được trích                  |
-| `confidenceScore`  | `Number`      | min: 0, max: 1                                           | Độ tin cậy                           |
-| `isLiked`          | `Boolean`     | default: `null`                                          | User đánh giá                        |
-| `feedbackText`     | `String`      | —                                                        | Phản hồi user                        |
-| `processingTimeMs` | `Number`      | —                                                        | Thời gian AI xử lý                   |
-| `createdAt`        | `Date`        | auto (timestamps)                                        |                                      |
+| Field              | Mongoose Type | Ràng buộc                                       | Mô tả                  |
+| ------------------ | ------------- | ----------------------------------------------- | ---------------------- |
+| `_id`              | `ObjectId`    | auto                                            |                        |
+| `sessionId`        | `ObjectId`    | ref: `'ai_chat_sessions'`, required             | Thuộc phiên nào        |
+| `role`             | `String`      | enum: `['user','assistant','system']`, required | Vai trò                |
+| `content`          | `String`      | required                                        | Nội dung               |
+| `tokensUsed`       | `Number`      | default: `0`                                    | Token dùng             |
+| `model`            | `String`      | —                                               | Model xử lý            |
+| `citedChunks`      | `[Object]`    | default: `[]`                                   | Trích đoạn từ tài liệu |
+| `citedSolutionIds` | `[ObjectId]`  | ref: `'solutions'`, default: `[]`               | Tài liệu được trích    |
+| `confidenceScore`  | `Number`      | min: 0, max: 1                                  | Độ tin cậy             |
+| `isLiked`          | `Boolean`     | default: `null`                                 | User đánh giá          |
+| `feedbackText`     | `String`      | —                                               | Phản hồi user          |
+| `processingTimeMs` | `Number`      | —                                               | Thời gian AI xử lý     |
+| `createdAt`        | `Date`        | auto (timestamps)                               |                        |
 
 ---
 
@@ -380,20 +383,20 @@ admin_lock_user, admin_delete_solution, admin_update_ai_config
 
 > Vector embeddings từng chunk nội dung tài liệu, phục vụ semantic search và RAG cho AI chatbot.
 
-| Field             | Mongoose Type | Ràng buộc                                                | Mô tả                                  |
-| ----------------- | ------------- | -------------------------------------------------------- | -------------------------------------- |
-| `_id`             | `ObjectId`    | auto                                                     |                                        |
-| `solutionId`      | `ObjectId`    | ref: `'solutions'`, required                             | Tài liệu nguồn                         |
-| `chunkIndex`      | `Number`      | required, min: 0                                         | Thứ tự đoạn                            |
-| `chunkText`       | `String`      | required                                                 | Nội dung đoạn                          |
-| `embeddingVector` | `[Number]`    | required                                                 | Vector (1536 chiều cho Ada-002)        |
-| `embeddingModel`  | `String`      | default: `'text-embedding-ada-002'`                      |                                        |
-| `pageNumber`      | `Number`      | —                                                        |                                        |
-| `tokenCount`      | `Number`      | —                                                        |                                        |
-| `charStart`       | `Number`      | —                                                        |                                        |
-| `charEnd`         | `Number`      | —                                                        |                                        |
-| `metadata`        | `Object`      | —                                                        | Heading, section…                      |
-| `createdAt`       | `Date`        | auto (timestamps)                                        |                                        |
+| Field             | Mongoose Type | Ràng buộc                           | Mô tả                           |
+| ----------------- | ------------- | ----------------------------------- | ------------------------------- |
+| `_id`             | `ObjectId`    | auto                                |                                 |
+| `solutionId`      | `ObjectId`    | ref: `'solutions'`, required        | Tài liệu nguồn                  |
+| `chunkIndex`      | `Number`      | required, min: 0                    | Thứ tự đoạn                     |
+| `chunkText`       | `String`      | required                            | Nội dung đoạn                   |
+| `embeddingVector` | `[Number]`    | required                            | Vector (1536 chiều cho Ada-002) |
+| `embeddingModel`  | `String`      | default: `'text-embedding-ada-002'` |                                 |
+| `pageNumber`      | `Number`      | —                                   |                                 |
+| `tokenCount`      | `Number`      | —                                   |                                 |
+| `charStart`       | `Number`      | —                                   |                                 |
+| `charEnd`         | `Number`      | —                                   |                                 |
+| `metadata`        | `Object`      | —                                   | Heading, section…               |
+| `createdAt`       | `Date`        | auto (timestamps)                   |                                 |
 
 > **Vector Search:** Dùng **MongoDB Atlas Vector Search** hoặc tách sang **Qdrant / Pinecone** khi scale.
 
@@ -403,31 +406,31 @@ admin_lock_user, admin_delete_solution, admin_update_ai_config
 
 > Cấu hình động cho AI chatbot — Admin thay đổi model/prompt/rate-limit/feature flag không cần deploy. Phục vụ US24.
 
-| Field         | Mongoose Type | Ràng buộc                                                                            | Mô tả                                       |
-| ------------- | ------------- | ------------------------------------------------------------------------------------ | ------------------------------------------- |
-| `_id`         | `ObjectId`    | auto                                                                                 |                                             |
-| `configKey`   | `String`      | required, unique, maxlength: 100                                                     | VD: `ai.model.default`                      |
-| `configValue` | `Mixed`       | required                                                                             | string/number/bool/object/array             |
-| `category`    | `String`      | enum: `['model','prompt','rate_limit','feature_flag','general']`, required           | Nhóm                                        |
-| `dataType`    | `String`      | enum: `['string','number','boolean','object','array']`, required                     | Kiểu của configValue                        |
-| `description` | `String`      | —                                                                                    |                                             |
-| `isActive`    | `Boolean`     | default: `true`                                                                      |                                             |
-| `version`     | `Number`      | default: `1`                                                                         | Tăng khi update                             |
-| `updatedBy`   | `ObjectId`    | ref: `'accounts'`                                                                    | Admin update cuối                           |
-| `createdAt`   | `Date`        | auto (timestamps)                                                                    |                                             |
-| `updatedAt`   | `Date`        | auto (timestamps)                                                                    |                                             |
+| Field         | Mongoose Type | Ràng buộc                                                                  | Mô tả                           |
+| ------------- | ------------- | -------------------------------------------------------------------------- | ------------------------------- |
+| `_id`         | `ObjectId`    | auto                                                                       |                                 |
+| `configKey`   | `String`      | required, unique, maxlength: 100                                           | VD: `ai.model.default`          |
+| `configValue` | `Mixed`       | required                                                                   | string/number/bool/object/array |
+| `category`    | `String`      | enum: `['model','prompt','rate_limit','feature_flag','general']`, required | Nhóm                            |
+| `dataType`    | `String`      | enum: `['string','number','boolean','object','array']`, required           | Kiểu của configValue            |
+| `description` | `String`      | —                                                                          |                                 |
+| `isActive`    | `Boolean`     | default: `true`                                                            |                                 |
+| `version`     | `Number`      | default: `1`                                                               | Tăng khi update                 |
+| `updatedBy`   | `ObjectId`    | ref: `'accounts'`                                                          | Admin update cuối               |
+| `createdAt`   | `Date`        | auto (timestamps)                                                          |                                 |
+| `updatedAt`   | `Date`        | auto (timestamps)                                                          |                                 |
 
 **Seed mẫu:**
 
-| configKey                     | category     | configValue                | mô tả                          |
-| ----------------------------- | ------------ | -------------------------- | ------------------------------ |
-| `ai.model.default`            | model        | `"claude-3-sonnet"`        | Model AI mặc định              |
-| `ai.model.temperature`        | model        | `0.7`                      | Độ sáng tạo                    |
-| `ai.model.max_tokens`         | model        | `2048`                     | Token tối đa/response          |
-| `ai.prompt.system`            | prompt       | `"You are a study..."`     | System prompt                  |
-| `ai.rate_limit.free`          | rate_limit   | `50`                       | AI queries/tháng free          |
-| `ai.feature.chat_enabled`     | feature_flag | `true`                     | Bật AI chat                    |
-| `ai.feature.summary_enabled`  | feature_flag | `true`                     | Bật AI summary                 |
+| configKey                    | category     | configValue            | mô tả                 |
+| ---------------------------- | ------------ | ---------------------- | --------------------- |
+| `ai.model.default`           | model        | `"claude-3-sonnet"`    | Model AI mặc định     |
+| `ai.model.temperature`       | model        | `0.7`                  | Độ sáng tạo           |
+| `ai.model.max_tokens`        | model        | `2048`                 | Token tối đa/response |
+| `ai.prompt.system`           | prompt       | `"You are a study..."` | System prompt         |
+| `ai.rate_limit.free`         | rate_limit   | `50`                   | AI queries/tháng free |
+| `ai.feature.chat_enabled`    | feature_flag | `true`                 | Bật AI chat           |
+| `ai.feature.summary_enabled` | feature_flag | `true`                 | Bật AI summary        |
 
 > **Cache:** lưu configValue ở Redis hoặc in-memory để tránh query DB mỗi lần gọi AI. Invalidate khi Admin update.
 
@@ -437,25 +440,25 @@ admin_lock_user, admin_delete_solution, admin_update_ai_config
 
 > Link công khai chia sẻ tài liệu — bất kỳ ai có link đều truy cập được với quyền định sẵn (US17).
 
-| Field             | Mongoose Type | Ràng buộc                                                                          | Mô tả                                     |
-| ----------------- | ------------- | ---------------------------------------------------------------------------------- | ----------------------------------------- |
-| `_id`             | `ObjectId`    | auto                                                                               |                                           |
-| `solutionId`      | `ObjectId`    | ref: `'solutions'`, required                                                       | Tài liệu                                  |
-| `createdBy`       | `ObjectId`    | ref: `'accounts'`, required                                                        | Người tạo link                            |
-| `token`           | `String`      | required, unique                                                                   | Token ngẫu nhiên trong URL                |
-| `permissionLevel` | `String`      | enum: `['viewer','commenter','downloader','editor','co_owner']`, required          | Mức quyền                                 |
-| `canView`         | `Boolean`     | default: `true`                                                                    |                                           |
-| `canDownload`     | `Boolean`     | default: `false`                                                                   |                                           |
-| `canComment`      | `Boolean`     | default: `false`                                                                   |                                           |
-| `requiresLogin`   | `Boolean`     | default: `false`                                                                   | Phải đăng nhập                            |
-| `passwordHash`    | `String`      | —                                                                                  | Mật khẩu bảo vệ link                      |
-| `maxUses`         | `Number`      | —                                                                                  | Giới hạn lần dùng (null = ∞)              |
-| `currentUses`     | `Number`      | default: `0`                                                                       |                                           |
-| `expiresAt`       | `Date`        | —                                                                                  | Hạn link                                  |
-| `isActive`        | `Boolean`     | default: `true`                                                                    |                                           |
-| `note`            | `String`      | —                                                                                  | Mục đích link                             |
-| `lastUsedAt`      | `Date`        | —                                                                                  |                                           |
-| `createdAt`       | `Date`        | auto (timestamps)                                                                  |                                           |
+| Field             | Mongoose Type | Ràng buộc                                                                 | Mô tả                        |
+| ----------------- | ------------- | ------------------------------------------------------------------------- | ---------------------------- |
+| `_id`             | `ObjectId`    | auto                                                                      |                              |
+| `solutionId`      | `ObjectId`    | ref: `'solutions'`, required                                              | Tài liệu                     |
+| `createdBy`       | `ObjectId`    | ref: `'accounts'`, required                                               | Người tạo link               |
+| `token`           | `String`      | required, unique                                                          | Token ngẫu nhiên trong URL   |
+| `permissionLevel` | `String`      | enum: `['viewer','commenter','downloader','editor','co_owner']`, required | Mức quyền                    |
+| `canView`         | `Boolean`     | default: `true`                                                           |                              |
+| `canDownload`     | `Boolean`     | default: `false`                                                          |                              |
+| `canComment`      | `Boolean`     | default: `false`                                                          |                              |
+| `requiresLogin`   | `Boolean`     | default: `false`                                                          | Phải đăng nhập               |
+| `passwordHash`    | `String`      | —                                                                         | Mật khẩu bảo vệ link         |
+| `maxUses`         | `Number`      | —                                                                         | Giới hạn lần dùng (null = ∞) |
+| `currentUses`     | `Number`      | default: `0`                                                              |                              |
+| `expiresAt`       | `Date`        | —                                                                         | Hạn link                     |
+| `isActive`        | `Boolean`     | default: `true`                                                           |                              |
+| `note`            | `String`      | —                                                                         | Mục đích link                |
+| `lastUsedAt`      | `Date`        | —                                                                         |                              |
+| `createdAt`       | `Date`        | auto (timestamps)                                                         |                              |
 
 **Quan hệ:**
 
@@ -470,13 +473,13 @@ admin_lock_user, admin_delete_solution, admin_update_ai_config
 
 > Bookmark tài liệu yêu thích (US18).
 
-| Field        | Mongoose Type | Ràng buộc                                                | Mô tả              |
-| ------------ | ------------- | -------------------------------------------------------- | ------------------ |
-| `_id`        | `ObjectId`    | auto                                                     |                    |
-| `accountId`  | `ObjectId`    | ref: `'accounts'`, required                              | Người dùng         |
-| `solutionId` | `ObjectId`    | ref: `'solutions'`, required                             | Tài liệu           |
-| `note`       | `String`      | maxlength: 300                                           | Ghi chú cá nhân    |
-| `createdAt`  | `Date`        | auto (timestamps)                                        |                    |
+| Field        | Mongoose Type | Ràng buộc                    | Mô tả           |
+| ------------ | ------------- | ---------------------------- | --------------- |
+| `_id`        | `ObjectId`    | auto                         |                 |
+| `accountId`  | `ObjectId`    | ref: `'accounts'`, required  | Người dùng      |
+| `solutionId` | `ObjectId`    | ref: `'solutions'`, required | Tài liệu        |
+| `note`       | `String`      | maxlength: 300               | Ghi chú cá nhân |
+| `createdAt`  | `Date`        | auto (timestamps)            |                 |
 
 > **Unique compound index:** `{ accountId, solutionId }`.
 
@@ -486,36 +489,36 @@ admin_lock_user, admin_delete_solution, admin_update_ai_config
 
 > Thông báo hệ thống (US22). Dùng pattern **fan-out on write** cho broadcast — mỗi recipient = 1 document.
 
-| Field           | Mongoose Type | Ràng buộc                                                                 | Mô tả                              |
-| --------------- | ------------- | ------------------------------------------------------------------------- | ---------------------------------- |
-| `_id`           | `ObjectId`    | auto                                                                      |                                    |
-| `recipientId`   | `ObjectId`    | ref: `'accounts'`, required                                               | Người nhận                         |
-| `senderId`      | `ObjectId`    | ref: `'accounts'`                                                         | null = system                      |
-| `sourceEventId` | `String`      | —                                                                         | ID sự kiện gốc (dedup broadcast)   |
-| `type`          | `String`      | enum: (xem bên dưới), required                                            | Loại                               |
-| `title`         | `String`      | required, maxlength: 300                                                  |                                    |
-| `body`          | `String`      | —                                                                         |                                    |
-| `refEntity`     | `String`      | enum: `['solution','session','account']`                                  | Entity liên quan                   |
-| `refEntityId`   | `ObjectId`    | —                                                                         |                                    |
-| `actionUrl`     | `String`      | —                                                                         | Link click                         |
-| `isRead`        | `Boolean`     | default: `false`                                                          |                                    |
-| `readAt`        | `Date`        | —                                                                         |                                    |
-| `priority`      | `String`      | enum: `['low','normal','high']`, default: `'normal'`                      |                                    |
-| `createdAt`     | `Date`        | auto (timestamps)                                                         |                                    |
+| Field           | Mongoose Type | Ràng buộc                                            | Mô tả                            |
+| --------------- | ------------- | ---------------------------------------------------- | -------------------------------- |
+| `_id`           | `ObjectId`    | auto                                                 |                                  |
+| `recipientId`   | `ObjectId`    | ref: `'accounts'`, required                          | Người nhận                       |
+| `senderId`      | `ObjectId`    | ref: `'accounts'`                                    | null = system                    |
+| `sourceEventId` | `String`      | —                                                    | ID sự kiện gốc (dedup broadcast) |
+| `type`          | `String`      | enum: (xem bên dưới), required                       | Loại                             |
+| `title`         | `String`      | required, maxlength: 300                             |                                  |
+| `body`          | `String`      | —                                                    |                                  |
+| `refEntity`     | `String`      | enum: `['solution','session','account']`             | Entity liên quan                 |
+| `refEntityId`   | `ObjectId`    | —                                                    |                                  |
+| `actionUrl`     | `String`      | —                                                    | Link click                       |
+| `isRead`        | `Boolean`     | default: `false`                                     |                                  |
+| `readAt`        | `Date`        | —                                                    |                                  |
+| `priority`      | `String`      | enum: `['low','normal','high']`, default: `'normal'` |                                  |
+| `createdAt`     | `Date`        | auto (timestamps)                                    |                                  |
 
 **Các loại thông báo (`type`):**
 
-| Giá trị               | Mô tả                          |
-| --------------------- | ------------------------------ |
-| `share_received`      | Được chia sẻ tài liệu          |
-| `ai_ready`            | AI đã xử lý xong tài liệu      |
-| `ai_failed`           | AI xử lý thất bại              |
-| `ocr_ready`           | OCR xong                       |
-| `ocr_failed`          | OCR thất bại                   |
-| `storage_warning`     | Gần hết dung lượng             |
-| `solution_updated`    | Tài liệu được cập nhật         |
-| `recycle_auto_delete` | Tài liệu sắp xóa vĩnh viễn     |
-| `system`              | Thông báo hệ thống chung       |
+| Giá trị               | Mô tả                      |
+| --------------------- | -------------------------- |
+| `share_received`      | Được chia sẻ tài liệu      |
+| `ai_ready`            | AI đã xử lý xong tài liệu  |
+| `ai_failed`           | AI xử lý thất bại          |
+| `ocr_ready`           | OCR xong                   |
+| `ocr_failed`          | OCR thất bại               |
+| `storage_warning`     | Gần hết dung lượng         |
+| `solution_updated`    | Tài liệu được cập nhật     |
+| `recycle_auto_delete` | Tài liệu sắp xóa vĩnh viễn |
+| `system`              | Thông báo hệ thống chung   |
 
 > Đã bỏ các type liên quan group/comment (`comment_added`, `comment_reply`, `group_invite`, `group_join`) vì không còn collection tương ứng.
 
@@ -523,24 +526,24 @@ admin_lock_user, admin_delete_solution, admin_update_ai_config
 
 ## 5. Bảng Tổng Hợp Quan Hệ
 
-| Entity A             | Quan hệ    | Entity B             | Ref trong MongoDB                     | Mô tả                                                 |
-| -------------------- | ---------- | -------------------- | ------------------------------------- | ----------------------------------------------------- |
-| **Account**          | **1 : 1**  | **StorageQuota**     | `storageQuota.accountId` (unique)     | Mỗi account 1 quota                                   |
-| **Account**          | **1 : N**  | **Solution**         | `solution.uploaderId`                 | Upload nhiều tài liệu                                 |
-| **Account**          | **1 : N**  | **AI_ChatSession**   | `aiChatSession.accountId`             | Nhiều phiên chat                                      |
-| **Account**          | **1 : N**  | **Notification**     | `notification.recipientId`            | Broadcast dùng fan-out                                |
-| **Account**          | **1 : N**  | **Favorite**         | `favorite.accountId`                  | Bookmark nhiều tài liệu                               |
-| **Account**          | **1 : N**  | **PermissionLink**   | `permissionLink.createdBy`            | Tạo nhiều link share                                  |
-| **Account**          | **1 : N**  | **ActivityLog**      | `activityLog.accountId`               | Lịch sử hoạt động                                     |
-| **Account**          | **1 : N**  | **AI_Configuration** | `aiConfiguration.updatedBy`           | Admin update nhiều config                             |
-| **Account**          | **1 : N**  | **Solution**         | `solution.deletedBy`                  | Ai xóa nhiều tài liệu (recycle inline)                |
-| **Solution**         | **1 : N**  | **DocumentEmbedding**| `documentEmbedding.solutionId`        | Nhiều chunk vector                                    |
-| **Solution**         | **1 : N**  | **AI_ChatSession**   | `aiChatSession.solutionId`            | Nhiều phiên chat về tài liệu                          |
-| **Solution**         | **1 : N**  | **PermissionLink**   | `permissionLink.solutionId`           | Nhiều link share                                      |
-| **Solution**         | **1 : N**  | **Favorite**         | `favorite.solutionId`                 | Được nhiều user bookmark                              |
-| **SolutionCategory** | **1 : N**  | **Solution**         | `solution.categoryId`                 | Một danh mục → nhiều tài liệu                         |
-| **SolutionCategory** | **1 : N**  | **SolutionCategory** | `solutionCategory.parentId` (self-ref) | Cây phân cấp danh mục                                |
-| **AI_ChatSession**   | **1 : N**  | **AI_Message**       | `aiMessage.sessionId`                 | Nhiều tin nhắn trong phiên                            |
+| Entity A             | Quan hệ   | Entity B              | Ref trong MongoDB                      | Mô tả                                  |
+| -------------------- | --------- | --------------------- | -------------------------------------- | -------------------------------------- |
+| **Account**          | **1 : 1** | **StorageQuota**      | `storageQuota.accountId` (unique)      | Mỗi account 1 quota                    |
+| **Account**          | **1 : N** | **Solution**          | `solution.uploaderId`                  | Upload nhiều tài liệu                  |
+| **Account**          | **1 : N** | **AI_ChatSession**    | `aiChatSession.accountId`              | Nhiều phiên chat                       |
+| **Account**          | **1 : N** | **Notification**      | `notification.recipientId`             | Broadcast dùng fan-out                 |
+| **Account**          | **1 : N** | **Favorite**          | `favorite.accountId`                   | Bookmark nhiều tài liệu                |
+| **Account**          | **1 : N** | **PermissionLink**    | `permissionLink.createdBy`             | Tạo nhiều link share                   |
+| **Account**          | **1 : N** | **ActivityLog**       | `activityLog.accountId`                | Lịch sử hoạt động                      |
+| **Account**          | **1 : N** | **AI_Configuration**  | `aiConfiguration.updatedBy`            | Admin update nhiều config              |
+| **Account**          | **1 : N** | **Solution**          | `solution.deletedBy`                   | Ai xóa nhiều tài liệu (recycle inline) |
+| **Solution**         | **1 : N** | **DocumentEmbedding** | `documentEmbedding.solutionId`         | Nhiều chunk vector                     |
+| **Solution**         | **1 : N** | **AI_ChatSession**    | `aiChatSession.solutionId`             | Nhiều phiên chat về tài liệu           |
+| **Solution**         | **1 : N** | **PermissionLink**    | `permissionLink.solutionId`            | Nhiều link share                       |
+| **Solution**         | **1 : N** | **Favorite**          | `favorite.solutionId`                  | Được nhiều user bookmark               |
+| **SolutionCategory** | **1 : N** | **Solution**          | `solution.categoryId`                  | Một danh mục → nhiều tài liệu          |
+| **SolutionCategory** | **1 : N** | **SolutionCategory**  | `solutionCategory.parentId` (self-ref) | Cây phân cấp danh mục                  |
+| **AI_ChatSession**   | **1 : N** | **AI_Message**        | `aiMessage.sessionId`                  | Nhiều tin nhắn trong phiên             |
 
 ---
 
@@ -623,38 +626,39 @@ Thứ tự kiểm tra (middleware):
 ```javascript
 // Soft delete — chỉ cần update solutions
 await Solution.findByIdAndUpdate(solutionId, {
-  deletedAt:    new Date(),
-  deletedBy:    userId,
-  autoDeleteAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // +30 ngày
-});
+  deletedAt: new Date(),
+  deletedBy: userId,
+  autoDeleteAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // +30 ngày
+})
 
 await ActivityLog.create({
-  accountId: userId, action: 'delete_solution',
-  entityType: 'solution', entityId: solutionId,
-});
+  accountId: userId,
+  action: 'delete_solution',
+  entityType: 'solution',
+  entityId: solutionId
+})
 
 // (tuỳ chọn) gửi notification reminder trước 3 ngày
 // ────────────────────────────────────────────────
 
 // Restore — user lấy lại từ thùng rác
 await Solution.findByIdAndUpdate(solutionId, {
-  deletedAt: null, deletedBy: null, autoDeleteAt: null,
-});
+  deletedAt: null,
+  deletedBy: null,
+  autoDeleteAt: null
+})
 
 // Xóa vĩnh viễn — chạy bằng cron job mỗi ngày
 const expired = await Solution.find({
-  deletedAt:    { $ne: null },
-  autoDeleteAt: { $lt: new Date() },
-});
+  deletedAt: { $ne: null },
+  autoDeleteAt: { $lt: new Date() }
+})
 
 for (const sol of expired) {
-  await cloudStorage.delete(sol.storageKey);
-  await DocumentEmbedding.deleteMany({ solutionId: sol._id });
-  await StorageQuota.findOneAndUpdate(
-    { accountId: sol.uploaderId },
-    { $inc: { usedBytes: -sol.fileSizeBytes } }
-  );
-  await Solution.deleteOne({ _id: sol._id }); // hard delete
+  await cloudStorage.delete(sol.storageKey)
+  await DocumentEmbedding.deleteMany({ solutionId: sol._id })
+  await StorageQuota.findOneAndUpdate({ accountId: sol.uploaderId }, { $inc: { usedBytes: -sol.fileSizeBytes } })
+  await Solution.deleteOne({ _id: sol._id }) // hard delete
 }
 ```
 
@@ -705,13 +709,13 @@ await StorageQuota.findOneAndUpdate({ accountId }, { $inc: { aiQueriesUsed: 1 } 
 
 ```javascript
 async function broadcastToAll(notificationData) {
-  const users = await Account.find({ isActive: true, deletedAt: null }).select('_id');
-  const docs = users.map(u => ({
+  const users = await Account.find({ isActive: true, deletedAt: null }).select('_id')
+  const docs = users.map((u) => ({
     ...notificationData,
-    recipientId:   u._id,
-    sourceEventId: notificationData.sourceEventId,
-  }));
-  await Notification.insertMany(docs); // bulk insert
+    recipientId: u._id,
+    sourceEventId: notificationData.sourceEventId
+  }))
+  await Notification.insertMany(docs) // bulk insert
 }
 ```
 
@@ -721,63 +725,63 @@ async function broadcastToAll(notificationData) {
 
 ```javascript
 // ── accounts ──────────────────────────────────────────────────
-accountSchema.index({ email:    1 }, { unique: true });
-accountSchema.index({ username: 1 }, { unique: true });
-accountSchema.index({ deletedAt: 1 });
+accountSchema.index({ email: 1 }, { unique: true })
+accountSchema.index({ username: 1 }, { unique: true })
+accountSchema.index({ deletedAt: 1 })
 
 // ── storage_quotas ────────────────────────────────────────────
-storageQuotaSchema.index({ accountId: 1 }, { unique: true });
+storageQuotaSchema.index({ accountId: 1 }, { unique: true })
 
 // ── activity_logs ─────────────────────────────────────────────
-activityLogSchema.index({ accountId: 1, createdAt: -1 });
-activityLogSchema.index({ entityType: 1, entityId: 1 });
-activityLogSchema.index({ action: 1, createdAt: -1 });
-activityLogSchema.index({ createdAt: 1 }, { expireAfterSeconds: 7776000 }); // TTL 90 ngày
+activityLogSchema.index({ accountId: 1, createdAt: -1 })
+activityLogSchema.index({ entityType: 1, entityId: 1 })
+activityLogSchema.index({ action: 1, createdAt: -1 })
+activityLogSchema.index({ createdAt: 1 }, { expireAfterSeconds: 7776000 }) // TTL 90 ngày
 
 // ── solutions ─────────────────────────────────────────────────
-solutionSchema.index({ uploaderId: 1, createdAt: -1 });
-solutionSchema.index({ categoryId: 1 });
-solutionSchema.index({ tags: 1 });
-solutionSchema.index({ aiStatus: 1 });
-solutionSchema.index({ ocrStatus: 1 });
-solutionSchema.index({ deletedAt: 1 });
-solutionSchema.index({ autoDeleteAt: 1 }, { sparse: true }); // cron cleanup
-solutionSchema.index({ isPublic: 1, createdAt: -1 });        // trang khám phá
-solutionSchema.index({ title: 'text', description: 'text', tags: 'text', ocrText: 'text' });
+solutionSchema.index({ uploaderId: 1, createdAt: -1 })
+solutionSchema.index({ categoryId: 1 })
+solutionSchema.index({ tags: 1 })
+solutionSchema.index({ aiStatus: 1 })
+solutionSchema.index({ ocrStatus: 1 })
+solutionSchema.index({ deletedAt: 1 })
+solutionSchema.index({ autoDeleteAt: 1 }, { sparse: true }) // cron cleanup
+solutionSchema.index({ isPublic: 1, createdAt: -1 }) // trang khám phá
+solutionSchema.index({ title: 'text', description: 'text', tags: 'text', ocrText: 'text' })
 
 // ── solution_categories ───────────────────────────────────────
-solutionCategorySchema.index({ slug: 1 }, { unique: true });
-solutionCategorySchema.index({ parentId: 1 });
-solutionCategorySchema.index({ type: 1, isActive: 1 });
+solutionCategorySchema.index({ slug: 1 }, { unique: true })
+solutionCategorySchema.index({ parentId: 1 })
+solutionCategorySchema.index({ type: 1, isActive: 1 })
 
 // ── ai_chat_sessions ──────────────────────────────────────────
-aiChatSessionSchema.index({ accountId: 1, createdAt: -1 });
-aiChatSessionSchema.index({ solutionId: 1 });
+aiChatSessionSchema.index({ accountId: 1, createdAt: -1 })
+aiChatSessionSchema.index({ solutionId: 1 })
 
 // ── ai_messages ───────────────────────────────────────────────
-aiMessageSchema.index({ sessionId: 1, createdAt: 1 });
+aiMessageSchema.index({ sessionId: 1, createdAt: 1 })
 
 // ── document_embeddings ───────────────────────────────────────
-documentEmbeddingSchema.index({ solutionId: 1, chunkIndex: 1 });
+documentEmbeddingSchema.index({ solutionId: 1, chunkIndex: 1 })
 // Vector index: dùng Atlas Vector Search hoặc Qdrant
 
 // ── ai_configurations ─────────────────────────────────────────
-aiConfigurationSchema.index({ configKey: 1 }, { unique: true });
-aiConfigurationSchema.index({ category: 1, isActive: 1 });
+aiConfigurationSchema.index({ configKey: 1 }, { unique: true })
+aiConfigurationSchema.index({ category: 1, isActive: 1 })
 
 // ── permission_links ──────────────────────────────────────────
-permissionLinkSchema.index({ token: 1 }, { unique: true });
-permissionLinkSchema.index({ solutionId: 1 });
-permissionLinkSchema.index({ createdBy: 1 });
+permissionLinkSchema.index({ token: 1 }, { unique: true })
+permissionLinkSchema.index({ solutionId: 1 })
+permissionLinkSchema.index({ createdBy: 1 })
 
 // ── favorites ─────────────────────────────────────────────────
-favoriteSchema.index({ accountId: 1, solutionId: 1 }, { unique: true });
-favoriteSchema.index({ accountId: 1, createdAt: -1 });
+favoriteSchema.index({ accountId: 1, solutionId: 1 }, { unique: true })
+favoriteSchema.index({ accountId: 1, createdAt: -1 })
 
 // ── notifications ─────────────────────────────────────────────
-notificationSchema.index({ recipientId: 1, isRead: 1, createdAt: -1 });
-notificationSchema.index({ sourceEventId: 1 });
-notificationSchema.index({ createdAt: 1 }, { expireAfterSeconds: 7776000 }); // TTL 90 ngày
+notificationSchema.index({ recipientId: 1, isRead: 1, createdAt: -1 })
+notificationSchema.index({ sourceEventId: 1 })
+notificationSchema.index({ createdAt: 1 }, { expireAfterSeconds: 7776000 }) // TTL 90 ngày
 ```
 
 ---
@@ -837,28 +841,28 @@ PermissionLink.lastUsedAt + currentUses → tracking share link
 
 ### Cắt 6 collection vượt scope user stories
 
-| Collection cũ        | Lý do bỏ                                                                              |
-| -------------------- | ------------------------------------------------------------------------------------- |
-| `groups`             | Không có US nào về lớp học / nhóm / dự án nhóm. Toàn bộ flow là tài liệu cá nhân.    |
-| `group_memberships`  | Phụ thuộc `groups`, bỏ luôn.                                                          |
-| `history_solutions`  | Không có US nào yêu cầu version control / rollback. US06 chỉ là "sửa thông tin".     |
-| `recycle_bins`       | **Gộp vào `solutions`** qua field `deletedAt` + `autoDeleteAt` + `deletedBy`.        |
-| `comment_notes`      | Không có US nào về comment/note trên tài liệu. Feature collab kiểu Google Docs.       |
-| `permissions`        | US17 chỉ cần share link công khai. Per-user ACL là feature enterprise.                |
+| Collection cũ       | Lý do bỏ                                                                          |
+| ------------------- | --------------------------------------------------------------------------------- |
+| `groups`            | Không có US nào về lớp học / nhóm / dự án nhóm. Toàn bộ flow là tài liệu cá nhân. |
+| `group_memberships` | Phụ thuộc `groups`, bỏ luôn.                                                      |
+| `history_solutions` | Không có US nào yêu cầu version control / rollback. US06 chỉ là "sửa thông tin".  |
+| `recycle_bins`      | **Gộp vào `solutions`** qua field `deletedAt` + `autoDeleteAt` + `deletedBy`.     |
+| `comment_notes`     | Không có US nào về comment/note trên tài liệu. Feature collab kiểu Google Docs.   |
+| `permissions`       | US17 chỉ cần share link công khai. Per-user ACL là feature enterprise.            |
 
 ### Thay đổi schema
 
-| Field thay đổi                              | Trước (v2.0)            | Sau (v2.1)                                                  |
-| ------------------------------------------- | ----------------------- | ----------------------------------------------------------- |
-| `solutions.groupId`                         | ref `groups`            | **Bỏ**                                                      |
-| `solutions.version`                         | có (gắn với history)    | **Bỏ**                                                      |
-| `solutions.deletedAt`                       | có                      | giữ + thêm `deletedBy`, `deleteReason`, `autoDeleteAt`      |
-| `solutions.ocrStatus`, `ocrText`, …         | nói "cần bổ sung"       | **Đã add chính thức** vào schema                            |
-| `solution_categories.groupId`               | có                      | **Bỏ**                                                      |
-| `ai_chat_sessions.groupId`                  | có                      | **Bỏ**                                                      |
-| `notifications.type`                        | có `comment_*`, `group_*` | **Bỏ** các type liên quan collection đã xoá                |
-| `activity_logs.entityType`                  | có `group`, `comment`   | **Bỏ** giá trị tương ứng                                    |
-| `activity_logs.countryCode`, `sessionId`    | có                      | **Bỏ** cho gọn (có thể thêm lại khi cần geo analytics)      |
+| Field thay đổi                           | Trước (v2.0)              | Sau (v2.1)                                             |
+| ---------------------------------------- | ------------------------- | ------------------------------------------------------ |
+| `solutions.groupId`                      | ref `groups`              | **Bỏ**                                                 |
+| `solutions.version`                      | có (gắn với history)      | **Bỏ**                                                 |
+| `solutions.deletedAt`                    | có                        | giữ + thêm `deletedBy`, `deleteReason`, `autoDeleteAt` |
+| `solutions.ocrStatus`, `ocrText`, …      | nói "cần bổ sung"         | **Đã add chính thức** vào schema                       |
+| `solution_categories.groupId`            | có                        | **Bỏ**                                                 |
+| `ai_chat_sessions.groupId`               | có                        | **Bỏ**                                                 |
+| `notifications.type`                     | có `comment_*`, `group_*` | **Bỏ** các type liên quan collection đã xoá            |
+| `activity_logs.entityType`               | có `group`, `comment`     | **Bỏ** giá trị tương ứng                               |
+| `activity_logs.countryCode`, `sessionId` | có                        | **Bỏ** cho gọn (có thể thêm lại khi cần geo analytics) |
 
 ### Tác động đến tài liệu khác
 
@@ -870,4 +874,4 @@ PermissionLink.lastUsedAt + currentUses → tracking share link
 
 ---
 
-*Tài liệu v2.1 — phiên bản lean, tập trung vào core features của AI Study Hub. 12 collections, sẵn sàng implement.*
+_Tài liệu v2.1 — phiên bản lean, tập trung vào core features của AI Study Hub. 12 collections, sẵn sàng implement._
