@@ -10,7 +10,7 @@ import {
 } from '~/controllers/account.controller'
 import {
   accessTokenValidator,
-  emailVerifyTokenValidator,
+  emailVerifyOtpValidator,
   forgotPasswordValidator,
   loginValidator,
   registerValidator,
@@ -58,17 +58,26 @@ accountRouter.post('/register', registerValidator, wrapAsync(registerController)
 /**
  * @swagger
  * /account/verify-email:
- *   get:
- *     summary: Verify account email
+ *   post:
+ *     summary: Verify account email with OTP
  *     tags:
  *       - Account
- *     parameters:
- *       - in: query
- *         name: email_verify_token
- *         required: true
- *         schema:
- *           type: string
- *         description: Email verification token from the verification link
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - otp
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               otp:
+ *                 type: string
+ *                 description: 6-digit OTP sent to the email
  *     responses:
  *       200:
  *         description: Email verify success
@@ -76,14 +85,8 @@ accountRouter.post('/register', registerValidator, wrapAsync(registerController)
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/MessageResponse'
- *       401:
- *         description: Token is invalid or expired
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
  *       422:
- *         description: Email verify token is invalid
+ *         description: OTP is invalid or expired
  *         content:
  *           application/json:
  *             schema:
@@ -95,7 +98,7 @@ accountRouter.post('/register', registerValidator, wrapAsync(registerController)
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-accountRouter.get('/verify-email', emailVerifyTokenValidator, wrapAsync(emailVerifyController))
+accountRouter.post('/verify-email', emailVerifyOtpValidator, wrapAsync(emailVerifyController))
 
 /**
  * @swagger

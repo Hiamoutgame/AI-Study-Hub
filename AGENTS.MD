@@ -74,7 +74,7 @@ Ví dụ pattern hiện tại:
 
 ```ts
 accountRouter.post('/login', loginValidator, wrapAsync(loginController))
-accountRouter.get('/verify-email', emailVerifyTokenValidator, wrapAsync(emailVerifyController))
+accountRouter.post('/verify-email', emailVerifyOtpValidator, wrapAsync(emailVerifyController))
 ```
 
 Quy ước khi thêm endpoint mới:
@@ -104,7 +104,7 @@ export const loginValidator = validate(checkSchema({ email: emailSchema, passwor
 
 Middleware có thể gán dữ liệu đã decode vào `req` để controller dùng tiếp. Ví dụ:
 
-- `emailVerifyTokenValidator` decode token và gán `req.decoded_email_verify_Token`.
+- `emailVerifyOtpValidator` validate `email` + `otp` (6 chữ số) trong body trước khi controller gọi service đối chiếu OTP.
 - `accessTokenValidator` decode access token và gán `req.decoded_authorization`.
 - `resetPasswordValidator` decode forgot password token và gán `req.decoded_forgot_password_token`.
 

@@ -69,6 +69,10 @@ export const ACCOUNT_MESSAGES = {
 
   REGISTER_SUCCESS: 'Register success',
   RESEND_VERIFY_EMAIL_SUCCESS: 'Verification email has been resent',
+  //otp
+  OTP_IS_REQUIRED: 'OTP is required',
+  OTP_MUST_BE_6_DIGITS: 'OTP must be 6 digits',
+  OTP_IS_INVALID_OR_EXPIRED: 'OTP is invalid or expired',
   ACCESS_TOKEN_IS_INVALID: 'Access token is invalid',
   AUTHORIZATION_HEADER_IS_INVALID: 'Authorization header is invalid'
 } as const

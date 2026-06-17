@@ -4,13 +4,12 @@ import HTTP_STATUS from '~/constants/httpStatus'
 import { ACCOUNT_MESSAGES } from '~/constants/message'
 import { ErrorWithStatus } from '~/models/Error'
 import {
-  EmailVerifyQuery,
   ForgotPasswordReqBody,
   LoginReqBody,
   RegisterReqBody,
   ResendVerificationReqBody,
   ResetPasswordReqBody,
-  TokenPayLoad
+  VerifyEmailReqBody
 } from '~/models/request/account.request'
 import accountService from '~/services/account.service'
 
@@ -24,15 +23,10 @@ export const registerController = async (req: Request<ParamsDictionary, any, Reg
   return res.status(HTTP_STATUS.CREATED).json({ message: ACCOUNT_MESSAGES.REGISTER_SUCCESS, account: account })
 }
 
-export const emailVerifyController = async (
-  req: Request<ParamsDictionary, any, any, EmailVerifyQuery>,
-  res: Response
-) => {
-  const { email_verify_token } = req.query
-  const { user_id } = req.decoded_email_verify_Token as TokenPayLoad
+export const emailVerifyController = async (req: Request<ParamsDictionary, any, VerifyEmailReqBody>, res: Response) => {
+  const { email, otp } = req.body
 
-  await accountService.checkEmailVerifyToken({ user_id, email_verify_token })
-  await accountService.verifyEmail({ user_id })
+  await accountService.verifyEmailByOtp({ email, otp })
   return res.status(HTTP_STATUS.OK).json({ message: ACCOUNT_MESSAGES.EMAIL_VERIFY_SUCCESS })
 }
 
@@ -65,7 +59,7 @@ export const resetPasswordController = async (
   req: Request<ParamsDictionary, any, ResetPasswordReqBody>,
   res: Response
 ) => {
-  const { user_id } = req.decoded_forgot_password_token as TokenPayLoad
-  await accountService.resetPassword({ user_id, ...req.body })
+  const { email, otp, newPassword } = req.body
+  await accountService.resetPassword({ email, otp, newPassword })
   return res.status(HTTP_STATUS.OK).json({ message: ACCOUNT_MESSAGES.RESET_PASSWORD_SUCCESS })
 }

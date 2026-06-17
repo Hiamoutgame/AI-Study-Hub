@@ -13,3 +13,10 @@ export const CORS_ORIGINS = (process.env.CORS_ORIGINS as string)
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean)
+
+// Cấu hình SMTP để gửi email (OTP). Để trống khi dev sẽ fallback log OTP ra console.
+export const SMTP_HOST = process.env.SMTP_HOST as string
+export const SMTP_PORT = Number(process.env.SMTP_PORT) || 587
+export const SMTP_USER = process.env.SMTP_USER as string
+export const SMTP_PASS = process.env.SMTP_PASS as string
+export const EMAIL_FROM = (process.env.EMAIL_FROM || process.env.SMTP_USER) as string

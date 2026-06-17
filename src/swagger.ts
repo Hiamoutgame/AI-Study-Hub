@@ -138,11 +138,16 @@ const swaggerDefinition = {
       },
       ResetPasswordRequest: {
         type: 'object',
-        required: ['token', 'newPassword', 'confirmPassword'],
+        required: ['email', 'otp', 'newPassword', 'confirmPassword'],
         properties: {
-          token: {
+          email: {
             type: 'string',
-            example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+            format: 'email',
+            example: 'nguyenvana@student.edu.vn'
+          },
+          otp: {
+            type: 'string',
+            example: '123456'
           },
           newPassword: {
             type: 'string',

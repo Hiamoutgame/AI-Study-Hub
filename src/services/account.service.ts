@@ -5,13 +5,15 @@ import { ACCOUNT_MESSAGES } from '~/constants/message'
 import { Account, AccountType } from '~/models/Account.schema'
 import { ErrorWithStatus } from '~/models/Error'
 import { LoginReqBody, RegisterReqBody, ResetPasswordReqBody } from '~/models/request/account.request'
-import { BASE_URL } from '~/constants/base'
 import { hashPassword } from '~/utils/crypto'
 import { signToken } from '~/utils/jwt'
+import { generateOtp } from '~/utils/otp'
+import emailService from './email.service'
 import databaseService from './database.service'
 
 const ACCESS_TOKEN_EXPIRES_IN_SECONDS = 60 * 60
-const RESET_PASSWORD_TOKEN_EXPIRES_IN_MINUTES = 15
+const RESET_PASSWORD_OTP_EXPIRES_IN_MINUTES = 15
+const EMAIL_VERIFY_OTP_EXPIRES_IN_MINUTES = 10
 
 class AccountService {
   private normalizeEmail(email: string) {
@@ -20,16 +22,6 @@ class AccountService {
 
   private async findAccountByEmail(email: string) {
     return databaseService.accounts.findOne({ email: this.normalizeEmail(email) })
-  }
-
-  private async signAccountToken({ accountId, tokenType }: { accountId: ObjectId | string; tokenType: TokenType }) {
-    return signToken({
-      payload: {
-        user_id: accountId.toString(),
-        token_type: tokenType
-      },
-      privateKey: process.env.JWT_PRIVATE_KEY as string
-    })
   }
 
   private getPublicAccount(account: AccountType) {
@@ -47,10 +39,8 @@ class AccountService {
 
   async register(payload: RegisterReqBody) {
     const accountId = new ObjectId()
-    const emailVerifyToken = await this.signAccountToken({
-      accountId,
-      tokenType: TokenType.EmailVerificationToken
-    })
+    const otp = generateOtp()
+    const emailVerifyTokenExpires = new Date(Date.now() + EMAIL_VERIFY_OTP_EXPIRES_IN_MINUTES * 60 * 1000)
 
     const result = await databaseService.accounts.insertOne(
       new Account({
@@ -60,11 +50,12 @@ class AccountService {
         fullName: payload.fullName,
         username: payload.username,
         isEmailVerified: false,
-        emailVerifyToken
+        emailVerifyToken: otp,
+        emailVerifyTokenExpires
       })
     )
 
-    console.log(`${BASE_URL}/account/verify-email?email_verify_token=${emailVerifyToken}`)
+    await emailService.sendVerifyEmailOtp(payload.email, otp, EMAIL_VERIFY_OTP_EXPIRES_IN_MINUTES)
     return result
   }
 
@@ -73,20 +64,20 @@ class AccountService {
     return Boolean(account)
   }
 
-  async checkEmailVerifyToken({ user_id, email_verify_token }: { user_id: string; email_verify_token: string }) {
-    const account = await databaseService.accounts.findOne({
-      _id: new ObjectId(user_id),
-      emailVerifyToken: email_verify_token
-    })
+  async verifyEmailByOtp({ email, otp }: { email: string; otp: string }) {
+    const account = await this.findAccountByEmail(email)
 
-    if (!account) {
-      throw new ErrorWithStatus(ACCOUNT_MESSAGES.EMAIL_VERIFY_TOKEN_IS_INVALID, HTTP_STATUS.UNPROCESSABLE_ENTITY)
+    if (
+      !account ||
+      account.emailVerifyToken !== otp ||
+      !account.emailVerifyTokenExpires ||
+      account.emailVerifyTokenExpires < new Date()
+    ) {
+      throw new ErrorWithStatus(ACCOUNT_MESSAGES.OTP_IS_INVALID_OR_EXPIRED, HTTP_STATUS.UNPROCESSABLE_ENTITY)
     }
-  }
 
-  async verifyEmail({ user_id }: { user_id: string }) {
     await databaseService.accounts.updateOne(
-      { _id: new ObjectId(user_id) },
+      { _id: account._id },
       { $set: { isEmailVerified: true, updatedAt: new Date(), emailVerifyToken: '' } }
     )
     return true
@@ -107,17 +98,15 @@ class AccountService {
       throw new ErrorWithStatus(ACCOUNT_MESSAGES.EMAIL_ALREADY_VERIFIED_BEFORE, HTTP_STATUS.UNPROCESSABLE_ENTITY)
     }
 
-    const emailVerifyToken = await this.signAccountToken({
-      accountId: account._id as ObjectId,
-      tokenType: TokenType.EmailVerificationToken
-    })
+    const otp = generateOtp()
+    const emailVerifyTokenExpires = new Date(Date.now() + EMAIL_VERIFY_OTP_EXPIRES_IN_MINUTES * 60 * 1000)
 
     await databaseService.accounts.updateOne(
       { _id: account._id },
-      { $set: { emailVerifyToken, updatedAt: new Date() } }
+      { $set: { emailVerifyToken: otp, emailVerifyTokenExpires, updatedAt: new Date() } }
     )
 
-    console.log(`${BASE_URL}/account/verify-email?email_verify_token=${emailVerifyToken}`)
+    await emailService.sendVerifyEmailOtp(account.email, otp, EMAIL_VERIFY_OTP_EXPIRES_IN_MINUTES)
     return true
   }
 
@@ -167,30 +156,27 @@ class AccountService {
       return false
     }
 
-    const resetPasswordToken = await this.signAccountToken({
-      accountId: account._id as ObjectId,
-      tokenType: TokenType.ForgotPasswordToken
-    })
-    const resetPasswordExpires = new Date(Date.now() + RESET_PASSWORD_TOKEN_EXPIRES_IN_MINUTES * 60 * 1000)
+    const otp = generateOtp()
+    const resetPasswordExpires = new Date(Date.now() + RESET_PASSWORD_OTP_EXPIRES_IN_MINUTES * 60 * 1000)
 
     await databaseService.accounts.updateOne(
       { _id: account._id },
-      { $set: { resetPasswordToken, resetPasswordExpires, updatedAt: new Date() } }
+      { $set: { resetPasswordToken: otp, resetPasswordExpires, updatedAt: new Date() } }
     )
 
-    console.log(`${BASE_URL}/account/reset-password?token=${resetPasswordToken}`)
+    await emailService.sendForgotPasswordOtp(account.email, otp, RESET_PASSWORD_OTP_EXPIRES_IN_MINUTES)
     return true
   }
 
-  async resetPassword({ user_id, token, newPassword }: ResetPasswordReqBody & { user_id: string }) {
+  async resetPassword({ email, otp, newPassword }: Omit<ResetPasswordReqBody, 'confirmPassword'>) {
     const account = await databaseService.accounts.findOne({
-      _id: new ObjectId(user_id),
-      resetPasswordToken: token,
+      email: this.normalizeEmail(email),
+      resetPasswordToken: otp,
       resetPasswordExpires: { $gt: new Date() }
     })
 
     if (!account) {
-      throw new ErrorWithStatus(ACCOUNT_MESSAGES.FORGOT_PASSWORD_TOKEN_IS_INVALID, HTTP_STATUS.UNPROCESSABLE_ENTITY)
+      throw new ErrorWithStatus(ACCOUNT_MESSAGES.OTP_IS_INVALID_OR_EXPIRED, HTTP_STATUS.UNPROCESSABLE_ENTITY)
     }
 
     await databaseService.accounts.updateOne(

@@ -14,6 +14,7 @@ export interface AccountType {
   isActive?: boolean
   isEmailVerified?: boolean
   emailVerifyToken?: string
+  emailVerifyTokenExpires?: Date
   resetPasswordToken?: string
   resetPasswordExpires?: Date
   lastLoginAt?: Date
@@ -40,6 +41,7 @@ export class Account implements AccountType {
   isActive: boolean
   isEmailVerified: boolean
   emailVerifyToken: string
+  emailVerifyTokenExpires: Date
   resetPasswordToken: string
   resetPasswordExpires: Date
   lastLoginAt: Date
@@ -66,6 +68,7 @@ export class Account implements AccountType {
     this.isActive = account.isActive ?? true
     this.isEmailVerified = account.isEmailVerified ?? false
     this.emailVerifyToken = account.emailVerifyToken || ''
+    this.emailVerifyTokenExpires = account.emailVerifyTokenExpires || now
     this.resetPasswordToken = account.resetPasswordToken || ''
     this.resetPasswordExpires = account.resetPasswordExpires || now
     this.lastLoginAt = account.lastLoginAt || now

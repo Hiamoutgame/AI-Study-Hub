@@ -103,6 +103,19 @@ const fullNameSchema: ParamSchema = {
     errorMessage: ACCOUNT_MESSAGES.NAME_MUST_BE_A_STRING
   }
 }
+const otpSchema: ParamSchema = {
+  trim: true,
+  notEmpty: {
+    errorMessage: ACCOUNT_MESSAGES.OTP_IS_REQUIRED
+  },
+  isLength: {
+    options: { min: 6, max: 6 },
+    errorMessage: ACCOUNT_MESSAGES.OTP_MUST_BE_6_DIGITS
+  },
+  isNumeric: {
+    errorMessage: ACCOUNT_MESSAGES.OTP_MUST_BE_6_DIGITS
+  }
+}
 
 export const registerValidator = validate(
   checkSchema({ username: usernameSchema, email: emailSchema, password: passwordSchema, fullName: fullNameSchema }, [
@@ -110,44 +123,7 @@ export const registerValidator = validate(
   ])
 )
 
-export const emailVerifyTokenValidator = validate(
-  checkSchema(
-    {
-      email_verify_token: {
-        trim: true,
-        notEmpty: {
-          errorMessage: ACCOUNT_MESSAGES.EMAIL_VERIFY_TOKEN_IS_REQUIRED
-        },
-        custom: {
-          options: async (value, { req }) => {
-            try {
-              const decodedEmailVerifyToken = await verifyToken({
-                token: value,
-                privateKey: process.env.JWT_PRIVATE_KEY as string
-              })
-
-              if (decodedEmailVerifyToken.token_type !== TokenType.EmailVerificationToken) {
-                throw new Error(ACCOUNT_MESSAGES.EMAIL_VERIFY_TOKEN_IS_INVALID)
-              }
-
-              req.decoded_email_verify_Token = decodedEmailVerifyToken as TokenPayLoad
-              return true
-            } catch (err) {
-              if (err instanceof ErrorWithStatus) {
-                throw err
-              }
-              if (err instanceof Error && err.message === ACCOUNT_MESSAGES.EMAIL_VERIFY_TOKEN_IS_INVALID) {
-                throw err
-              }
-              throw new ErrorWithStatus(capitalize((err as JsonWebTokenError).message), HTTP_STATUS.UNAUTHORIZED)
-            }
-          }
-        }
-      }
-    },
-    ['query']
-  )
-)
+export const emailVerifyOtpValidator = validate(checkSchema({ email: emailSchema, otp: otpSchema }, ['body']))
 
 export const resendVerificationValidator = validate(checkSchema({ email: emailSchema }, ['body']))
 
@@ -201,34 +177,8 @@ export const forgotPasswordValidator = validate(checkSchema({ email: emailSchema
 export const resetPasswordValidator = validate(
   checkSchema(
     {
-      token: {
-        trim: true,
-        notEmpty: {
-          errorMessage: ACCOUNT_MESSAGES.FORGOT_PASSWORD_TOKEN_IS_REQUIRED
-        },
-        custom: {
-          options: async (value, { req }) => {
-            try {
-              const decodedForgotPasswordToken = await verifyToken({
-                token: value,
-                privateKey: process.env.JWT_PRIVATE_KEY as string
-              })
-
-              if (decodedForgotPasswordToken.token_type !== TokenType.ForgotPasswordToken) {
-                throw new Error(ACCOUNT_MESSAGES.FORGOT_PASSWORD_TOKEN_IS_INVALID)
-              }
-
-              req.decoded_forgot_password_token = decodedForgotPasswordToken as TokenPayLoad
-              return true
-            } catch (err) {
-              if (err instanceof ErrorWithStatus) {
-                throw err
-              }
-              throw new ErrorWithStatus(capitalize((err as JsonWebTokenError).message), HTTP_STATUS.UNAUTHORIZED)
-            }
-          }
-        }
-      },
+      email: emailSchema,
+      otp: otpSchema,
       newPassword: newPasswordSchema,
       confirmPassword: confirmPasswordSchema
     },
