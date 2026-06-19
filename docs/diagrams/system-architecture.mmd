@@ -1,0 +1,176 @@
+flowchart TB
+  %% AI Study Hub - current backend system architecture
+  classDef client fill:#e0f2fe,stroke:#0369a1,color:#0c4a6e
+  classDef entry fill:#fef3c7,stroke:#b45309,color:#78350f
+  classDef layer fill:#f8fafc,stroke:#475569,color:#0f172a
+  classDef service fill:#dcfce7,stroke:#15803d,color:#14532d
+  classDef data fill:#ede9fe,stroke:#7c3aed,color:#3b0764
+  classDef external fill:#fee2e2,stroke:#b91c1c,color:#7f1d1d
+  classDef note fill:#f1f5f9,stroke:#64748b,color:#334155
+
+  Client[Client app / Swagger user]:::client
+  Browser[Browser static file request]:::client
+
+  subgraph Runtime["Node.js runtime"]
+    Express["src/index.ts\nExpress 5 app"]:::entry
+    CORS["cors(CORS_ORIGINS)"]:::layer
+    JSON["express.json()"]:::layer
+    StaticUploads["/uploads\nexpress.static('uploads')"]:::layer
+    SwaggerUI["/api-docs\nswagger-ui-express + swagger-jsdoc"]:::layer
+    ErrorHandler["defautHandler\nErrorWithStatus / EntityErr / 500"]:::entry
+  end
+
+  subgraph Routes["src/routes"]
+    AccountRoute["/account\naccount.route.ts"]:::layer
+    UserRoute["/users\nuser.route.ts"]:::layer
+    DocumentRoute["/documents\ndocument.route.ts"]:::layer
+    AdminRoute["/admin\nadmin.route.ts"]:::layer
+    CategoryRoute["/categories\ncategory.route.ts"]:::layer
+    SharedRoute["/shared\nshared.route.ts"]:::layer
+  end
+
+  subgraph Middlewares["src/middlewares"]
+    Validators["validate(checkSchema(...))\nrequest/body/query/params"]:::layer
+    AccessToken["accessTokenValidator\nJWT -> req.decoded_authorization"]:::layer
+    AdminRole["adminRoleValidator\nrole = admin"]:::layer
+    Upload["upload.middlewares.ts\nMulter avatar/document upload"]:::layer
+  end
+
+  subgraph Controllers["src/controllers"]
+    AccountController["account.controller.ts"]:::layer
+    UserController["user.controller.ts"]:::layer
+    DocumentController["document.controller.ts"]:::layer
+    SharingController["sharing.controller.ts"]:::layer
+    AdminController["admin.controller.ts"]:::layer
+    CategoryController["category.controller.ts"]:::layer
+    NotificationController["notification.controller.ts"]:::layer
+  end
+
+  subgraph Services["src/services"]
+    AccountService["account.service.ts"]:::service
+    EmailService["email.service.ts\nSMTP or dev console OTP"]:::service
+    UserService["user.service.ts"]:::service
+    DocumentService["document.service.ts"]:::service
+    SharingService["sharing.service.ts"]:::service
+    CategoryService["category.service.ts"]:::service
+    NotificationService["notification.service.ts"]:::service
+    AdminUserService["adminUser.service.ts"]:::service
+    AdminDocumentService["adminDocument.service.ts"]:::service
+    AdminDashboardService["adminDashboard.service.ts"]:::service
+    DatabaseService["database.service.ts\nMongoClient + typed collections + indexes"]:::service
+  end
+
+  subgraph UtilsModels["src/utils + src/models + src/constants"]
+    Utils["wrapAsync, validate, jwt, crypto, otp"]:::note
+    Constants["HTTP_STATUS, messages, enums, base env"]:::note
+    RequestTypes["models/request/*.request.ts"]:::note
+    Schemas["models/*.schema.ts\nMongoDB document classes"]:::note
+  end
+
+  subgraph Storage["Persistence and generated files"]
+    Mongo[(MongoDB\nai_study_hub)]:::data
+    Uploads[(uploads/\navatars + documents\nDocker volume: uploads-data)]:::data
+  end
+
+  subgraph Collections["MongoDB collections exposed by databaseService"]
+    Accounts[(accounts)]:::data
+    StorageQuotas[(storage_quotas)]:::data
+    ActivityLogs[(activity_logs)]:::data
+    Solutions[(solutions)]:::data
+    SolutionCategories[(solution_categories)]:::data
+    AiChatSessions[(ai_chat_sessions)]:::data
+    AiMessages[(ai_messages)]:::data
+    DocumentEmbeddings[(document_embeddings)]:::data
+    AiConfigurations[(ai_configurations)]:::data
+    PermissionLinks[(permission_links)]:::data
+    Favorites[(favorites)]:::data
+    Notifications[(notifications)]:::data
+  end
+
+  subgraph External["External / environment boundaries"]
+    SMTP["SMTP provider\noptional Gmail/app password"]:::external
+    Env[".env\nDATABASE_URL, DB_NAME, JWT_PRIVATE_KEY,\nPASSWORD_SECRET, CORS_ORIGINS, DNS_SERVERS"]:::external
+    Docker["Docker Compose\nserver on 5284"]:::external
+  end
+
+  Client --> Express
+  Browser --> StaticUploads
+  Express --> CORS --> JSON
+  JSON --> SwaggerUI
+  JSON --> AccountRoute
+  JSON --> UserRoute
+  JSON --> DocumentRoute
+  JSON --> AdminRoute
+  JSON --> CategoryRoute
+  JSON --> SharedRoute
+
+  AccountRoute --> Validators --> AccountController
+  AccountRoute --> AccessToken --> AccountController
+  UserRoute --> AccessToken --> UserController
+  UserRoute --> Upload --> UserController
+  UserRoute --> Validators --> NotificationController
+  UserRoute --> Validators --> SharingController
+  DocumentRoute --> AccessToken --> Upload --> DocumentController
+  DocumentRoute --> Validators --> SharingController
+  AdminRoute --> AccessToken --> AdminRole --> AdminController
+  CategoryRoute --> AccessToken --> Validators --> CategoryController
+  SharedRoute --> Validators --> SharingController
+
+  AccountController --> AccountService
+  AccountService --> EmailService
+  UserController --> UserService
+  DocumentController --> DocumentService
+  SharingController --> SharingService
+  CategoryController --> CategoryService
+  NotificationController --> NotificationService
+  AdminController --> AdminUserService
+  AdminController --> AdminDocumentService
+  AdminController --> AdminDashboardService
+  AdminController --> CategoryService
+  AdminController --> NotificationService
+
+  AccountService --> DatabaseService
+  UserService --> DatabaseService
+  DocumentService --> DatabaseService
+  SharingService --> DatabaseService
+  CategoryService --> DatabaseService
+  NotificationService --> DatabaseService
+  AdminUserService --> DatabaseService
+  AdminDocumentService --> DatabaseService
+  AdminDashboardService --> DatabaseService
+
+  Upload --> Uploads
+  StaticUploads --> Uploads
+  EmailService --> SMTP
+  Env --> Express
+  Env --> DatabaseService
+  Docker --> Express
+  SwaggerUI --> Routes
+
+  DatabaseService --> Mongo
+  Mongo --> Accounts
+  Mongo --> StorageQuotas
+  Mongo --> ActivityLogs
+  Mongo --> Solutions
+  Mongo --> SolutionCategories
+  Mongo --> AiChatSessions
+  Mongo --> AiMessages
+  Mongo --> DocumentEmbeddings
+  Mongo --> AiConfigurations
+  Mongo --> PermissionLinks
+  Mongo --> Favorites
+  Mongo --> Notifications
+
+  Controllers --> Utils
+  Middlewares --> Utils
+  Services --> Constants
+  Services --> RequestTypes
+  Services --> Schemas
+
+  AccountController -. thrown error via wrapAsync .-> ErrorHandler
+  UserController -. thrown error via wrapAsync .-> ErrorHandler
+  DocumentController -. thrown error via wrapAsync .-> ErrorHandler
+  SharingController -. thrown error via wrapAsync .-> ErrorHandler
+  AdminController -. thrown error via wrapAsync .-> ErrorHandler
+  Validators -. EntityErr / ErrorWithStatus .-> ErrorHandler
+  ErrorHandler --> Client

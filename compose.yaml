@@ -1,0 +1,18 @@
+services:
+  server:
+    image: ai-study-hub-api:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+    ports:
+      - '5284:5284'
+    volumes:
+      - uploads-data:/usr/src/app/uploads
+    restart: unless-stopped
+
+volumes:
+  uploads-data:

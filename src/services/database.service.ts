@@ -1,4 +1,5 @@
-import { Collection, Db, MongoClient, ServerApiVersion } from 'mongodb'
+import dns from 'node:dns'
+import { Collection, Db, MongoClient } from 'mongodb'
 import { DATABASE_URL, DB_NAME, DNS_SERVERS } from '~/constants/base'
 import { Account } from '~/models/Account.schema'
 import { ActivityLog } from '~/models/ActivityLog.schema'
@@ -12,18 +13,20 @@ import { PermissionLink } from '~/models/PermissionLink.schema'
 import { Solution } from '~/models/Solution.schema'
 import { SolutionCategory } from '~/models/SolutionCategory.schema'
 import { StorageQuota } from '~/models/StorageQuota.schema'
-import dns from 'node:dns'
 
-dns.setServers([DNS_SERVERS] as string[]) // cái này quan trọng cần phải set trước
+if (DNS_SERVERS.length) {
+  dns.setServers(DNS_SERVERS)
+}
 
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
 class DatabaseService {
   private client: MongoClient
   private dbName: Db
+
   constructor() {
     this.client = new MongoClient(DATABASE_URL)
     this.dbName = this.client.db(DB_NAME)
   }
+
   async connect() {
     try {
       await this.dbName.command({ ping: 1 })

@@ -1,0 +1,17 @@
+.git
+.github
+.vscode
+.claude
+.codegraph
+.env
+.env.*
+!.env.docker.example
+node_modules
+dist
+uploads
+npm-debug.log*
+*.log
+*.tmp
+Dockerfile
+compose.yaml
+README.Docker.md
