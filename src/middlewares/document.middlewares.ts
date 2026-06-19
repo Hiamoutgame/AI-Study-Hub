@@ -1,7 +1,7 @@
 import { checkSchema, ParamSchema } from 'express-validator'
 import { ObjectId } from 'mongodb'
 import { AiStatus } from '~/constants/enum'
-import { DOCUMENT_MESSAGES } from '~/constants/message'
+import { DOCUMENT_MESSAGES, FOLDER_MESSAGES } from '~/constants/message'
 import { validate } from '~/utils/validation'
 
 const optionalObjectIdSchema = (errorMessage: string): ParamSchema => ({
@@ -103,6 +103,7 @@ export const uploadDocumentValidator = validate(
       title: titleSchema,
       description: optionalDescriptionSchema,
       categoryId: optionalObjectIdSchema(DOCUMENT_MESSAGES.CATEGORY_ID_IS_INVALID),
+      folderId: optionalObjectIdSchema(FOLDER_MESSAGES.FOLDER_ID_IS_INVALID),
       tags: optionalTagsSchema,
       language: optionalLanguageSchema,
       isPublic: optionalBooleanSchema(DOCUMENT_MESSAGES.IS_PUBLIC_MUST_BE_BOOLEAN),
@@ -121,6 +122,7 @@ export const getDocumentsValidator = validate(
         trim: true
       },
       categoryId: optionalObjectIdSchema(DOCUMENT_MESSAGES.CATEGORY_ID_IS_INVALID),
+      folderId: optionalObjectIdSchema(FOLDER_MESSAGES.FOLDER_ID_IS_INVALID),
       tags: {
         optional: true,
         isString: {
@@ -196,6 +198,7 @@ export const updateDocumentValidator = validate(
       title: optionalTitleSchema,
       description: optionalDescriptionSchema,
       categoryId: optionalObjectIdSchema(DOCUMENT_MESSAGES.CATEGORY_ID_IS_INVALID),
+      folderId: optionalObjectIdSchema(FOLDER_MESSAGES.FOLDER_ID_IS_INVALID),
       tags: optionalTagsSchema,
       isPublic: optionalBooleanSchema(DOCUMENT_MESSAGES.IS_PUBLIC_MUST_BE_BOOLEAN),
       language: optionalLanguageSchema

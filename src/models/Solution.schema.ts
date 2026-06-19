@@ -5,6 +5,7 @@ interface SolutionType {
   _id?: ObjectId
   uploaderId: ObjectId
   categoryId?: ObjectId
+  folderId?: ObjectId | null
   title: string
   description?: string
   tags?: string[]
@@ -49,6 +50,7 @@ export class Solution implements SolutionType {
   _id?: ObjectId
   uploaderId: ObjectId
   categoryId?: ObjectId
+  folderId?: ObjectId | null
   title: string
   description: string
   tags: string[]
@@ -93,6 +95,7 @@ export class Solution implements SolutionType {
     this._id = solution._id
     this.uploaderId = solution.uploaderId
     this.categoryId = solution.categoryId
+    this.folderId = solution.folderId ?? null
     this.title = solution.title
     this.description = solution.description || ''
     this.tags = solution.tags || []

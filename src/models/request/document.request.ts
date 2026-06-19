@@ -4,6 +4,7 @@ export interface UploadDocumentReqBody {
   title: string
   description?: string
   categoryId?: string
+  folderId?: string | null
   tags?: string[] | string
   language?: string
   isPublic?: boolean | string
@@ -13,6 +14,7 @@ export interface UploadDocumentReqBody {
 export interface GetDocumentsQuery extends ParsedQs {
   q?: string
   categoryId?: string
+  folderId?: string
   tags?: string
   isPublic?: string
   aiStatus?: string
@@ -26,6 +28,7 @@ export interface UpdateDocumentReqBody {
   title?: string
   description?: string
   categoryId?: string
+  folderId?: string | null
   tags?: string[] | string
   isPublic?: boolean | string
   language?: string

@@ -453,6 +453,10 @@ const swaggerDefinition = {
           uploaderId: {
             $ref: '#/components/schemas/ObjectId'
           },
+          folderId: {
+            allOf: [{ $ref: '#/components/schemas/ObjectId' }],
+            nullable: true
+          },
           title: {
             type: 'string',
             example: 'Linear Algebra Notes'
@@ -575,6 +579,10 @@ const swaggerDefinition = {
           },
           categoryId: {
             $ref: '#/components/schemas/ObjectId'
+          },
+          folderId: {
+            allOf: [{ $ref: '#/components/schemas/ObjectId' }],
+            nullable: true
           },
           title: {
             type: 'string',
@@ -846,6 +854,11 @@ const swaggerDefinition = {
           categoryId: {
             $ref: '#/components/schemas/ObjectId'
           },
+          folderId: {
+            allOf: [{ $ref: '#/components/schemas/ObjectId' }],
+            nullable: true,
+            description: 'Target personal folder; null moves the document to root'
+          },
           tags: {
             oneOf: [
               {
@@ -886,6 +899,10 @@ const swaggerDefinition = {
           },
           categoryId: {
             $ref: '#/components/schemas/ObjectId'
+          },
+          folderId: {
+            allOf: [{ $ref: '#/components/schemas/ObjectId' }],
+            nullable: true
           },
           tags: {
             type: 'array',

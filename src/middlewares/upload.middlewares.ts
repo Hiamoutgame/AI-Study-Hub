@@ -1,4 +1,4 @@
-import { Request, RequestHandler } from 'express'
+import { NextFunction, Request, RequestHandler, Response } from 'express'
 import fs from 'node:fs'
 import path from 'node:path'
 import multer, { FileFilterCallback } from 'multer'
@@ -104,3 +104,20 @@ export const uploadDocumentFile = handleUpload({
   upload: documentUpload.single('file'),
   fileTooLargeMessage: DOCUMENT_MESSAGES.FILE_TOO_LARGE
 })
+
+export const cleanupUploadedDocumentOnError = async (
+  error: unknown,
+  req: Request,
+  _res: Response,
+  next: NextFunction
+) => {
+  if (req.file?.path) {
+    try {
+      await fs.promises.unlink(req.file.path)
+    } catch {
+      // Cleanup must not hide the validation or upload error.
+    }
+  }
+
+  next(error)
+}

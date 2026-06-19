@@ -10,6 +10,7 @@ import documentRouter from './routes/document.route'
 import adminRouter from './routes/admin.route'
 import categoryRouter from './routes/category.route'
 import sharedRouter from './routes/shared.route'
+import folderRouter from './routes/folder.route'
 import { defautHandler } from './middlewares/error.middlewares'
 databaseService.connect()
 const app = express()
@@ -37,6 +38,7 @@ app.use('/documents', documentRouter)
 app.use('/admin', adminRouter)
 app.use('/categories', categoryRouter)
 app.use('/shared', sharedRouter)
+app.use('/folders', folderRouter)
 
 app.get('/', (req, res) => {
   res.send('Hello World!')

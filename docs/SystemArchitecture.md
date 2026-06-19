@@ -21,17 +21,17 @@ Standalone Mermaid file: [docs/diagrams/system-architecture.mmd](./diagrams/syst
 
 ## Stack Runtime
 
-| Layer | Công nghệ / file chính | Vai trò |
-| --- | --- | --- |
-| Runtime | Node.js + Express 5, `src/index.ts` | Khởi tạo app, middleware, routes, Swagger, static files, error handler |
-| Language | TypeScript, `tsc && tsc-alias` | Compile source từ `src/` sang `dist/` để chạy production |
-| Validation | `express-validator`, `src/utils/validation.ts` | Validate body/query/params/headers, gom lỗi field thành `EntityErr` |
-| Auth | JWT, `src/utils/jwt.ts`, `accessTokenValidator` | Decode bearer token và gán payload vào request |
-| Upload | Multer, `src/middlewares/upload.middlewares.ts` | Lưu avatar/document vào `uploads/avatars` và `uploads/documents` |
-| Docs | `swagger-jsdoc`, `swagger-ui-express`, `src/swagger.ts` | Sinh OpenAPI từ comment `@swagger` trong route files |
-| Database | MongoDB native driver, `src/services/database.service.ts` | Một `MongoClient`, typed collection getters, index cho favorites/share token |
-| Email | Nodemailer, `src/services/email.service.ts` | Gửi OTP qua SMTP hoặc log ra console khi dev thiếu SMTP config |
-| Deploy | `Dockerfile`, `compose.yaml` | Build production image, expose port `5284`, mount `uploads-data` volume |
+| Layer      | Công nghệ / file chính                                    | Vai trò                                                                                  |
+| ---------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Runtime    | Node.js + Express 5, `src/index.ts`                       | Khởi tạo app, middleware, routes, Swagger, static files, error handler                   |
+| Language   | TypeScript, `tsc && tsc-alias`                            | Compile source từ `src/` sang `dist/` để chạy production                                 |
+| Validation | `express-validator`, `src/utils/validation.ts`            | Validate body/query/params/headers, gom lỗi field thành `EntityErr`                      |
+| Auth       | JWT, `src/utils/jwt.ts`, `accessTokenValidator`           | Decode bearer token và gán payload vào request                                           |
+| Upload     | Multer, `src/middlewares/upload.middlewares.ts`           | Lưu avatar/document vào `uploads/avatars` và `uploads/documents`                         |
+| Docs       | `swagger-jsdoc`, `swagger-ui-express`, `src/swagger.ts`   | Sinh OpenAPI từ comment `@swagger` trong route files                                     |
+| Database   | MongoDB native driver, `src/services/database.service.ts` | Một `MongoClient`, typed collection getters, index cho favorites/share token/folder tree |
+| Email      | Nodemailer, `src/services/email.service.ts`               | Gửi OTP qua SMTP hoặc log ra console khi dev thiếu SMTP config                           |
+| Deploy     | `Dockerfile`, `compose.yaml`                              | Build production image, expose port `5284`, mount `uploads-data` volume                  |
 
 ## Main System Diagram
 
@@ -57,12 +57,14 @@ flowchart TB
   Routes --> Categories["/categories"]:::layer
   Routes --> Shared["/shared"]:::layer
 
+  Routes --> Folders[folders]:::layer
   Account --> AccountMW[account validators + accessTokenValidator]:::layer --> AccountCtl[account.controller]:::layer --> AccountSvc[account.service]:::service
   Users --> UserMW[user/notification/bookmark validators + uploadAvatar]:::layer --> UserCtl[user + notification + sharing controllers]:::layer --> UserSvc[user/sharing/notification services]:::service
   Documents --> DocMW[accessToken + uploadDocumentFile + document/share validators]:::layer --> DocCtl[document + sharing controllers]:::layer --> DocSvc[document/sharing services]:::service
   Admin --> AdminMW[accessToken + adminRoleValidator + admin validators]:::layer --> AdminCtl[admin.controller]:::layer --> AdminSvc[adminUser/adminDocument/adminDashboard services]:::service
   Categories --> CategoryMW[category validators]:::layer --> CategoryCtl[category.controller]:::layer --> CategorySvc[category.service]:::service
   Shared --> ShareMW[shareTokenValidator]:::layer --> ShareCtl[sharing.controller]:::layer --> ShareSvc[sharing.service]:::service
+  Folders --> FolderMW[accessToken + folder validators]:::layer --> FolderCtl[folder.controller]:::layer --> FolderSvc[folder.service]:::service
 
   AccountSvc --> EmailSvc[email.service]:::service --> SMTP[SMTP provider or dev console]:::external
   AccountSvc --> DBService[database.service.ts]:::service
@@ -71,6 +73,7 @@ flowchart TB
   AdminSvc --> DBService
   CategorySvc --> DBService
   ShareSvc --> DBService
+  FolderSvc --> DBService
   Static --> Uploads[(uploads folder / Docker volume)]:::data
   DocMW --> Uploads
   UserMW --> Uploads
@@ -123,16 +126,17 @@ sequenceDiagram
 
 ## Mounted API Surface
 
-| Mount | Route file | Main controllers | Domain services | Main storage |
-| --- | --- | --- | --- | --- |
-| `/account` | `account.route.ts` | `account.controller.ts` | `account.service.ts`, `email.service.ts` | `accounts` |
-| `/users` | `user.route.ts` | `user.controller.ts`, `notification.controller.ts`, `sharing.controller.ts` | `user.service.ts`, `notification.service.ts`, `sharing.service.ts` | `accounts`, `storage_quotas`, `favorites`, `notifications` |
-| `/documents` | `document.route.ts` | `document.controller.ts`, `sharing.controller.ts` | `document.service.ts`, `sharing.service.ts` | `solutions`, `solution_categories`, `favorites`, `permission_links`, `storage_quotas`, `activity_logs`, `uploads/documents` |
-| `/admin` | `admin.route.ts` | `admin.controller.ts` | `adminUser.service.ts`, `adminDocument.service.ts`, `adminDashboard.service.ts`, `category.service.ts`, `notification.service.ts` | most collections |
-| `/categories` | `category.route.ts` | `category.controller.ts` | `category.service.ts` | `solution_categories`, `solutions` |
-| `/shared` | `shared.route.ts` | `sharing.controller.ts` | `sharing.service.ts` | `permission_links`, `solutions`, `accounts` |
-| `/uploads` | `src/index.ts` | none | none | local `uploads/` folder |
-| `/api-docs` | `src/index.ts`, `src/swagger.ts` | none | none | Swagger schema generated from route comments |
+| Mount         | Route file                       | Main controllers                                                            | Domain services                                                                                                                   | Main storage                                                                                                                |
+| ------------- | -------------------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `/account`    | `account.route.ts`               | `account.controller.ts`                                                     | `account.service.ts`, `email.service.ts`                                                                                          | `accounts`                                                                                                                  |
+| `/users`      | `user.route.ts`                  | `user.controller.ts`, `notification.controller.ts`, `sharing.controller.ts` | `user.service.ts`, `notification.service.ts`, `sharing.service.ts`                                                                | `accounts`, `storage_quotas`, `favorites`, `notifications`                                                                  |
+| `/documents`  | `document.route.ts`              | `document.controller.ts`, `sharing.controller.ts`                           | `document.service.ts`, `sharing.service.ts`                                                                                       | `solutions`, `solution_categories`, `favorites`, `permission_links`, `storage_quotas`, `activity_logs`, `uploads/documents` |
+| `/admin`      | `admin.route.ts`                 | `admin.controller.ts`                                                       | `adminUser.service.ts`, `adminDocument.service.ts`, `adminDashboard.service.ts`, `category.service.ts`, `notification.service.ts` | most collections                                                                                                            |
+| `/categories` | `category.route.ts`              | `category.controller.ts`                                                    | `category.service.ts`                                                                                                             | `solution_categories`, `solutions`                                                                                          |
+| `/shared`     | `shared.route.ts`                | `sharing.controller.ts`                                                     | `sharing.service.ts`                                                                                                              | `permission_links`, `solutions`, `accounts`                                                                                 |
+| `/folders`    | `folder.route.ts`                | `folder.controller.ts`                                                      | `folder.service.ts`                                                                                                               | `folders`, `solutions`, `storage_quotas`, `favorites`, `permission_links`                                                   |
+| `/uploads`    | `src/index.ts`                   | none                                                                        | none                                                                                                                              | local `uploads/` folder                                                                                                     |
+| `/api-docs`   | `src/index.ts`, `src/swagger.ts` | none                                                                        | none                                                                                                                              | Swagger schema generated from route comments                                                                                |
 
 ## Current Route Groups
 
@@ -190,6 +194,13 @@ mindmap
       GET /categories
     Shared
       GET /shared/:token
+    Folders
+      POST /folders
+      GET /folders/contents
+      GET /folders/:id/breadcrumb
+      PUT /folders/:id
+      PUT /folders/:id/move
+      DELETE /folders/:id
 ```
 
 ## Database Architecture
@@ -209,6 +220,9 @@ erDiagram
   SOLUTIONS ||--o{ FAVORITES : saved_as
   SOLUTIONS ||--o{ PERMISSION_LINKS : shared_by
   SOLUTIONS }o--|| SOLUTION_CATEGORIES : categorized_as
+  ACCOUNTS ||--o{ FOLDERS : owns
+  FOLDERS ||--o{ FOLDERS : contains
+  FOLDERS ||--o{ SOLUTIONS : organizes
   SOLUTIONS ||--o{ DOCUMENT_EMBEDDINGS : can_have
   ACCOUNTS ||--o{ AI_CHAT_SESSIONS : can_start
   AI_CHAT_SESSIONS ||--o{ AI_MESSAGES : contains
@@ -225,11 +239,19 @@ erDiagram
     ObjectId _id
     ObjectId uploaderId
     ObjectId categoryId
+    ObjectId folderId
     string title
     string storageKey
     string aiStatus
     string ocrStatus
     boolean isPublic
+  }
+  FOLDERS {
+    ObjectId _id
+    ObjectId ownerId
+    ObjectId parentId
+    string name
+    date deletedAt
   }
   PERMISSION_LINKS {
     ObjectId _id
@@ -247,20 +269,21 @@ erDiagram
 
 Collections exposed today:
 
-| Getter | MongoDB collection | Main usage |
-| --- | --- | --- |
-| `accounts` | `accounts` | auth, profile, admin users, uploaders |
-| `storageQuotas` | `storage_quotas` | storage plan and usage tracking |
-| `activityLogs` | `activity_logs` | document/admin/category/notification audit entries |
-| `solutions` | `solutions` | documents, OCR/AI status, soft delete, download count |
-| `solutionCategories` | `solution_categories` | categories and document grouping |
-| `aiChatSessions` | `ai_chat_sessions` | AI chat data model and admin stats basis |
-| `aiMessages` | `ai_messages` | AI messages data model and admin stats basis |
-| `documentEmbeddings` | `document_embeddings` | future/internal RAG embeddings |
-| `aiConfigurations` | `ai_configurations` | AI configuration model |
-| `permissionLinks` | `permission_links` | public share links |
-| `favorites` | `favorites` | bookmarks |
-| `notifications` | `notifications` | admin fan-out and user notification inbox |
+| Getter               | MongoDB collection    | Main usage                                                    |
+| -------------------- | --------------------- | ------------------------------------------------------------- |
+| `accounts`           | `accounts`            | auth, profile, admin users, uploaders                         |
+| `storageQuotas`      | `storage_quotas`      | storage plan and usage tracking                               |
+| `activityLogs`       | `activity_logs`       | document/admin/category/notification audit entries            |
+| `solutions`          | `solutions`           | documents, OCR/AI status, soft delete, download count         |
+| `folders`            | `folders`             | personal parent-reference folder tree and cascade soft delete |
+| `solutionCategories` | `solution_categories` | categories and document grouping                              |
+| `aiChatSessions`     | `ai_chat_sessions`    | AI chat data model and admin stats basis                      |
+| `aiMessages`         | `ai_messages`         | AI messages data model and admin stats basis                  |
+| `documentEmbeddings` | `document_embeddings` | future/internal RAG embeddings                                |
+| `aiConfigurations`   | `ai_configurations`   | AI configuration model                                        |
+| `permissionLinks`    | `permission_links`    | public share links                                            |
+| `favorites`          | `favorites`           | bookmarks                                                     |
+| `notifications`      | `notifications`       | admin fan-out and user notification inbox                     |
 
 ## Upload And Static File Flow
 
@@ -313,6 +336,8 @@ npm run dev -> tsx watch src/index.ts
 - Routes stay thin: choose method/path, attach validators/auth/upload middleware, then wrap controller with `wrapAsync`.
 - Controllers should only translate request data into service calls and HTTP responses.
 - Services own business rules, MongoDB queries, email sending orchestration, storage quota updates, bookmark/share behavior, notifications, and admin dashboards.
+- Folder organization is separate from content categories: `folders.parentId` builds a personal tree while `solutions.folderId` locates a document in that tree.
+- Folder delete is owner-only, requires `confirm: true`, prevents move cycles, and cascade soft-deletes subtree documents using the same 30-day document retention metadata.
 - The repo uses MongoDB native driver, not Mongoose. Schema files are TypeScript classes/interfaces for document shape, not Mongoose models.
 - `ai_chat_sessions`, `ai_messages`, `document_embeddings`, and `ai_configurations` exist in the model/database layer, but no separate `/chat` router is mounted in the current `src/index.ts`.
 - OCR currently appears as document state fields in `solutions`; there is no separate OCR worker/process mounted in this Express app.

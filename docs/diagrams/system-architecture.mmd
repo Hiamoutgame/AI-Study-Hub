@@ -103,6 +103,7 @@ flowchart TB
   JSON --> AdminRoute
   JSON --> CategoryRoute
   JSON --> SharedRoute
+  JSON --> FolderRoute[folders - folder.route.ts]:::layer
 
   AccountRoute --> Validators --> AccountController
   AccountRoute --> AccessToken --> AccountController
@@ -115,11 +116,13 @@ flowchart TB
   AdminRoute --> AccessToken --> AdminRole --> AdminController
   CategoryRoute --> AccessToken --> Validators --> CategoryController
   SharedRoute --> Validators --> SharingController
+  FolderRoute --> AccessToken --> Validators --> FolderController[folder.controller.ts]:::layer
 
   AccountController --> AccountService
   AccountService --> EmailService
   UserController --> UserService
   DocumentController --> DocumentService
+  FolderController --> FolderService[folder.service.ts]:::service
   SharingController --> SharingService
   CategoryController --> CategoryService
   NotificationController --> NotificationService
@@ -132,6 +135,7 @@ flowchart TB
   AccountService --> DatabaseService
   UserService --> DatabaseService
   DocumentService --> DatabaseService
+  FolderService --> DatabaseService
   SharingService --> DatabaseService
   CategoryService --> DatabaseService
   NotificationService --> DatabaseService
@@ -152,6 +156,7 @@ flowchart TB
   Mongo --> StorageQuotas
   Mongo --> ActivityLogs
   Mongo --> Solutions
+  Mongo --> Folders[(folders)]
   Mongo --> SolutionCategories
   Mongo --> AiChatSessions
   Mongo --> AiMessages
@@ -170,6 +175,7 @@ flowchart TB
   AccountController -. thrown error via wrapAsync .-> ErrorHandler
   UserController -. thrown error via wrapAsync .-> ErrorHandler
   DocumentController -. thrown error via wrapAsync .-> ErrorHandler
+  FolderController -. thrown error via wrapAsync .-> ErrorHandler
   SharingController -. thrown error via wrapAsync .-> ErrorHandler
   AdminController -. thrown error via wrapAsync .-> ErrorHandler
   Validators -. EntityErr / ErrorWithStatus .-> ErrorHandler

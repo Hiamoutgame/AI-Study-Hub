@@ -23,7 +23,7 @@ import {
   uploadDocumentValidator
 } from '~/middlewares/document.middlewares'
 import { bookmarkNoteValidator, createShareLinkValidator, shareIdValidator } from '~/middlewares/sharing.middlewares'
-import { uploadDocumentFile } from '~/middlewares/upload.middlewares'
+import { cleanupUploadedDocumentOnError, uploadDocumentFile } from '~/middlewares/upload.middlewares'
 import { wrapAsync } from '~/utils/handler'
 
 const documentRouter = express.Router()
@@ -56,6 +56,10 @@ const documentRouter = express.Router()
  *                 type: string
  *               categoryId:
  *                 type: string
+ *               folderId:
+ *                 type: string
+ *                 nullable: true
+ *                 description: Personal folder id; omit or send null for root
  *               tags:
  *                 type: string
  *               language:
@@ -101,6 +105,7 @@ documentRouter.post(
   accessTokenValidator,
   uploadDocumentFile,
   uploadDocumentValidator,
+  cleanupUploadedDocumentOnError,
   wrapAsync(uploadDocumentController)
 )
 
@@ -122,6 +127,11 @@ documentRouter.post(
  *         name: categoryId
  *         schema:
  *           type: string
+ *       - in: query
+ *         name: folderId
+ *         schema:
+ *           type: string
+ *         description: Send an empty value to list personal root documents
  *       - in: query
  *         name: tags
  *         schema:

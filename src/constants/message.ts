@@ -146,6 +146,32 @@ export const DOCUMENT_MESSAGES = {
   DELETE_DOCUMENT_SUCCESS: 'Delete document success'
 } as const
 
+export const FOLDER_MESSAGES = {
+  FOLDER_NAME_IS_REQUIRED: 'Folder name is required',
+  FOLDER_NAME_MUST_BE_A_STRING: 'Folder name must be a string',
+  FOLDER_NAME_LENGTH_MUST_BE_FROM_1_TO_120: 'Folder name length must be from 1 to 120',
+  FOLDER_SEARCH_LENGTH_MUST_BE_LESS_THAN_200: 'Folder search length must be less than 200',
+  FOLDER_ID_IS_INVALID: 'Folder id is invalid',
+  PARENT_FOLDER_ID_IS_INVALID: 'Parent folder id is invalid',
+  SORT_BY_IS_INVALID: 'Folder sort by is invalid',
+  ORDER_IS_INVALID: 'Folder order is invalid',
+  DELETE_CONFIRMATION_IS_REQUIRED: 'Cascade delete confirmation is required',
+  FOLDER_NOT_FOUND: 'Folder not found',
+  FOLDER_ACCESS_DENIED: 'You do not have permission to access this folder',
+  FOLDER_CREATE_SUCCESS: 'Create folder success',
+  FOLDER_LIST_SUCCESS: 'Get folder contents success',
+  FOLDER_DETAIL_SUCCESS: 'Get folder detail success',
+  FOLDER_UPDATE_SUCCESS: 'Update folder success',
+  FOLDER_MOVE_SUCCESS: 'Move folder success',
+  FOLDER_DELETE_SUCCESS: 'Delete folder success',
+  FOLDER_DELETE_DENIED: 'Only the owner can delete this folder',
+  FOLDER_ALREADY_DELETED: 'Folder already deleted',
+  CANNOT_MOVE_FOLDER_TO_ITSELF: 'Cannot move folder into itself',
+  CANNOT_MOVE_FOLDER_TO_DESCENDANT: 'Cannot move folder into one of its descendants',
+  PARENT_FOLDER_NOT_FOUND: 'Parent folder not found',
+  CASCADE_DELETE_FOLDER_SUCCESS: 'Cascade delete folder success'
+} as const
+
 export const BOOKMARK_MESSAGES = {
   NOTE_MUST_BE_A_STRING: 'Bookmark note must be a string',
   NOTE_LENGTH_MUST_BE_LESS_THAN_300: 'Bookmark note length must be less than 300',

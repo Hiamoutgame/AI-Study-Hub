@@ -8,6 +8,7 @@ import { AiConfiguration } from '~/models/AiConfiguration.schema'
 import { AiMessage } from '~/models/AiMessage.schema'
 import { DocumentEmbedding } from '~/models/DocumentEmbedding.schema'
 import { Favorite } from '~/models/Favorite.schema'
+import { Folder } from '~/models/Folder.schema'
 import { Notification } from '~/models/Notification.schema'
 import { PermissionLink } from '~/models/PermissionLink.schema'
 import { Solution } from '~/models/Solution.schema'
@@ -42,7 +43,10 @@ class DatabaseService {
   private async createIndexes() {
     await Promise.all([
       this.favorites.createIndex({ accountId: 1, solutionId: 1 }, { unique: true }),
-      this.permissionLinks.createIndex({ token: 1 }, { unique: true })
+      this.permissionLinks.createIndex({ token: 1 }, { unique: true }),
+      this.folders.createIndex({ ownerId: 1, parentId: 1, createdAt: -1 }),
+      this.folders.createIndex({ ownerId: 1, parentId: 1, name: 1 }),
+      this.solutions.createIndex({ uploaderId: 1, folderId: 1, createdAt: -1 })
     ])
   }
 
@@ -60,6 +64,10 @@ class DatabaseService {
 
   get solutions(): Collection<Solution> {
     return this.dbName.collection('solutions')
+  }
+
+  get folders(): Collection<Folder> {
+    return this.dbName.collection('folders')
   }
 
   get solutionCategories(): Collection<SolutionCategory> {

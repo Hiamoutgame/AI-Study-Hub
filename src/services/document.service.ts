@@ -23,6 +23,7 @@ import {
 import { Solution } from '~/models/Solution.schema'
 import { StorageQuota } from '~/models/StorageQuota.schema'
 import databaseService from './database.service'
+import folderService from './folder.service'
 
 const DEFAULT_TOTAL_BYTES = 500 * 1024 * 1024
 const DEFAULT_MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024
@@ -317,19 +318,22 @@ class DocumentService {
     }
 
     const uploaderId = this.toObjectId(accountId)
+    const solutionId = new ObjectId()
+    let documentInserted = false
+    let storageUsageIncreased = false
 
     try {
       await this.ensureActiveVerifiedAccount(uploaderId)
-      await this.ensureStorageAvailable(uploaderId, file.size)
 
       const categoryId = await this.validateCategory(payload.categoryId)
-      const solutionId = new ObjectId()
+      const folderId = await folderService.validateFolderAccess(payload.folderId, uploaderId)
       const enableOcr = this.parseBoolean(payload.enableOcr)
       const now = new Date()
       const document = new Solution({
         _id: solutionId,
         uploaderId,
         categoryId,
+        folderId,
         title: payload.title.trim(),
         description: payload.description?.trim(),
         tags: this.parseTags(payload.tags),
@@ -351,8 +355,11 @@ class DocumentService {
         updatedAt: now
       })
 
+      await this.ensureStorageAvailable(uploaderId, file.size)
       await databaseService.solutions.insertOne(document)
+      documentInserted = true
       await this.increaseStorageUsage(uploaderId, file.size)
+      storageUsageIncreased = true
       await this.createActivityLog({
         accountId: uploaderId,
         action: ActivityAction.uploadSolution,
@@ -363,7 +370,11 @@ class DocumentService {
 
       return document
     } catch (error) {
-      await this.removeUploadedFile(file)
+      await Promise.allSettled([
+        documentInserted ? databaseService.solutions.deleteOne({ _id: solutionId, uploaderId }) : Promise.resolve(),
+        storageUsageIncreased ? this.decreaseStorageUsage(uploaderId, file.size) : Promise.resolve(),
+        this.removeUploadedFile(file)
+      ])
       throw error
     }
   }
@@ -395,6 +406,18 @@ class DocumentService {
 
     if (query.categoryId) {
       andFilters.push({ categoryId: this.toObjectId(query.categoryId) })
+    }
+
+    if (query.folderId !== undefined) {
+      const folderId = await folderService.validateFolderAccess(query.folderId || null, userObjectId)
+      andFilters.push({ uploaderId: userObjectId })
+      andFilters.push(
+        folderId
+          ? { folderId }
+          : ({
+              $or: [{ folderId: null }, { folderId: { $exists: false } }]
+            } as Filter<Solution>)
+      )
     }
 
     if (query.tags) {
@@ -436,6 +459,7 @@ class DocumentService {
       data: documents.map((document) => ({
         _id: document._id,
         uploaderId: document.uploaderId,
+        folderId: document.folderId,
         title: document.title,
         category: document.categoryId ? categoryMap.get(document.categoryId.toString()) || null : null,
         tags: document.tags,
@@ -510,6 +534,7 @@ class DocumentService {
     return {
       _id: visibleDocument._id,
       uploaderId: visibleDocument.uploaderId,
+      folderId: visibleDocument.folderId,
       category,
       title: visibleDocument.title,
       description: visibleDocument.description,
@@ -581,6 +606,11 @@ class DocumentService {
       changedFields.push('categoryId')
     }
 
+    if (payload.folderId !== undefined) {
+      updateData.folderId = await folderService.validateFolderAccess(payload.folderId, userObjectId)
+      changedFields.push('folderId')
+    }
+
     if (payload.tags !== undefined) {
       updateData.tags = this.parseTags(payload.tags)
       changedFields.push('tags')
@@ -619,6 +649,7 @@ class DocumentService {
       title: updatedDocument.title,
       description: updatedDocument.description,
       categoryId: updatedDocument.categoryId,
+      folderId: updatedDocument.folderId,
       tags: updatedDocument.tags,
       isPublic: updatedDocument.isPublic,
       language: updatedDocument.language,

@@ -431,3 +431,15 @@ Thứ tự rất quan trọng: error handler phải đặt sau routes, vì nó c
 - Không nên trả raw error trực tiếp trong controller; hãy `throw` lỗi và để `defautHandler` quyết định response.
 - Các status code nên lấy từ `HTTP_STATUS` để tránh viết số magic number rải rác.
 - Nếu đổi tên, có thể cân nhắc sửa `defautHandler` thành `defaultHandler` cho đúng chính tả, nhưng phải update import ở nơi sử dụng.
+
+## 10. Folder validation và security errors
+
+`src/middlewares/folder.middlewares.ts` giữ validation hình dạng request:
+
+- `name`: string đã trim, dài từ 1 đến 120 ký tự.
+- `id`, `folderId`, `parentId`: MongoDB ObjectId hợp lệ; `parentId = null` biểu diễn root.
+- Cascade delete: body bắt buộc có `{ confirm: true }`.
+
+Các kiểm tra phụ thuộc database không đặt trong middleware. `folder.service.ts` kiểm tra folder còn active, đúng owner, parent thuộc cùng owner và move không tạo cycle. Vì vậy lỗi ObjectId sai đi theo `EntityErr` 422, còn resource không tồn tại và truy cập chéo user đi theo `ErrorWithStatus` 404/403.
+
+Document upload/update/list dùng cùng `folderService.validateFolderAccess(...)`. Nếu folder không tồn tại, đã soft-delete hoặc thuộc user khác, service chặn request; upload flow đồng thời cleanup file multer và rollback document/quota nếu một bước sau khi ghi file thất bại.
