@@ -6,11 +6,11 @@ Nhóm này gồm US09 và US14. Trong API spec, preview gắn trực tiếp vớ
 
 ## Endpoint Map
 
-| US   | Method | Endpoint                         | Auth   | Trang thai  |
-| ---- | ------ | -------------------------------- | ------ | ----------- |
-| US09 | GET    | `/documents/{id}/preview`        | Bearer | Planned     |
-| US14 | (auto) | chạy trong `POST /documents`     | Bearer | Implemented |
-| US14 | GET    | `/documents/{id}/upload-status`  | Bearer | Implemented |
+| US   | Method | Endpoint                        | Auth   | Trang thai  |
+| ---- | ------ | ------------------------------- | ------ | ----------- |
+| US09 | GET    | `/documents/{id}/preview`       | Bearer | Planned     |
+| US14 | (auto) | chạy trong `POST /documents`    | Bearer | Implemented |
+| US14 | GET    | `/documents/{id}/upload-status` | Bearer | Implemented |
 
 > Không còn `POST /documents/{id}/extraction` và `GET /documents/{id}/extraction`. Trích xuất text diễn ra ngay trong luồng upload; trạng thái xem qua `GET /documents/{id}/upload-status`.
 

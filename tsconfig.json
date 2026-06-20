@@ -2,14 +2,13 @@
   "compilerOptions": {
     "module": "CommonJS",
     "target": "ES2020",
-    "rootDir": "src",
-    "outDir": "dist",
     "esModuleInterop": true,
     "strict": true,
     "skipLibCheck": true,
+    "noEmit": true,
     "paths": {
       "~/*": ["./src/*"]
     }
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*.ts", "tests/**/*.ts", "jest.config.ts"]
 }

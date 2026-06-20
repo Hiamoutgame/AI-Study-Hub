@@ -489,16 +489,16 @@ Tất cả response đều bọc trong envelope chuẩn:
 
 **Request Form-data:**
 
-| Trường        | Kiểu     | Bắt buộc | Mô tả                                           |
-| ------------- | -------- | -------- | ----------------------------------------------- |
-| `file`        | file     | ✅       | File tài liệu (PDF, DOCX, TXT, max theo plan)   |
-| `title`       | string   | ✅       | Tiêu đề tài liệu                                |
-| `description` | string   | ❌       | Mô tả tài liệu                                  |
-| `categoryId`  | string   | ❌       | ObjectId danh mục                               |
-| `tags`        | string[] | ❌       | Danh sách tag (vd: `["giải tích", "chương 1"]`) |
-| `language`    | string   | ❌       | Mã ngôn ngữ (default: `"vi"`)                   |
-| `isPublic`    | boolean  | ❌       | Công khai (default: `false`)                    |
-| `enableExtraction`   | boolean  | ❌       | Bật text extraction ngay sau upload (default: `false`)      |
+| Trường             | Kiểu     | Bắt buộc | Mô tả                                                  |
+| ------------------ | -------- | -------- | ------------------------------------------------------ |
+| `file`             | file     | ✅       | File tài liệu (PDF, DOCX, TXT, max theo plan)          |
+| `title`            | string   | ✅       | Tiêu đề tài liệu                                       |
+| `description`      | string   | ❌       | Mô tả tài liệu                                         |
+| `categoryId`       | string   | ❌       | ObjectId danh mục                                      |
+| `tags`             | string[] | ❌       | Danh sách tag (vd: `["giải tích", "chương 1"]`)        |
+| `language`         | string   | ❌       | Mã ngôn ngữ (default: `"vi"`)                          |
+| `isPublic`         | boolean  | ❌       | Công khai (default: `false`)                           |
+| `enableExtraction` | boolean  | ❌       | Bật text extraction ngay sau upload (default: `false`) |
 
 **Response `201`:**
 
@@ -546,17 +546,17 @@ Tất cả response đều bọc trong envelope chuẩn:
 
 **Query Parameters:**
 
-| Tham số      | Kiểu    | Bắt buộc | Mô tả                                                   |
-| ------------ | ------- | -------- | ------------------------------------------------------- |
+| Tham số      | Kiểu    | Bắt buộc | Mô tả                                                         |
+| ------------ | ------- | -------- | ------------------------------------------------------------- |
 | `q`          | string  | ❌       | Từ khóa tìm kiếm theo `title`, `description`, `extractedText` |
-| `categoryId` | string  | ❌       | Lọc theo ObjectId danh mục                              |
-| `tags`       | string  | ❌       | Lọc theo tag (phân cách bởi dấu phẩy)                   |
-| `isPublic`   | boolean | ❌       | Lọc public/private                                      |
-| `aiStatus`   | string  | ❌       | `pending`, `processing`, `ready`, `failed`              |
-| `sortBy`     | string  | ❌       | `"createdAt"` (default), `"title"`, `"fileSizeBytes"`   |
-| `order`      | string  | ❌       | `"desc"` (default) / `"asc"`                            |
-| `page`       | integer | ❌       | Trang hiện tại (default: 1)                             |
-| `limit`      | integer | ❌       | Số bản ghi mỗi trang (default: 20, max: 100)            |
+| `categoryId` | string  | ❌       | Lọc theo ObjectId danh mục                                    |
+| `tags`       | string  | ❌       | Lọc theo tag (phân cách bởi dấu phẩy)                         |
+| `isPublic`   | boolean | ❌       | Lọc public/private                                            |
+| `aiStatus`   | string  | ❌       | `pending`, `processing`, `ready`, `failed`                    |
+| `sortBy`     | string  | ❌       | `"createdAt"` (default), `"title"`, `"fileSizeBytes"`         |
+| `order`      | string  | ❌       | `"desc"` (default) / `"asc"`                                  |
+| `page`       | integer | ❌       | Trang hiện tại (default: 1)                                   |
+| `limit`      | integer | ❌       | Số bản ghi mỗi trang (default: 20, max: 100)                  |
 
 **Ví dụ request:**
 
@@ -1799,18 +1799,18 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
 
 **Query Parameters:**
 
-| Tham số      | Kiểu    | Bắt buộc | Mô tả                                                  |
-| ------------ | ------- | -------- | ------------------------------------------------------ |
-| `q`          | string  | ❌       | Tìm theo `title`                                       |
-| `uploaderId` | string  | ❌       | Lọc theo ObjectId người upload                         |
-| `categoryId` | string  | ❌       | Lọc theo danh mục                                      |
-| `isPublic`   | boolean | ❌       | `true` / `false`                                       |
-| `extractionStatus`  | string  | ❌       | `"pending"`, `"processing"`, `"completed"`, `"failed"` |
-| `aiStatus`   | string  | ❌       | `"pending"`, `"processing"`, `"ready"`, `"failed"`     |
-| `status`     | string  | ❌       | `"active"`, `"processing"`, `"error"`, `"archived"`    |
-| `flagged`    | boolean | ❌       | Lọc tài liệu bị báo cáo vi phạm                        |
-| `page`       | integer | ❌       | Trang                                                  |
-| `limit`      | integer | ❌       | Số bản ghi                                             |
+| Tham số            | Kiểu    | Bắt buộc | Mô tả                                                  |
+| ------------------ | ------- | -------- | ------------------------------------------------------ |
+| `q`                | string  | ❌       | Tìm theo `title`                                       |
+| `uploaderId`       | string  | ❌       | Lọc theo ObjectId người upload                         |
+| `categoryId`       | string  | ❌       | Lọc theo danh mục                                      |
+| `isPublic`         | boolean | ❌       | `true` / `false`                                       |
+| `extractionStatus` | string  | ❌       | `"pending"`, `"processing"`, `"completed"`, `"failed"` |
+| `aiStatus`         | string  | ❌       | `"pending"`, `"processing"`, `"ready"`, `"failed"`     |
+| `status`           | string  | ❌       | `"active"`, `"processing"`, `"error"`, `"archived"`    |
+| `flagged`          | boolean | ❌       | Lọc tài liệu bị báo cáo vi phạm                        |
+| `page`             | integer | ❌       | Trang                                                  |
+| `limit`            | integer | ❌       | Số bản ghi                                             |
 
 **Response `200`:**
 
@@ -2482,13 +2482,13 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
 
 **Request Body:** (nested object — server tự map sang các record `ai_configurations`)
 
-| Trường        | Kiểu   | Mô tả                         |
-| ------------- | ------ | ----------------------------- |
-| `model`       | object | Cấu hình model AI             |
-| `prompt`      | object | System prompt                 |
-| `rateLimit`   | object | Giới hạn AI queries theo plan |
-| `features`    | object | Bật/tắt từng tính năng AI     |
-| `extractionProvider` | string | text extraction provider hệ thống         |
+| Trường               | Kiểu   | Mô tả                             |
+| -------------------- | ------ | --------------------------------- |
+| `model`              | object | Cấu hình model AI                 |
+| `prompt`             | object | System prompt                     |
+| `rateLimit`          | object | Giới hạn AI queries theo plan     |
+| `features`           | object | Bật/tắt từng tính năng AI         |
+| `extractionProvider` | string | text extraction provider hệ thống |
 
 ```json
 {
@@ -2589,13 +2589,13 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
 
 **Query Params:**
 
-| Tham số     | Kiểu    | Mô tả                                        |
-| ----------- | ------- | -------------------------------------------- |
-| `extractionStatus` | string  | ❌ `"completed"`, `"failed"`, `"processing"` |
-| `from`      | string  | ❌ ISO8601 — lọc theo `extractionProcessedAt`       |
-| `to`        | string  | ❌ ISO8601                                   |
-| `page`      | integer | ❌                                           |
-| `limit`     | integer | ❌                                           |
+| Tham số            | Kiểu    | Mô tả                                         |
+| ------------------ | ------- | --------------------------------------------- |
+| `extractionStatus` | string  | ❌ `"completed"`, `"failed"`, `"processing"`  |
+| `from`             | string  | ❌ ISO8601 — lọc theo `extractionProcessedAt` |
+| `to`               | string  | ❌ ISO8601                                    |
+| `page`             | integer | ❌                                            |
+| `limit`            | integer | ❌                                            |
 
 **Response `200`:**
 
@@ -2753,7 +2753,7 @@ Tất cả lỗi đều tuân theo cấu trúc nhất quán:
 | `FILE_TOO_LARGE`          | 400         | File vượt quá giới hạn dung lượng        |
 | `UNSUPPORTED_FILE_TYPE`   | 400         | Định dạng file không được hỗ trợ         |
 | `STORAGE_QUOTA_EXCEEDED`  | 400         | Vượt quá dung lượng lưu trữ              |
-| `EXTRACTION_FAILED`              | 500         | Xử lý text extraction thất bại                       |
+| `EXTRACTION_FAILED`       | 500         | Xử lý text extraction thất bại           |
 | `AI_SERVICE_UNAVAILABLE`  | 503         | Dịch vụ AI tạm thời không khả dụng       |
 | `AI_TOKEN_LIMIT_EXCEEDED` | 429         | Vượt quá giới hạn token AI trong ngày    |
 | `RATE_LIMIT_EXCEEDED`     | 429         | Gửi request quá nhanh                    |
@@ -2790,8 +2790,8 @@ Tất cả lỗi đều tuân theo cấu trúc nhất quán:
 | US13 | Xem danh sách phiên chat     | GET    | `/chat/sessions`                    |
 | US13 | Xem lịch sử tin nhắn         | GET    | `/chat/sessions/{id}/messages`      |
 | US13 | Xóa phiên chat               | DELETE | `/chat/sessions/{id}`               |
-| US14 | Yêu cầu text extraction                  | POST   | `/documents/{id}/extraction`               |
-| US14 | Xem kết quả text extraction              | GET    | `/documents/{id}/extraction`               |
+| US14 | Yêu cầu text extraction      | POST   | `/documents/{id}/extraction`        |
+| US14 | Xem kết quả text extraction  | GET    | `/documents/{id}/extraction`        |
 | US15 | Xem profile                  | GET    | `/users/me`                         |
 | US15 | Cập nhật profile             | PUT    | `/users/me`                         |
 | US15 | Đổi mật khẩu                 | PUT    | `/users/me/password`                |
@@ -2827,7 +2827,7 @@ Tất cả lỗi đều tuân theo cấu trúc nhất quán:
 | US24 | Xem cấu hình AI raw          | GET    | `/admin/ai-settings/raw`            |
 | US24 | Cập nhật cấu hình AI         | PUT    | `/admin/ai-settings`                |
 | US24 | Xem thống kê AI              | GET    | `/admin/ai-settings/usage`          |
-| US25 | Xem log text extraction                  | GET    | `/admin/logs/extraction`                   |
+| US25 | Xem log text extraction      | GET    | `/admin/logs/extraction`            |
 | US25 | Xem log hệ thống             | GET    | `/admin/logs/system`                |
 | US25 | Xem audit log                | GET    | `/admin/logs/audit`                 |
 
@@ -2837,36 +2837,36 @@ Tất cả lỗi đều tuân theo cấu trúc nhất quán:
 
 Cắt gọn theo user stories thực tế — bỏ các collection vượt scope:
 
-| Thay đổi                           | Trước (v2.0)                       | Sau (v2.1)                                                                                                          |
-| ---------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| **Số collection**                  | 18                                 | **12** (giảm 6)                                                                                                     |
-| **`groups` / `group_memberships`** | Có                                 | **Bỏ** — không có US về lớp học/nhóm                                                                                |
-| **`history_solutions`**            | Có (version tracking)              | **Bỏ** — không có US về rollback. Dùng `activity_logs` cho audit                                                    |
-| **`recycle_bins`**                 | Collection riêng                   | **Gộp inline vào `solutions`** (`deletedAt`, `deletedBy`, `autoDeleteAt`)                                           |
-| **`comment_notes`**                | Có                                 | **Bỏ** — không có US về comment trên tài liệu                                                                       |
-| **`permissions`** (per-user ACL)   | Có                                 | **Bỏ** — US17 chỉ dùng `permission_links`                                                                           |
-| **`solutions.groupId`**            | Có (ref groups)                    | **Bỏ**                                                                                                              |
-| **`solutions.version`**            | Có (gắn history)                   | **Bỏ**                                                                                                              |
-| **`solutions` text extraction fields**         | "Cần bổ sung vào schema"           | **Đã add chính thức** (`extractionStatus`, `extractedText`, `extractionLanguage`, `extractionConfidence`, `extractionProcessedAt`, `extractionErrorMessage`) |
-| **Notification target**            | `all` / `recipientIds` / `groupId` | `all` / `recipientIds` (bỏ broadcast theo group)                                                                    |
-| **Notification types**             | có `comment_*`, `group_*`          | bỏ các type tương ứng collection đã xoá                                                                             |
-| **Tổng API endpoints**             | 65                                 | **64** (gỡ các endpoint group/comment, gộp text extraction vào solutions, bỏ refresh-token)                                     |
+| Thay đổi                               | Trước (v2.0)                       | Sau (v2.1)                                                                                                                                                   |
+| -------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Số collection**                      | 18                                 | **12** (giảm 6)                                                                                                                                              |
+| **`groups` / `group_memberships`**     | Có                                 | **Bỏ** — không có US về lớp học/nhóm                                                                                                                         |
+| **`history_solutions`**                | Có (version tracking)              | **Bỏ** — không có US về rollback. Dùng `activity_logs` cho audit                                                                                             |
+| **`recycle_bins`**                     | Collection riêng                   | **Gộp inline vào `solutions`** (`deletedAt`, `deletedBy`, `autoDeleteAt`)                                                                                    |
+| **`comment_notes`**                    | Có                                 | **Bỏ** — không có US về comment trên tài liệu                                                                                                                |
+| **`permissions`** (per-user ACL)       | Có                                 | **Bỏ** — US17 chỉ dùng `permission_links`                                                                                                                    |
+| **`solutions.groupId`**                | Có (ref groups)                    | **Bỏ**                                                                                                                                                       |
+| **`solutions.version`**                | Có (gắn history)                   | **Bỏ**                                                                                                                                                       |
+| **`solutions` text extraction fields** | "Cần bổ sung vào schema"           | **Đã add chính thức** (`extractionStatus`, `extractedText`, `extractionLanguage`, `extractionConfidence`, `extractionProcessedAt`, `extractionErrorMessage`) |
+| **Notification target**                | `all` / `recipientIds` / `groupId` | `all` / `recipientIds` (bỏ broadcast theo group)                                                                                                             |
+| **Notification types**                 | có `comment_*`, `group_*`          | bỏ các type tương ứng collection đã xoá                                                                                                                      |
+| **Tổng API endpoints**                 | 65                                 | **64** (gỡ các endpoint group/comment, gộp text extraction vào solutions, bỏ refresh-token)                                                                  |
 
 ---
 
 ## Changelog v2.0
 
-| Thay đổi              | Trước (v1.0)                           | Sau (v2.0)                                                |
-| --------------------- | -------------------------------------- | --------------------------------------------------------- |
-| **ID format**         | `usr_01J...`, `doc_01J...` (ULID-like) | MongoDB `ObjectId` 24-char hex                            |
-| **Naming convention** | `snake_case` (user_id, full_name)      | `camelCase` (accountId, fullName)                         |
-| **Roles**             | GUEST, USER, MODERATOR, ADMIN          | guest, user, admin (moderator → `groupMembership.role`)   |
-| **Storage unit**      | MB (`storage_used_mb`)                 | Bytes (`usedBytes`, `totalBytes`)                         |
-| **text extraction storage**       | Implied separate `extraction_jobs`            | Inline trong `solutions` (extractionStatus, extractedText, ...)        |
-| **AI Settings**       | Flat object hardcode                   | Mapping với `ai_configurations` collection (key-value)    |
-| **Notifications**     | Flat target=all/user_ids               | Fan-out on write với `sourceEventId`                      |
-| **Share endpoint**    | `DELETE /documents/{id}/share`         | `DELETE /documents/{id}/share/{shareId}` (multi-link)     |
-| **Permission levels** | `link` / `users`                       | `viewer`, `commenter`, `downloader`, `editor`, `co_owner` |
+| Thay đổi                    | Trước (v1.0)                           | Sau (v2.0)                                                      |
+| --------------------------- | -------------------------------------- | --------------------------------------------------------------- |
+| **ID format**               | `usr_01J...`, `doc_01J...` (ULID-like) | MongoDB `ObjectId` 24-char hex                                  |
+| **Naming convention**       | `snake_case` (user_id, full_name)      | `camelCase` (accountId, fullName)                               |
+| **Roles**                   | GUEST, USER, MODERATOR, ADMIN          | guest, user, admin (moderator → `groupMembership.role`)         |
+| **Storage unit**            | MB (`storage_used_mb`)                 | Bytes (`usedBytes`, `totalBytes`)                               |
+| **text extraction storage** | Implied separate `extraction_jobs`     | Inline trong `solutions` (extractionStatus, extractedText, ...) |
+| **AI Settings**             | Flat object hardcode                   | Mapping với `ai_configurations` collection (key-value)          |
+| **Notifications**           | Flat target=all/user_ids               | Fan-out on write với `sourceEventId`                            |
+| **Share endpoint**          | `DELETE /documents/{id}/share`         | `DELETE /documents/{id}/share/{shareId}` (multi-link)           |
+| **Permission levels**       | `link` / `users`                       | `viewer`, `commenter`, `downloader`, `editor`, `co_owner`       |
 
 ---
 

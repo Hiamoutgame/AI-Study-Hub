@@ -30,10 +30,7 @@ describe('document routes', () => {
     })
     await expect(databaseService.solutions.countDocuments({ uploaderId: account._id })).resolves.toBe(1)
 
-    const listResponse = await request(app)
-      .get('/documents')
-      .set('Authorization', authorization)
-      .expect(200)
+    const listResponse = await request(app).get('/documents').set('Authorization', authorization).expect(200)
 
     expect(listResponse.body.data).toEqual([
       expect.objectContaining({ title: 'TypeScript Notes', fileName: 'notes.txt' })
@@ -46,10 +43,7 @@ describe('document routes', () => {
     const document = await seedDocument(owner._id!, { isPublic: false })
     const authorization = await createAuthHeader(viewer)
 
-    await request(app)
-      .get(`/documents/${document._id}`)
-      .set('Authorization', authorization)
-      .expect(403)
+    await request(app).get(`/documents/${document._id}`).set('Authorization', authorization).expect(403)
   })
 
   it('requires authentication for document listing', async () => {

@@ -17,10 +17,7 @@ describe('admin routes', () => {
     await seedAccount({ role: UserRole.user })
     const authorization = await createAuthHeader(admin)
 
-    const response = await request(app)
-      .get('/admin/users')
-      .set('Authorization', authorization)
-      .expect(200)
+    const response = await request(app).get('/admin/users').set('Authorization', authorization).expect(200)
 
     expect(response.body.data).toHaveLength(2)
     expect(response.body.meta).toMatchObject({ page: 1, total: 2 })
@@ -30,10 +27,7 @@ describe('admin routes', () => {
     const admin = await seedAccount({ role: UserRole.admin })
     const authorization = await createAuthHeader(admin)
 
-    const response = await request(app)
-      .get('/admin/users?page=0')
-      .set('Authorization', authorization)
-      .expect(422)
+    const response = await request(app).get('/admin/users?page=0').set('Authorization', authorization).expect(422)
 
     expect(response.body.errors).toHaveProperty('page')
   })

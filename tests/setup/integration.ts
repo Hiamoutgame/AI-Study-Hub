@@ -1,9 +1,4 @@
-import {
-  clearTestDatabase,
-  cleanupTestUploads,
-  connectTestDatabase,
-  disconnectTestDatabase
-} from '../helpers/db'
+import { clearTestDatabase, cleanupTestUploads, connectTestDatabase, disconnectTestDatabase } from '../helpers/db'
 
 jest.mock('~/services/email.service', () => ({
   __esModule: true,

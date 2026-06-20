@@ -4,11 +4,11 @@ Nhóm này gồm US25, cho admin xem log trích xuất văn bản (text extracti
 
 ## Endpoint Map
 
-| US   | Method | Endpoint                  | Auth         | Trang thai |
-| ---- | ------ | ------------------------- | ------------ | ---------- |
-| US25 | GET    | `/admin/logs/extraction`  | Admin Bearer | Planned    |
-| US25 | GET    | `/admin/logs/system`      | Admin Bearer | Planned    |
-| US25 | GET    | `/admin/logs/audit`       | Admin Bearer | Planned    |
+| US   | Method | Endpoint                 | Auth         | Trang thai |
+| ---- | ------ | ------------------------ | ------------ | ---------- |
+| US25 | GET    | `/admin/logs/extraction` | Admin Bearer | Planned    |
+| US25 | GET    | `/admin/logs/system`     | Admin Bearer | Planned    |
+| US25 | GET    | `/admin/logs/audit`      | Admin Bearer | Planned    |
 
 ## Schema Và Collection Flow
 

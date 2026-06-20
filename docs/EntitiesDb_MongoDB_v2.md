@@ -98,7 +98,7 @@ Riêng `solutions` còn `autoDeleteAt: Date` cho cơ chế thùng rác (mặc đ
 | --- | ----------------------- | -------- | ---------------------------------------------------- |
 | 1   | **accounts**            | Identity | Tài khoản người dùng (user + admin)                  |
 | 2   | **storage_quotas**      | Identity | Dung lượng & AI quota theo từng account              |
-| 3   | **activity_logs**       | Identity | Nhật ký hành động (audit + text extraction log)                  |
+| 3   | **activity_logs**       | Identity | Nhật ký hành động (audit + text extraction log)      |
 | 4   | **solutions**           | Document | Tài liệu học tập (entity trung tâm) — đã gộp recycle |
 | 5   | **solution_categories** | Document | Danh mục tài liệu (môn học, định dạng…)              |
 | 6   | **ai_chat_sessions**    | AI       | Phiên chat AI với tài liệu                           |
@@ -272,13 +272,13 @@ admin_lock_user, admin_delete_solution, admin_update_ai_config
 | **AI fields**                           |               |                                                                             |                                                |
 | `aiStatus`                              | `String`      | enum: `['pending','processing','ready','failed']`, default: `'pending'`     | Trạng thái embedding                           |
 | `aiErrorMessage`                        | `String`      | —                                                                           | Lỗi AI (nếu có)                                |
-| **text extraction fields**                          |               |                                                                             |                                                |
-| `extractionStatus`                             | `String`      | enum: `['pending','processing','completed','failed']`, default: `'pending'` | Trạng thái text extraction                                 |
-| `extractionLanguage`                           | `String`      | default: `'vie'`                                                            | Ngôn ngữ text extraction                                   |
-| `extractedText`                               | `String`      | —                                                                           | Text trích xuất (cho search)                   |
-| `extractionConfidence`                         | `Number`      | min: 0, max: 1                                                              | Độ tin cậy                                     |
-| `extractionProcessedAt`                        | `Date`        | —                                                                           | Thời điểm text extraction xong                             |
-| `extractionErrorMessage`                       | `String`      | —                                                                           | Lỗi text extraction                                        |
+| **text extraction fields**              |               |                                                                             |                                                |
+| `extractionStatus`                      | `String`      | enum: `['pending','processing','completed','failed']`, default: `'pending'` | Trạng thái text extraction                     |
+| `extractionLanguage`                    | `String`      | default: `'vie'`                                                            | Ngôn ngữ text extraction                       |
+| `extractedText`                         | `String`      | —                                                                           | Text trích xuất (cho search)                   |
+| `extractionConfidence`                  | `Number`      | min: 0, max: 1                                                              | Độ tin cậy                                     |
+| `extractionProcessedAt`                 | `Date`        | —                                                                           | Thời điểm text extraction xong                 |
+| `extractionErrorMessage`                | `String`      | —                                                                           | Lỗi text extraction                            |
 | **Recycle bin** (gộp từ `recycle_bins`) |               |                                                                             |
 | `deletedAt`                             | `Date`        | default: `null`                                                             | Soft delete → vào thùng rác                    |
 | `deletedBy`                             | `ObjectId`    | ref: `'accounts'`                                                           | Ai xóa                                         |
@@ -513,8 +513,8 @@ admin_lock_user, admin_delete_solution, admin_update_ai_config
 | `share_received`      | Được chia sẻ tài liệu      |
 | `ai_ready`            | AI đã xử lý xong tài liệu  |
 | `ai_failed`           | AI xử lý thất bại          |
-| `extract_complete`           | text extraction xong                   |
-| `extract_failed`          | text extraction thất bại               |
+| `extract_complete`    | text extraction xong       |
+| `extract_failed`      | text extraction thất bại   |
 | `storage_warning`     | Gần hết dung lượng         |
 | `solution_updated`    | Tài liệu được cập nhật     |
 | `recycle_auto_delete` | Tài liệu sắp xóa vĩnh viễn |
@@ -852,17 +852,17 @@ PermissionLink.lastUsedAt + currentUses → tracking share link
 
 ### Thay đổi schema
 
-| Field thay đổi                           | Trước (v2.0)              | Sau (v2.1)                                             |
-| ---------------------------------------- | ------------------------- | ------------------------------------------------------ |
-| `solutions.groupId`                      | ref `groups`              | **Bỏ**                                                 |
-| `solutions.version`                      | có (gắn với history)      | **Bỏ**                                                 |
-| `solutions.deletedAt`                    | có                        | giữ + thêm `deletedBy`, `deleteReason`, `autoDeleteAt` |
-| `solutions.extractionStatus`, `extractedText`, …      | nói "cần bổ sung"         | **Đã add chính thức** vào schema                       |
-| `solution_categories.groupId`            | có                        | **Bỏ**                                                 |
-| `ai_chat_sessions.groupId`               | có                        | **Bỏ**                                                 |
-| `notifications.type`                     | có `comment_*`, `group_*` | **Bỏ** các type liên quan collection đã xoá            |
-| `activity_logs.entityType`               | có `group`, `comment`     | **Bỏ** giá trị tương ứng                               |
-| `activity_logs.countryCode`, `sessionId` | có                        | **Bỏ** cho gọn (có thể thêm lại khi cần geo analytics) |
+| Field thay đổi                                   | Trước (v2.0)              | Sau (v2.1)                                             |
+| ------------------------------------------------ | ------------------------- | ------------------------------------------------------ |
+| `solutions.groupId`                              | ref `groups`              | **Bỏ**                                                 |
+| `solutions.version`                              | có (gắn với history)      | **Bỏ**                                                 |
+| `solutions.deletedAt`                            | có                        | giữ + thêm `deletedBy`, `deleteReason`, `autoDeleteAt` |
+| `solutions.extractionStatus`, `extractedText`, … | nói "cần bổ sung"         | **Đã add chính thức** vào schema                       |
+| `solution_categories.groupId`                    | có                        | **Bỏ**                                                 |
+| `ai_chat_sessions.groupId`                       | có                        | **Bỏ**                                                 |
+| `notifications.type`                             | có `comment_*`, `group_*` | **Bỏ** các type liên quan collection đã xoá            |
+| `activity_logs.entityType`                       | có `group`, `comment`     | **Bỏ** giá trị tương ứng                               |
+| `activity_logs.countryCode`, `sessionId`         | có                        | **Bỏ** cho gọn (có thể thêm lại khi cần geo analytics) |
 
 ### Tác động đến tài liệu khác
 

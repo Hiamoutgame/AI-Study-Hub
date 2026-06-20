@@ -274,7 +274,7 @@ Collections exposed today:
 | `accounts`           | `accounts`            | auth, profile, admin users, uploaders                         |
 | `storageQuotas`      | `storage_quotas`      | storage plan and usage tracking                               |
 | `activityLogs`       | `activity_logs`       | document/admin/category/notification audit entries            |
-| `solutions`          | `solutions`           | documents, extraction/AI status, soft delete, download count         |
+| `solutions`          | `solutions`           | documents, extraction/AI status, soft delete, download count  |
 | `folders`            | `folders`             | personal parent-reference folder tree and cascade soft delete |
 | `solutionCategories` | `solution_categories` | categories and document grouping                              |
 | `aiChatSessions`     | `ai_chat_sessions`    | AI chat data model and admin stats basis                      |

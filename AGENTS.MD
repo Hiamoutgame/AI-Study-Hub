@@ -59,6 +59,7 @@ Client request
 ```
 
 `src/index.ts` chỉ còn vai trò boot:
+
 - Gọi `databaseService.connect()`.
 - Gọi `app.listen(...)`.
 

@@ -10,7 +10,9 @@ let sequence = 0
 
 const nextSuffix = () => `${Date.now()}-${++sequence}`
 
-export const createRegisterBody = (overrides: Partial<Record<'username' | 'email' | 'password' | 'fullName', string>> = {}) => {
+export const createRegisterBody = (
+  overrides: Partial<Record<'username' | 'email' | 'password' | 'fullName', string>> = {}
+) => {
   const suffix = nextSuffix()
   return {
     username: `student-${suffix}`,

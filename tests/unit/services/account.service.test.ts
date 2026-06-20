@@ -100,7 +100,9 @@ describe('AccountService', () => {
       })
     )
 
-    await expect(accountService.verifyEmailByOtp({ email: 'account@example.com', otp: '123456' })).rejects.toMatchObject({
+    await expect(
+      accountService.verifyEmailByOtp({ email: 'account@example.com', otp: '123456' })
+    ).rejects.toMatchObject({
       message: ACCOUNT_MESSAGES.OTP_IS_INVALID_OR_EXPIRED,
       status: HTTP_STATUS.UNPROCESSABLE_ENTITY
     })

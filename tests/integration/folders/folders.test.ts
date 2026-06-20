@@ -33,9 +33,6 @@ describe('folder routes', () => {
   })
 
   it('rejects an invalid access token', async () => {
-    await request(app)
-      .get('/folders/contents')
-      .set('Authorization', 'Bearer invalid-token')
-      .expect(401)
+    await request(app).get('/folders/contents').set('Authorization', 'Bearer invalid-token').expect(401)
   })
 })
