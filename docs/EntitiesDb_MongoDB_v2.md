@@ -98,7 +98,7 @@ Riêng `solutions` còn `autoDeleteAt: Date` cho cơ chế thùng rác (mặc đ
 | --- | ----------------------- | -------- | ---------------------------------------------------- |
 | 1   | **accounts**            | Identity | Tài khoản người dùng (user + admin)                  |
 | 2   | **storage_quotas**      | Identity | Dung lượng & AI quota theo từng account              |
-| 3   | **activity_logs**       | Identity | Nhật ký hành động (audit + OCR log)                  |
+| 3   | **activity_logs**       | Identity | Nhật ký hành động (audit + text extraction log)                  |
 | 4   | **solutions**           | Document | Tài liệu học tập (entity trung tâm) — đã gộp recycle |
 | 5   | **solution_categories** | Document | Danh mục tài liệu (môn học, định dạng…)              |
 | 6   | **ai_chat_sessions**    | AI       | Phiên chat AI với tài liệu                           |
@@ -211,7 +211,7 @@ const accountSchema = new Schema(
 
 ### 4.3. `activity_logs`
 
-> Nhật ký mọi hành động người dùng — phục vụ audit trail, debug, thống kê, và log OCR (US25). **Append-only**, không update/delete.
+> Nhật ký mọi hành động người dùng — phục vụ audit trail, debug, thống kê, và log text extraction (US25). **Append-only**, không update/delete.
 
 | Field        | Mongoose Type | Ràng buộc                                           | Mô tả                                 |
 | ------------ | ------------- | --------------------------------------------------- | ------------------------------------- |
@@ -231,7 +231,7 @@ const accountSchema = new Schema(
 login, logout, register, password_reset,
 upload_solution, view_solution, download_solution, delete_solution,
 update_solution_meta, share_link_create, share_link_use, share_link_revoke,
-ocr_start, ocr_complete, ocr_failed,
+extract_start, extract_complete, extract_failed,
 ai_chat_start, ai_message_send, ai_summarize, ai_explain,
 favorite_add, favorite_remove,
 admin_lock_user, admin_delete_solution, admin_update_ai_config
@@ -243,7 +243,7 @@ admin_lock_user, admin_delete_solution, admin_update_ai_config
 
 ### 4.4. `solutions`
 
-> Entity trung tâm — đại diện cho một tài liệu được upload. Bao gồm metadata file, cloud storage, trạng thái OCR/AI, **và logic recycle bin (gộp từ `recycle_bins` cũ)**.
+> Entity trung tâm — đại diện cho một tài liệu được upload. Bao gồm metadata file, cloud storage, trạng thái text extraction/AI, **và logic recycle bin (gộp từ `recycle_bins` cũ)**.
 
 | Field                                   | Mongoose Type | Ràng buộc                                                                   | Mô tả                                          |
 | --------------------------------------- | ------------- | --------------------------------------------------------------------------- | ---------------------------------------------- |
@@ -272,13 +272,13 @@ admin_lock_user, admin_delete_solution, admin_update_ai_config
 | **AI fields**                           |               |                                                                             |                                                |
 | `aiStatus`                              | `String`      | enum: `['pending','processing','ready','failed']`, default: `'pending'`     | Trạng thái embedding                           |
 | `aiErrorMessage`                        | `String`      | —                                                                           | Lỗi AI (nếu có)                                |
-| **OCR fields**                          |               |                                                                             |                                                |
-| `ocrStatus`                             | `String`      | enum: `['pending','processing','completed','failed']`, default: `'pending'` | Trạng thái OCR                                 |
-| `ocrLanguage`                           | `String`      | default: `'vie'`                                                            | Ngôn ngữ OCR                                   |
-| `ocrText`                               | `String`      | —                                                                           | Text trích xuất (cho search)                   |
-| `ocrConfidence`                         | `Number`      | min: 0, max: 1                                                              | Độ tin cậy                                     |
-| `ocrProcessedAt`                        | `Date`        | —                                                                           | Thời điểm OCR xong                             |
-| `ocrErrorMessage`                       | `String`      | —                                                                           | Lỗi OCR                                        |
+| **text extraction fields**                          |               |                                                                             |                                                |
+| `extractionStatus`                             | `String`      | enum: `['pending','processing','completed','failed']`, default: `'pending'` | Trạng thái text extraction                                 |
+| `extractionLanguage`                           | `String`      | default: `'vie'`                                                            | Ngôn ngữ text extraction                                   |
+| `extractedText`                               | `String`      | —                                                                           | Text trích xuất (cho search)                   |
+| `extractionConfidence`                         | `Number`      | min: 0, max: 1                                                              | Độ tin cậy                                     |
+| `extractionProcessedAt`                        | `Date`        | —                                                                           | Thời điểm text extraction xong                             |
+| `extractionErrorMessage`                       | `String`      | —                                                                           | Lỗi text extraction                                        |
 | **Recycle bin** (gộp từ `recycle_bins`) |               |                                                                             |
 | `deletedAt`                             | `Date`        | default: `null`                                                             | Soft delete → vào thùng rác                    |
 | `deletedBy`                             | `ObjectId`    | ref: `'accounts'`                                                           | Ai xóa                                         |
@@ -513,8 +513,8 @@ admin_lock_user, admin_delete_solution, admin_update_ai_config
 | `share_received`      | Được chia sẻ tài liệu      |
 | `ai_ready`            | AI đã xử lý xong tài liệu  |
 | `ai_failed`           | AI xử lý thất bại          |
-| `ocr_ready`           | OCR xong                   |
-| `ocr_failed`          | OCR thất bại               |
+| `extract_complete`           | text extraction xong                   |
+| `extract_failed`          | text extraction thất bại               |
 | `storage_warning`     | Gần hết dung lượng         |
 | `solution_updated`    | Tài liệu được cập nhật     |
 | `recycle_auto_delete` | Tài liệu sắp xóa vĩnh viễn |
@@ -581,7 +581,7 @@ admin_lock_user, admin_delete_solution, admin_update_ai_config
                                   │ title, tags: [String]                │
                                   │ fileExtension, fileSizeBytes         │
                                   │ storageKey, isPublic                 │
-                                  │ aiStatus, ocrStatus, ocrText         │
+                                  │ aiStatus, extractionStatus, extractedText         │
                                   │ deletedAt, deletedBy, autoDeleteAt   │
                                   │   ← (gộp logic recycle_bin)          │
                                   └──────────────┬───────────────────────┘
@@ -662,19 +662,19 @@ for (const sol of expired) {
 }
 ```
 
-### 7.3. Luồng xử lý AI + OCR
+### 7.3. Luồng xử lý AI + text extraction
 
 ```javascript
 // Khi upload xong:
-await Solution.create({ ..., aiStatus: 'pending', ocrStatus: 'pending' });
-await queue.add('process-ocr',       { solutionId });
+await Solution.create({ ..., aiStatus: 'pending', extractionStatus: 'pending' });
+await queue.add('process-extraction',       { solutionId });
 await queue.add('process-embedding', { solutionId });
 
-// Worker OCR:
-const text = await ocrService.extract(solution.storageKey, solution.ocrLanguage);
+// Worker text extraction:
+const text = await extractionService.extract(solution.storageKey, solution.extractionLanguage);
 await Solution.findByIdAndUpdate(solutionId, {
-  ocrStatus: 'completed', ocrText: text,
-  ocrConfidence: 0.94, ocrProcessedAt: new Date(),
+  extractionStatus: 'completed', extractedText: text,
+  extractionConfidence: 0.94, extractionProcessedAt: new Date(),
 });
 
 // Worker Embedding:
@@ -743,11 +743,11 @@ solutionSchema.index({ uploaderId: 1, createdAt: -1 })
 solutionSchema.index({ categoryId: 1 })
 solutionSchema.index({ tags: 1 })
 solutionSchema.index({ aiStatus: 1 })
-solutionSchema.index({ ocrStatus: 1 })
+solutionSchema.index({ extractionStatus: 1 })
 solutionSchema.index({ deletedAt: 1 })
 solutionSchema.index({ autoDeleteAt: 1 }, { sparse: true }) // cron cleanup
 solutionSchema.index({ isPublic: 1, createdAt: -1 }) // trang khám phá
-solutionSchema.index({ title: 'text', description: 'text', tags: 'text', ocrText: 'text' })
+solutionSchema.index({ title: 'text', description: 'text', tags: 'text', extractedText: 'text' })
 
 // ── solution_categories ───────────────────────────────────────
 solutionCategorySchema.index({ slug: 1 }, { unique: true })
@@ -795,7 +795,7 @@ Database chính:   MongoDB Atlas (Atlas Vector Search cho embedding)
                   HOẶC MongoDB tự host + Qdrant (vector DB riêng)
 Cache:            Redis — session, quota, rate limit, AI config cache
 File storage:     AWS S3 / Cloudinary / Cloudflare R2
-Queue:            BullMQ — xử lý OCR, embedding, broadcast notification
+Queue:            BullMQ — xử lý text extraction, embedding, broadcast notification
 CDN:              Cloudflare / CloudFront — serve file public
 ```
 
@@ -830,8 +830,8 @@ KHÔNG cần soft delete:
 ### Audit Trail
 
 ```
-ActivityLog → mọi hành động user + admin + OCR/AI events
-              (gộp luôn nhật ký OCR — không cần collection riêng)
+ActivityLog → mọi hành động user + admin + text extraction/AI events
+              (gộp luôn nhật ký text extraction — không cần collection riêng)
 PermissionLink.lastUsedAt + currentUses → tracking share link
 ```
 
@@ -857,7 +857,7 @@ PermissionLink.lastUsedAt + currentUses → tracking share link
 | `solutions.groupId`                      | ref `groups`              | **Bỏ**                                                 |
 | `solutions.version`                      | có (gắn với history)      | **Bỏ**                                                 |
 | `solutions.deletedAt`                    | có                        | giữ + thêm `deletedBy`, `deleteReason`, `autoDeleteAt` |
-| `solutions.ocrStatus`, `ocrText`, …      | nói "cần bổ sung"         | **Đã add chính thức** vào schema                       |
+| `solutions.extractionStatus`, `extractedText`, …      | nói "cần bổ sung"         | **Đã add chính thức** vào schema                       |
 | `solution_categories.groupId`            | có                        | **Bỏ**                                                 |
 | `ai_chat_sessions.groupId`               | có                        | **Bỏ**                                                 |
 | `notifications.type`                     | có `comment_*`, `group_*` | **Bỏ** các type liên quan collection đã xoá            |
@@ -870,7 +870,7 @@ PermissionLink.lastUsedAt + currentUses → tracking share link
   - Bỏ field `groupId` trong request/response của `/documents`, `/chat/sessions`, `/categories`
   - Bỏ field `version` trong response `/documents/{id}`
   - Section 1.4 "Mapping API ↔ Collection": bỏ dòng `permission_links` duplicate, bỏ `groupMembership`
-  - Section 16: lưu ý OCR fields giờ đã chính thức nằm trong `solutions` schema (không còn "cần bổ sung")
+  - Section 16: lưu ý text extraction fields giờ đã chính thức nằm trong `solutions` schema (không còn "cần bổ sung")
 
 ---
 

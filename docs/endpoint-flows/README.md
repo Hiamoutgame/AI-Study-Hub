@@ -26,7 +26,7 @@ Mỗi file có cùng một khung:
 | `01-authentication.md`             | US01, US02 | Auth account               | Implemented |
 | `02-user-profile-storage.md`       | US15, US16 | Profile + quota            | Partial     |
 | `03-document-management.md`        | US03-US08  | Tài liệu cơ bản            | Partial     |
-| `04-cloud-preview-ocr.md`          | US09, US14 | Preview + OCR              | Planned     |
+| `04-cloud-preview-extraction.md`   | US09, US14 | Preview + Text Extraction  | Planned     |
 | `05-ai-chat-document-ai.md`        | US10-US13  | AI chat/doc AI             | Planned     |
 | `06-bookmarks-sharing.md`          | US17, US18 | Bookmark + sharing         | Planned     |
 | `07-admin-users.md`                | US19       | Admin users                | Planned     |

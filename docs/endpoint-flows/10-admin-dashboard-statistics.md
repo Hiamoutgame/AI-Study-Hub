@@ -18,7 +18,7 @@ Nhóm này gồm US23, cung cấp dashboard và thống kê chi tiết về user
 ## Request Processing Flow
 
 1. Validate admin token và query period/from/to.
-2. Dashboard aggregate tổng user, active user, documents, storage usage, OCR/AI status.
+2. Dashboard aggregate tổng user, active user, documents, storage usage, text extraction/AI status.
 3. User stats aggregate theo ngày, role, active/locked, verified status.
 4. Document stats aggregate upload count, public/private, category, file size, top uploaders.
 5. Response nên có `meta.period` hoặc params đã dùng để frontend hiển thị.

@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from 'express'
 import { checkSchema, ParamSchema } from 'express-validator'
 import { ObjectId } from 'mongodb'
-import { AiStatus, OcrStatus, SolutionStatus, StoragePlan, UserRole } from '~/constants/enum'
+import { AiStatus, ExtractionStatus, SolutionStatus, StoragePlan, UserRole } from '~/constants/enum'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { ADMIN_MESSAGES } from '~/constants/message'
 import { ErrorWithStatus } from '~/models/Error'
@@ -242,10 +242,10 @@ export const getAdminDocumentsValidator = validate(
       uploaderId: optionalObjectId(ADMIN_MESSAGES.USER_ID_IS_INVALID),
       categoryId: optionalObjectId(ADMIN_MESSAGES.USER_ID_IS_INVALID),
       isPublic: optionalBoolean(ADMIN_MESSAGES.IS_ACTIVE_MUST_BE_BOOLEAN),
-      ocrStatus: {
+      extractionStatus: {
         optional: true,
         isIn: {
-          options: [Object.values(OcrStatus)],
+          options: [Object.values(ExtractionStatus)],
           errorMessage: ADMIN_MESSAGES.STATUS_IS_INVALID
         }
       },

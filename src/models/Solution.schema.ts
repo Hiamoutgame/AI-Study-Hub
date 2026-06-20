@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb'
-import { AiStatus, OcrStatus, SolutionStatus, StorageProvider } from '~/constants/enum'
+import { AiStatus, ExtractionStatus, SolutionStatus, StorageProvider } from '~/constants/enum'
 
 interface SolutionType {
   _id?: ObjectId
@@ -27,12 +27,10 @@ interface SolutionType {
   checksum?: string
   aiStatus?: AiStatus
   aiErrorMessage?: string
-  ocrStatus?: OcrStatus
-  ocrLanguage?: string
-  ocrText?: string
-  ocrConfidence?: number
-  ocrProcessedAt?: Date
-  ocrErrorMessage?: string
+  extractionStatus?: ExtractionStatus
+  extractedText?: string
+  extractedAt?: Date
+  extractionErrorMessage?: string
   flagCount?: number
   flaggedAt?: Date
   flaggedBy?: ObjectId
@@ -72,12 +70,10 @@ export class Solution implements SolutionType {
   checksum: string
   aiStatus: AiStatus
   aiErrorMessage: string
-  ocrStatus: OcrStatus
-  ocrLanguage: string
-  ocrText: string
-  ocrConfidence: number
-  ocrProcessedAt?: Date
-  ocrErrorMessage: string
+  extractionStatus: ExtractionStatus
+  extractedText: string
+  extractedAt?: Date
+  extractionErrorMessage: string
   flagCount: number
   flaggedAt?: Date
   flaggedBy?: ObjectId
@@ -117,12 +113,10 @@ export class Solution implements SolutionType {
     this.checksum = solution.checksum || ''
     this.aiStatus = solution.aiStatus || AiStatus.pending
     this.aiErrorMessage = solution.aiErrorMessage || ''
-    this.ocrStatus = solution.ocrStatus || OcrStatus.pending
-    this.ocrLanguage = solution.ocrLanguage || 'vie'
-    this.ocrText = solution.ocrText || ''
-    this.ocrConfidence = solution.ocrConfidence || 0
-    this.ocrProcessedAt = solution.ocrProcessedAt
-    this.ocrErrorMessage = solution.ocrErrorMessage || ''
+    this.extractionStatus = solution.extractionStatus || ExtractionStatus.pending
+    this.extractedText = solution.extractedText || ''
+    this.extractedAt = solution.extractedAt
+    this.extractionErrorMessage = solution.extractionErrorMessage || ''
     this.flagCount = solution.flagCount || 0
     this.flaggedAt = solution.flaggedAt
     this.flaggedBy = solution.flaggedBy

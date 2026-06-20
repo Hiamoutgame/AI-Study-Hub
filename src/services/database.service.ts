@@ -40,6 +40,10 @@ class DatabaseService {
     }
   }
 
+  async disconnect() {
+    await this.client.close()
+  }
+
   private async createIndexes() {
     await Promise.all([
       this.favorites.createIndex({ accountId: 1, solutionId: 1 }, { unique: true }),

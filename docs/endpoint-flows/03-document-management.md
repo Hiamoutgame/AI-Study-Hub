@@ -26,7 +26,7 @@ Nhóm này gồm US03, US04, US05, US06, US07 và US08. Đây là core của AI 
 ## Request Processing Flow
 
 1. `accessTokenValidator` decode user từ bearer token.
-2. Upload endpoint chạy multer trước, sau đó validator check title/category/tags/isPublic/enableOcr.
+2. Upload endpoint chạy multer trước, sau đó validator check title/category/tags/isPublic. Text được trích xuất tự động (pdf-parse/mammoth/utf-8) ngay trong service upload.
 3. `documentService.uploadDocument` check account active/verified, quota, category active, tạo `Solution`, update quota, ghi `activity_logs`.
 4. List endpoint tạo Mongo filter theo owner/public, not deleted, search regex, tags, category, status, pagination.
 5. Detail endpoint check owner/public, tăng `viewCount`, join category/uploader/favorite/share count.

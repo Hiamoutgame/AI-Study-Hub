@@ -8,7 +8,6 @@ export interface UploadDocumentReqBody {
   tags?: string[] | string
   language?: string
   isPublic?: boolean | string
-  enableOcr?: boolean | string
 }
 
 export interface GetDocumentsQuery extends ParsedQs {

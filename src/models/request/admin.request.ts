@@ -40,7 +40,7 @@ export interface AdminDocumentsQuery extends PaginationQuery {
   uploaderId?: string
   categoryId?: string
   isPublic?: string
-  ocrStatus?: string
+  extractionStatus?: string
   aiStatus?: string
   status?: string
   flagged?: string

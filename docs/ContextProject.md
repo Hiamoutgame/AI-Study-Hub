@@ -98,7 +98,7 @@ Hệ thống **AI Study Hub** được xây dựng nhằm:
 | US11 | AI Tóm Tắt Tài Liệu     | AI tóm tắt nội dung tài liệu để ôn tập hiệu quả                        |
 | US12 | AI Giải Thích Khái Niệm | AI giải thích khái niệm từ tài liệu để hiểu bài sâu hơn                |
 | US13 | Xem Lịch Sử Chat        | Xem lại các cuộc trò chuyện AI trước đó                                |
-| US14 | OCR Trích Xuất Văn Bản  | Hệ thống trích xuất text từ PDF scan / ảnh để nội dung có thể tìm kiếm |
+| US14 | Trích Xuất Văn Bản      | Tự động trích xuất nội dung text từ tài liệu digital (PDF/DOCX/TXT) khi upload để nội dung có thể tìm kiếm & dùng cho AI |
 | US15 | Quản Lý Profile         | Cập nhật thông tin tài khoản cá nhân                                   |
 | US16 | Dung Lượng Lưu Trữ      | Kiểm tra mức sử dụng cloud storage để quản lý file hiệu quả            |
 | US17 | Chia Sẻ Tài Liệu        | Chia sẻ tài liệu với người dùng khác để phân phối tài liệu dễ hơn      |
@@ -121,7 +121,7 @@ Hệ thống **AI Study Hub** được xây dựng nhằm:
 | US22 | Gửi Thông Báo      | Gửi thông báo & thông tin hệ thống đến người dùng             |
 | US23 | Dashboard Thống Kê | Xem thống kê tổng quan để theo dõi hoạt động hệ thống         |
 | US24 | Cấu Hình AI        | Cấu hình chatbot AI để kiểm soát hành vi và mức sử dụng AI    |
-| US25 | Giám Sát OCR & Log | Xem log xử lý OCR và hoạt động hệ thống để phát hiện lỗi sớm  |
+| US25 | Giám Sát Trích Xuất & Log | Xem log xử lý trích xuất văn bản và hoạt động hệ thống để phát hiện lỗi sớm  |
 
 ---
 

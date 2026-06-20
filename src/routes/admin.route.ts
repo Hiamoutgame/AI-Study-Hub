@@ -275,7 +275,7 @@ adminRouter.delete(
  *         name: isPublic
  *         schema: { type: boolean }
  *       - in: query
- *         name: ocrStatus
+ *         name: extractionStatus
  *         schema: { type: string }
  *       - in: query
  *         name: aiStatus

@@ -5,7 +5,7 @@ import {
   ActivityAction,
   ActivityEntityType,
   AiStatus,
-  OcrStatus,
+  ExtractionStatus,
   SolutionStatus,
   StoragePlan,
   StorageProvider
@@ -23,6 +23,7 @@ import {
 import { Solution } from '~/models/Solution.schema'
 import { StorageQuota } from '~/models/StorageQuota.schema'
 import databaseService from './database.service'
+import extractionService from './extraction.service'
 import folderService from './folder.service'
 
 const DEFAULT_TOTAL_BYTES = 500 * 1024 * 1024
@@ -278,7 +279,7 @@ class DocumentService {
   }
 
   private getLocalStorageKey(file: Express.Multer.File) {
-    return file.path.replace(/\\/g, '/')
+    return file.path ? file.path.replace(/\\/g, '/') : `test-memory://${file.originalname}`
   }
 
   private getLocalFilePath(document: Solution) {
@@ -327,7 +328,10 @@ class DocumentService {
 
       const categoryId = await this.validateCategory(payload.categoryId)
       const folderId = await folderService.validateFolderAccess(payload.folderId, uploaderId)
-      const enableOcr = this.parseBoolean(payload.enableOcr)
+      await this.ensureStorageAvailable(uploaderId, file.size)
+
+      // Trich xuat text tu tai lieu digital (PDF/DOCX/TXT) ngay khi upload de phuc vu search & AI.
+      const extraction = await extractionService.extractText(file)
       const now = new Date()
       const document = new Solution({
         _id: solutionId,
@@ -350,12 +354,14 @@ class DocumentService {
         isPublic: this.parseBoolean(payload.isPublic),
         language: payload.language?.trim() || 'vi',
         aiStatus: AiStatus.pending,
-        ocrStatus: enableOcr ? OcrStatus.processing : OcrStatus.pending,
+        extractionStatus: extraction.status,
+        extractedText: extraction.text,
+        extractedAt: extraction.status === ExtractionStatus.completed ? now : undefined,
+        extractionErrorMessage: extraction.errorMessage,
         createdAt: now,
         updatedAt: now
       })
 
-      await this.ensureStorageAvailable(uploaderId, file.size)
       await databaseService.solutions.insertOne(document)
       documentInserted = true
       await this.increaseStorageUsage(uploaderId, file.size)
@@ -365,6 +371,20 @@ class DocumentService {
         action: ActivityAction.uploadSolution,
         solutionId,
         metadata: { fileName: document.fileName, fileSizeBytes: document.fileSizeBytes },
+        context
+      })
+      await this.createActivityLog({
+        accountId: uploaderId,
+        action:
+          extraction.status === ExtractionStatus.completed
+            ? ActivityAction.extractComplete
+            : ActivityAction.extractFailed,
+        solutionId,
+        metadata: {
+          extractionStatus: extraction.status,
+          extractedChars: extraction.text.length,
+          errorMessage: extraction.errorMessage || undefined
+        },
         context
       })
 
@@ -399,7 +419,7 @@ class DocumentService {
         $or: [
           { title: { $regex: regex, $options: 'i' } },
           { description: { $regex: regex, $options: 'i' } },
-          { ocrText: { $regex: regex, $options: 'i' } }
+          { extractedText: { $regex: regex, $options: 'i' } }
         ]
       })
     }
@@ -471,7 +491,7 @@ class DocumentService {
         isPublic: document.isPublic,
         isBookmarked: bookmarkedIds.has((document._id as ObjectId).toString()),
         aiStatus: document.aiStatus,
-        ocrStatus: document.ocrStatus,
+        extractionStatus: document.extractionStatus,
         viewCount: document.viewCount,
         downloadCount: document.downloadCount,
         createdAt: document.createdAt,
@@ -547,7 +567,7 @@ class DocumentService {
       pageCount: visibleDocument.pageCount,
       status: visibleDocument.status,
       aiStatus: visibleDocument.aiStatus,
-      ocrStatus: visibleDocument.ocrStatus,
+      extractionStatus: visibleDocument.extractionStatus,
       isPublic: visibleDocument.isPublic,
       isBookmarked: Boolean(favorite),
       viewCount: visibleDocument.viewCount,
@@ -672,8 +692,8 @@ class DocumentService {
       status: document.status,
       aiStatus: document.aiStatus,
       aiErrorMessage: document.aiErrorMessage,
-      ocrStatus: document.ocrStatus,
-      ocrErrorMessage: document.ocrErrorMessage,
+      extractionStatus: document.extractionStatus,
+      extractionErrorMessage: document.extractionErrorMessage,
       storageProvider: document.storageProvider,
       storageBucket: document.storageBucket,
       storageKey: document.storageKey,

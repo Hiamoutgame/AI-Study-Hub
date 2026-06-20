@@ -66,8 +66,6 @@ const documentRouter = express.Router()
  *                 type: string
  *               isPublic:
  *                 type: boolean
- *               enableOcr:
- *                 type: boolean
  *     responses:
  *       201:
  *         description: Document uploaded

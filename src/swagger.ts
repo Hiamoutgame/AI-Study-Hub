@@ -504,7 +504,7 @@ const swaggerDefinition = {
             enum: ['pending', 'processing', 'ready', 'failed'],
             example: 'pending'
           },
-          ocrStatus: {
+          extractionStatus: {
             type: 'string',
             enum: ['pending', 'processing', 'completed', 'failed'],
             example: 'pending'
@@ -674,24 +674,16 @@ const swaggerDefinition = {
             type: 'string',
             example: ''
           },
-          ocrStatus: {
+          extractionStatus: {
             type: 'string',
             enum: ['pending', 'processing', 'completed', 'failed'],
             example: 'pending'
           },
-          ocrLanguage: {
-            type: 'string',
-            example: 'vie'
-          },
-          ocrText: {
+          extractedText: {
             type: 'string',
             example: ''
           },
-          ocrConfidence: {
-            type: 'number',
-            example: 0
-          },
-          ocrErrorMessage: {
+          extractionErrorMessage: {
             type: 'string',
             example: ''
           },
@@ -796,12 +788,12 @@ const swaggerDefinition = {
             type: 'string',
             example: ''
           },
-          ocrStatus: {
+          extractionStatus: {
             type: 'string',
             enum: ['pending', 'processing', 'completed', 'failed'],
             example: 'pending'
           },
-          ocrErrorMessage: {
+          extractionErrorMessage: {
             type: 'string',
             example: ''
           },
@@ -1171,7 +1163,7 @@ const swaggerDefinition = {
           mimeType: { type: 'string' },
           uploadedBy: { $ref: '#/components/schemas/AdminDocumentUploaderSummary', nullable: true },
           category: { $ref: '#/components/schemas/AdminDocumentCategorySummary', nullable: true },
-          ocrStatus: { type: 'string' },
+          extractionStatus: { type: 'string' },
           aiStatus: { type: 'string' },
           status: { type: 'string' },
           flagCount: { type: 'number' },
@@ -1445,7 +1437,7 @@ const swaggerDefinition = {
                   totalChatSessions: { type: 'number' },
                   totalMessages: { type: 'number' },
                   totalSummaries: { type: 'number' },
-                  totalOcrJobs: { type: 'number' },
+                  totalExtractionJobs: { type: 'number' },
                   tokensConsumed: { type: 'number' }
                 }
               },
@@ -1549,7 +1541,7 @@ const swaggerDefinition = {
             properties: {
               totalDocuments: { type: 'number' },
               fileTypeBreakdown: { type: 'object' },
-              ocrStatusBreakdown: { type: 'object' },
+              extractionStatusBreakdown: { type: 'object' },
               aiStatusBreakdown: { type: 'object' },
               topUploaders: {
                 type: 'array',

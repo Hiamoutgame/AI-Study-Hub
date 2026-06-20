@@ -2,22 +2,27 @@ import { NextFunction, Request, RequestHandler, Response } from 'express'
 import fs from 'node:fs'
 import path from 'node:path'
 import multer, { FileFilterCallback } from 'multer'
+import { UPLOAD_ROOT } from '~/constants/base'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { DOCUMENT_MESSAGES, USER_MESSAGES } from '~/constants/message'
 import { ErrorWithStatus } from '~/models/Error'
 
 const AVATAR_MAX_SIZE_BYTES = 2 * 1024 * 1024
 const DOCUMENT_MAX_SIZE_BYTES = 100 * 1024 * 1024
-const UPLOAD_ROOT = path.resolve(process.cwd(), 'uploads')
-const AVATAR_UPLOAD_DIR = path.join(UPLOAD_ROOT, 'avatars')
-const DOCUMENT_UPLOAD_DIR = path.join(UPLOAD_ROOT, 'documents')
+const RESOLVED_UPLOAD_ROOT = path.resolve(UPLOAD_ROOT)
+const AVATAR_UPLOAD_DIR = path.join(RESOLVED_UPLOAD_ROOT, 'avatars')
+const DOCUMENT_UPLOAD_DIR = path.join(RESOLVED_UPLOAD_ROOT, 'documents')
 
 const ensureDir = (dir: string) => {
   fs.mkdirSync(dir, { recursive: true })
 }
 
-const createStorage = (dir: string) =>
-  multer.diskStorage({
+const createStorage = (dir: string) => {
+  if (process.env.NODE_ENV === 'test') {
+    return multer.memoryStorage()
+  }
+
+  return multer.diskStorage({
     destination: (req, file, cb) => {
       ensureDir(dir)
       cb(null, dir)
@@ -28,6 +33,7 @@ const createStorage = (dir: string) =>
       cb(null, `${randomSuffix}${extension}`)
     }
   })
+}
 
 const createFileFilter = ({
   allowedExtensions,

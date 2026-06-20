@@ -26,7 +26,7 @@ Nhóm này gồm US10, US11, US12 và US13. Mục tiêu là tạo chat session, 
 2. Service check document access nếu chat/summarize/explain gắn với tài liệu.
 3. Tạo session trong `ai_chat_sessions` hoặc load session hiện có.
 4. Lưu user message vào `ai_messages`.
-5. Lấy context từ `document_embeddings` nếu document có AI ready/OCR text.
+5. Lấy context từ `document_embeddings` nếu document có AI ready/extracted text.
 6. Gửi AI provider bằng config trong `ai_configurations`.
 7. Lưu assistant message, tăng usage/quota, trả response.
 
@@ -78,5 +78,5 @@ Nguồn: [Wikimedia Commons - Full GPT architecture](https://commons.wikimedia.o
 
 - Tạo session với document public/private.
 - Gửi message khi session không phải của user trả 403.
-- Summarize/explain document không có OCR/embedding cần fallback hoặc lỗi rõ.
+- Summarize/explain document không có text extraction/embedding cần fallback hoặc lỗi rõ.
 - List messages phân trang đúng thứ tự thời gian.

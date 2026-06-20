@@ -124,7 +124,6 @@ export const DOCUMENT_MESSAGES = {
   LANGUAGE_MUST_BE_A_STRING: 'Language must be a string',
   LANGUAGE_LENGTH_MUST_BE_FROM_2_TO_20: 'Language length must be from 2 to 20',
   IS_PUBLIC_MUST_BE_BOOLEAN: 'isPublic must be a boolean',
-  ENABLE_OCR_MUST_BE_BOOLEAN: 'enableOcr must be a boolean',
   AI_STATUS_IS_INVALID: 'AI status is invalid',
   SORT_BY_IS_INVALID: 'Sort by is invalid',
   ORDER_IS_INVALID: 'Order is invalid',

@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb'
-import { AiStatus, OcrStatus, SolutionStatus, UserRole } from '~/constants/enum'
+import { AiStatus, ExtractionStatus, SolutionStatus, UserRole } from '~/constants/enum'
 import { DashboardQuery, StatsQuery } from '~/models/request/admin.request'
 import databaseService from './database.service'
 
@@ -104,7 +104,7 @@ class AdminDashboardService {
       documentSize,
       totalChatSessions,
       totalMessages,
-      totalOcrJobs,
+      totalExtractionJobs,
       tokens,
       storage,
       userSignupsByDay,
@@ -124,7 +124,7 @@ class AdminDashboardService {
         .toArray(),
       databaseService.aiChatSessions.countDocuments({}),
       databaseService.aiMessages.countDocuments({}),
-      databaseService.solutions.countDocuments({ ocrStatus: { $ne: OcrStatus.pending } }),
+      databaseService.solutions.countDocuments({ extractionStatus: { $ne: ExtractionStatus.pending } }),
       databaseService.aiMessages
         .aggregate<{ tokensConsumed: number }>([{ $group: { _id: null, tokensConsumed: { $sum: '$tokensUsed' } } }])
         .toArray(),
@@ -163,7 +163,7 @@ class AdminDashboardService {
         totalChatSessions,
         totalMessages,
         totalSummaries: 0,
-        totalOcrJobs,
+        totalExtractionJobs,
         tokensConsumed: tokens[0]?.tokensConsumed || 0
       },
       storage: {
@@ -237,10 +237,10 @@ class AdminDashboardService {
   async getDocumentStats(query: StatsQuery) {
     const { from, to, groupBy } = this.getStatsRange(query)
     const format = this.getDateFormat(groupBy)
-    const [totalDocuments, fileTypes, ocrStatus, aiStatus, topUploaders, trend] = await Promise.all([
+    const [totalDocuments, fileTypes, extractionStatus, aiStatus, topUploaders, trend] = await Promise.all([
       databaseService.solutions.countDocuments({}),
       this.countByField('solutions', 'fileExtension'),
-      this.countByField('solutions', 'ocrStatus'),
+      this.countByField('solutions', 'extractionStatus'),
       this.countByField('solutions', 'aiStatus'),
       databaseService.solutions
         .aggregate<{
@@ -282,11 +282,11 @@ class AdminDashboardService {
     return {
       totalDocuments,
       fileTypeBreakdown: fileTypes,
-      ocrStatusBreakdown: {
-        pending: ocrStatus[AiStatus.pending] || ocrStatus[OcrStatus.pending] || 0,
-        processing: ocrStatus[OcrStatus.processing] || 0,
-        completed: ocrStatus[OcrStatus.completed] || 0,
-        failed: ocrStatus[OcrStatus.failed] || 0
+      extractionStatusBreakdown: {
+        pending: extractionStatus[ExtractionStatus.pending] || 0,
+        processing: extractionStatus[ExtractionStatus.processing] || 0,
+        completed: extractionStatus[ExtractionStatus.completed] || 0,
+        failed: extractionStatus[ExtractionStatus.failed] || 0
       },
       aiStatusBreakdown: {
         pending: aiStatus[AiStatus.pending] || 0,

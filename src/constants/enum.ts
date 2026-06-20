@@ -29,9 +29,9 @@ export enum ActivityAction {
   shareLinkCreate = 'share_link_create',
   shareLinkUse = 'share_link_use',
   shareLinkRevoke = 'share_link_revoke',
-  ocrStart = 'ocr_start',
-  ocrComplete = 'ocr_complete',
-  ocrFailed = 'ocr_failed',
+  extractStart = 'extract_start',
+  extractComplete = 'extract_complete',
+  extractFailed = 'extract_failed',
   aiChatStart = 'ai_chat_start',
   aiMessageSend = 'ai_message_send',
   aiSummarize = 'ai_summarize',
@@ -78,7 +78,7 @@ export enum AiStatus {
   failed = 'failed'
 }
 
-export enum OcrStatus {
+export enum ExtractionStatus {
   pending = 'pending',
   processing = 'processing',
   completed = 'completed',
@@ -130,8 +130,8 @@ export enum NotificationType {
   shareReceived = 'share_received',
   aiReady = 'ai_ready',
   aiFailed = 'ai_failed',
-  ocrReady = 'ocr_ready',
-  ocrFailed = 'ocr_failed',
+  extractReady = 'extract_ready',
+  extractFailed = 'extract_failed',
   storageWarning = 'storage_warning',
   solutionUpdated = 'solution_updated',
   recycleAutoDelete = 'recycle_auto_delete',

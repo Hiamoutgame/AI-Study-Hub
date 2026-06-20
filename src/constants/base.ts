@@ -1,6 +1,6 @@
 import dotenv from 'dotenv'
 
-dotenv.config()
+dotenv.config({ quiet: true })
 
 export const Base = {
   port: 5284
@@ -23,6 +23,7 @@ export const CORS_ORIGINS = (process.env.CORS_ORIGINS || '*')
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean)
+export const UPLOAD_ROOT = process.env.UPLOAD_ROOT || 'uploads'
 
 // Cau hinh SMTP de gui email OTP. De trong khi dev se fallback log OTP ra console.
 export const SMTP_HOST = process.env.SMTP_HOST as string

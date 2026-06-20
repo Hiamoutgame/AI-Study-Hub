@@ -106,8 +106,7 @@ export const uploadDocumentValidator = validate(
       folderId: optionalObjectIdSchema(FOLDER_MESSAGES.FOLDER_ID_IS_INVALID),
       tags: optionalTagsSchema,
       language: optionalLanguageSchema,
-      isPublic: optionalBooleanSchema(DOCUMENT_MESSAGES.IS_PUBLIC_MUST_BE_BOOLEAN),
-      enableOcr: optionalBooleanSchema(DOCUMENT_MESSAGES.ENABLE_OCR_MUST_BE_BOOLEAN)
+      isPublic: optionalBooleanSchema(DOCUMENT_MESSAGES.IS_PUBLIC_MUST_BE_BOOLEAN)
     },
     ['body']
   )

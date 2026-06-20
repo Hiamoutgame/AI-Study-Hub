@@ -3,10 +3,10 @@ import {
   ActivityAction,
   ActivityEntityType,
   AiStatus,
+  ExtractionStatus,
   NotificationPriority,
   NotificationRefEntity,
   NotificationType,
-  OcrStatus,
   SolutionStatus
 } from '~/constants/enum'
 import HTTP_STATUS from '~/constants/httpStatus'
@@ -129,7 +129,7 @@ class AdminDocumentService {
       filter.$or = [
         { title: { $regex: regex, $options: 'i' } },
         { description: { $regex: regex, $options: 'i' } },
-        { ocrText: { $regex: regex, $options: 'i' } }
+        { extractedText: { $regex: regex, $options: 'i' } }
       ]
     }
 
@@ -145,8 +145,8 @@ class AdminDocumentService {
       filter.isPublic = this.parseBoolean(query.isPublic)
     }
 
-    if (query.ocrStatus) {
-      filter.ocrStatus = query.ocrStatus as OcrStatus
+    if (query.extractionStatus) {
+      filter.extractionStatus = query.extractionStatus as ExtractionStatus
     }
 
     if (query.aiStatus) {
@@ -204,7 +204,7 @@ class AdminDocumentService {
         mimeType: document.mimeType,
         uploadedBy: uploaderMap.get(document.uploaderId.toString()) || null,
         category: document.categoryId ? categoryMap.get(document.categoryId.toString()) || null : null,
-        ocrStatus: document.ocrStatus,
+        extractionStatus: document.extractionStatus,
         aiStatus: document.aiStatus,
         status: document.status,
         flagCount: document.flagCount,

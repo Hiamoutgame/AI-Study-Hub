@@ -16,7 +16,7 @@
 3. [User Profile](#3-user-profile)
 4. [Document Management](#4-document-management)
 5. [Cloud Storage & Preview](#5-cloud-storage--preview)
-6. [OCR Processing](#6-ocr-processing)
+6. [Text Extraction](#6-extraction-processing)
 7. [AI Chatbot](#7-ai-chatbot)
 8. [Bookmarks](#8-bookmarks)
 9. [Document Sharing](#9-document-sharing)
@@ -498,7 +498,7 @@ Tất cả response đều bọc trong envelope chuẩn:
 | `tags`        | string[] | ❌       | Danh sách tag (vd: `["giải tích", "chương 1"]`) |
 | `language`    | string   | ❌       | Mã ngôn ngữ (default: `"vi"`)                   |
 | `isPublic`    | boolean  | ❌       | Công khai (default: `false`)                    |
-| `enableOcr`   | boolean  | ❌       | Bật OCR ngay sau upload (default: `false`)      |
+| `enableExtraction`   | boolean  | ❌       | Bật text extraction ngay sau upload (default: `false`)      |
 
 **Response `201`:**
 
@@ -524,7 +524,7 @@ Tất cả response đều bọc trong envelope chuẩn:
     "thumbnailUrl": "https://cdn.aistudyhub.io/thumbs/64a1b2c3d4e5f6a7b8c9d002.jpg",
     "status": "active",
     "aiStatus": "pending",
-    "ocrStatus": "pending",
+    "extractionStatus": "pending",
     "isPublic": false,
     "language": "vi",
     "pageCount": null,
@@ -548,7 +548,7 @@ Tất cả response đều bọc trong envelope chuẩn:
 
 | Tham số      | Kiểu    | Bắt buộc | Mô tả                                                   |
 | ------------ | ------- | -------- | ------------------------------------------------------- |
-| `q`          | string  | ❌       | Từ khóa tìm kiếm theo `title`, `description`, `ocrText` |
+| `q`          | string  | ❌       | Từ khóa tìm kiếm theo `title`, `description`, `extractedText` |
 | `categoryId` | string  | ❌       | Lọc theo ObjectId danh mục                              |
 | `tags`       | string  | ❌       | Lọc theo tag (phân cách bởi dấu phẩy)                   |
 | `isPublic`   | boolean | ❌       | Lọc public/private                                      |
@@ -588,7 +588,7 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
       "isPublic": false,
       "isBookmarked": false,
       "aiStatus": "ready",
-      "ocrStatus": "completed",
+      "extractionStatus": "completed",
       "viewCount": 42,
       "downloadCount": 7,
       "createdAt": "2024-10-15T10:30:00.000Z",
@@ -644,7 +644,7 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
     "pageCount": 120,
     "status": "active",
     "aiStatus": "ready",
-    "ocrStatus": "completed",
+    "extractionStatus": "completed",
     "isPublic": false,
     "isBookmarked": false,
     "viewCount": 42,
@@ -812,7 +812,7 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
 | ------------ | --------------- |
 | Auth yêu cầu | ✅ Bearer Token |
 
-> Dùng để polling trạng thái sau khi upload (xử lý cloud, OCR, AI embedding).
+> Dùng để polling trạng thái sau khi upload (xử lý cloud, text extraction, AI embedding).
 
 **Response `200`:**
 
@@ -823,12 +823,12 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
   "data": {
     "_id": "64a1b2c3d4e5f6a7b8c9d002",
     "status": "active",
-    "ocrStatus": "processing",
+    "extractionStatus": "processing",
     "aiStatus": "pending",
     "steps": [
       { "step": "uploadCloud", "status": "completed", "completedAt": "2024-10-15T10:30:05.000Z" },
       { "step": "generateThumbnail", "status": "completed", "completedAt": "2024-10-15T10:30:10.000Z" },
-      { "step": "ocrProcessing", "status": "processing", "startedAt": "2024-10-15T10:30:12.000Z" },
+      { "step": "extractionProcessing", "status": "processing", "startedAt": "2024-10-15T10:30:12.000Z" },
       { "step": "aiEmbedding", "status": "pending", "startedAt": null }
     ]
   }
@@ -837,19 +837,19 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
 
 ---
 
-## 6. OCR Processing
+## 6. Text Extraction
 
 > **User Story:** US14
 > **Actor:** User
-> **Collection:** `solutions` (OCR fields lưu inline)
+> **Collection:** `solutions` (text extraction fields lưu inline)
 
-> **Lưu ý kiến trúc:** Toàn bộ trạng thái và kết quả OCR được lưu inline trong `solutions` document qua các field: `ocrStatus`, `ocrText`, `ocrLanguage`, `ocrConfidence`, `ocrProcessedAt`, `ocrErrorMessage`. Không có collection `ocr_jobs` riêng.
+> **Lưu ý kiến trúc:** Toàn bộ trạng thái và kết quả text extraction được lưu inline trong `solutions` document qua các field: `extractionStatus`, `extractedText`, `extractionLanguage`, `extractionConfidence`, `extractionProcessedAt`, `extractionErrorMessage`. Không có collection `extraction_jobs` riêng.
 
 ---
 
-### US14 — Yêu cầu OCR cho Tài liệu
+### US14 — Yêu cầu text extraction cho Tài liệu
 
-**`POST /documents/{id}/ocr`**
+**`POST /documents/{id}/extraction`**
 
 | Thông tin    | Chi tiết        |
 | ------------ | --------------- |
@@ -873,10 +873,10 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
 ```json
 {
   "success": true,
-  "message": "Yêu cầu OCR đã được tiếp nhận và đang xử lý.",
+  "message": "Yêu cầu text extraction đã được tiếp nhận và đang xử lý.",
   "data": {
     "_id": "64a1b2c3d4e5f6a7b8c9d002",
-    "ocrStatus": "processing",
+    "extractionStatus": "processing",
     "estimatedSeconds": 30,
     "pollUrl": "/api/v1/documents/64a1b2c3d4e5f6a7b8c9d002/upload-status"
   }
@@ -885,9 +885,9 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
 
 ---
 
-### US14 — Xem kết quả OCR
+### US14 — Xem kết quả text extraction
 
-**`GET /documents/{id}/ocr`**
+**`GET /documents/{id}/extraction`**
 
 | Thông tin    | Chi tiết        |
 | ------------ | --------------- |
@@ -898,15 +898,15 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
 ```json
 {
   "success": true,
-  "message": "Kết quả OCR.",
+  "message": "Kết quả text extraction.",
   "data": {
     "_id": "64a1b2c3d4e5f6a7b8c9d002",
-    "ocrStatus": "completed",
-    "ocrLanguage": "vie",
-    "ocrText": "Chương 1: Giới hạn và liên tục của hàm số...",
+    "extractionStatus": "completed",
+    "extractionLanguage": "vie",
+    "extractedText": "Chương 1: Giới hạn và liên tục của hàm số...",
     "pageCount": 120,
-    "ocrConfidence": 0.94,
-    "ocrProcessedAt": "2024-10-15T10:32:00.000Z"
+    "extractionConfidence": 0.94,
+    "extractionProcessedAt": "2024-10-15T10:32:00.000Z"
   }
 }
 ```
@@ -1805,7 +1805,7 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
 | `uploaderId` | string  | ❌       | Lọc theo ObjectId người upload                         |
 | `categoryId` | string  | ❌       | Lọc theo danh mục                                      |
 | `isPublic`   | boolean | ❌       | `true` / `false`                                       |
-| `ocrStatus`  | string  | ❌       | `"pending"`, `"processing"`, `"completed"`, `"failed"` |
+| `extractionStatus`  | string  | ❌       | `"pending"`, `"processing"`, `"completed"`, `"failed"` |
 | `aiStatus`   | string  | ❌       | `"pending"`, `"processing"`, `"ready"`, `"failed"`     |
 | `status`     | string  | ❌       | `"active"`, `"processing"`, `"error"`, `"archived"`    |
 | `flagged`    | boolean | ❌       | Lọc tài liệu bị báo cáo vi phạm                        |
@@ -1830,7 +1830,7 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
         "fullName": "Nguyễn Văn A",
         "email": "nguyenvana@student.edu.vn"
       },
-      "ocrStatus": "completed",
+      "extractionStatus": "completed",
       "aiStatus": "ready",
       "status": "active",
       "flagCount": 0,
@@ -2273,7 +2273,7 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
       "totalChatSessions": 1800,
       "totalMessages": 12400,
       "totalSummaries": 540,
-      "totalOcrJobs": 230,
+      "totalExtractionJobs": 230,
       "tokensConsumed": 4850000
     },
     "storage": {
@@ -2359,7 +2359,7 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
       "docx": 1200,
       "txt": 500
     },
-    "ocrStatusBreakdown": {
+    "extractionStatusBreakdown": {
       "completed": 7200,
       "processing": 50,
       "pending": 800,
@@ -2429,9 +2429,9 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
       "summarizeEnabled": true,
       "explainEnabled": true,
       "semanticSearchEnabled": true,
-      "ocrEnabled": true
+      "extractionEnabled": true
     },
-    "ocrProvider": "google_vision",
+    "extractionProvider": "google_vision",
     "updatedBy": "64a1b2c3d4e5f6a7b8c9d099",
     "updatedAt": "2024-10-01T00:00:00.000Z"
   }
@@ -2488,7 +2488,7 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
 | `prompt`      | object | System prompt                 |
 | `rateLimit`   | object | Giới hạn AI queries theo plan |
 | `features`    | object | Bật/tắt từng tính năng AI     |
-| `ocrProvider` | string | OCR provider hệ thống         |
+| `extractionProvider` | string | text extraction provider hệ thống         |
 
 ```json
 {
@@ -2501,7 +2501,7 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
   },
   "features": {
     "semanticSearchEnabled": true,
-    "ocrEnabled": true
+    "extractionEnabled": true
   }
 }
 ```
@@ -2518,7 +2518,7 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
       "ai.model.temperature",
       "ai.rate_limit.free",
       "ai.feature.semantic_search_enabled",
-      "ai.feature.ocr_enabled"
+      "ai.feature.extraction_enabled"
     ],
     "updatedBy": "64a1b2c3d4e5f6a7b8c9d099",
     "updatedAt": "2024-10-16T09:00:00.000Z"
@@ -2572,27 +2572,27 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
 
 > **User Story:** US25
 > **Actor:** Admin
-> **Collection:** `activity_logs`, `solutions` (cho OCR logs)
+> **Collection:** `activity_logs`, `solutions` (cho text extraction logs)
 
 ---
 
-### US25 — Xem nhật ký OCR (query từ `solutions`)
+### US25 — Xem nhật ký text extraction (query từ `solutions`)
 
-**`GET /admin/logs/ocr`**
+**`GET /admin/logs/extraction`**
 
 | Thông tin    | Chi tiết        |
 | ------------ | --------------- |
 | Auth yêu cầu | ✅ Bearer Token |
 | Quyền        | `admin`         |
 
-> 💡 Endpoint này query trực tiếp từ `solutions` lọc theo `ocrStatus` (OCR được lưu inline trong solutions, không có collection riêng).
+> 💡 Endpoint này query trực tiếp từ `solutions` lọc theo `extractionStatus` (text extraction được lưu inline trong solutions, không có collection riêng).
 
 **Query Params:**
 
 | Tham số     | Kiểu    | Mô tả                                        |
 | ----------- | ------- | -------------------------------------------- |
-| `ocrStatus` | string  | ❌ `"completed"`, `"failed"`, `"processing"` |
-| `from`      | string  | ❌ ISO8601 — lọc theo `ocrProcessedAt`       |
+| `extractionStatus` | string  | ❌ `"completed"`, `"failed"`, `"processing"` |
+| `from`      | string  | ❌ ISO8601 — lọc theo `extractionProcessedAt`       |
 | `to`        | string  | ❌ ISO8601                                   |
 | `page`      | integer | ❌                                           |
 | `limit`     | integer | ❌                                           |
@@ -2611,10 +2611,10 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
         "email": "nguyenvana@student.edu.vn",
         "fullName": "Nguyễn Văn A"
       },
-      "ocrStatus": "failed",
-      "ocrLanguage": "vie",
-      "ocrErrorMessage": "File bị hỏng hoặc không thể đọc nội dung.",
-      "ocrProcessedAt": "2024-10-15T10:30:17.000Z"
+      "extractionStatus": "failed",
+      "extractionLanguage": "vie",
+      "extractionErrorMessage": "File bị hỏng hoặc không thể đọc nội dung.",
+      "extractionProcessedAt": "2024-10-15T10:30:17.000Z"
     }
   ],
   "meta": { "page": 1, "limit": 20, "total": 230, "totalPages": 12 }
@@ -2753,7 +2753,7 @@ Tất cả lỗi đều tuân theo cấu trúc nhất quán:
 | `FILE_TOO_LARGE`          | 400         | File vượt quá giới hạn dung lượng        |
 | `UNSUPPORTED_FILE_TYPE`   | 400         | Định dạng file không được hỗ trợ         |
 | `STORAGE_QUOTA_EXCEEDED`  | 400         | Vượt quá dung lượng lưu trữ              |
-| `OCR_FAILED`              | 500         | Xử lý OCR thất bại                       |
+| `EXTRACTION_FAILED`              | 500         | Xử lý text extraction thất bại                       |
 | `AI_SERVICE_UNAVAILABLE`  | 503         | Dịch vụ AI tạm thời không khả dụng       |
 | `AI_TOKEN_LIMIT_EXCEEDED` | 429         | Vượt quá giới hạn token AI trong ngày    |
 | `RATE_LIMIT_EXCEEDED`     | 429         | Gửi request quá nhanh                    |
@@ -2790,8 +2790,8 @@ Tất cả lỗi đều tuân theo cấu trúc nhất quán:
 | US13 | Xem danh sách phiên chat     | GET    | `/chat/sessions`                    |
 | US13 | Xem lịch sử tin nhắn         | GET    | `/chat/sessions/{id}/messages`      |
 | US13 | Xóa phiên chat               | DELETE | `/chat/sessions/{id}`               |
-| US14 | Yêu cầu OCR                  | POST   | `/documents/{id}/ocr`               |
-| US14 | Xem kết quả OCR              | GET    | `/documents/{id}/ocr`               |
+| US14 | Yêu cầu text extraction                  | POST   | `/documents/{id}/extraction`               |
+| US14 | Xem kết quả text extraction              | GET    | `/documents/{id}/extraction`               |
 | US15 | Xem profile                  | GET    | `/users/me`                         |
 | US15 | Cập nhật profile             | PUT    | `/users/me`                         |
 | US15 | Đổi mật khẩu                 | PUT    | `/users/me/password`                |
@@ -2827,7 +2827,7 @@ Tất cả lỗi đều tuân theo cấu trúc nhất quán:
 | US24 | Xem cấu hình AI raw          | GET    | `/admin/ai-settings/raw`            |
 | US24 | Cập nhật cấu hình AI         | PUT    | `/admin/ai-settings`                |
 | US24 | Xem thống kê AI              | GET    | `/admin/ai-settings/usage`          |
-| US25 | Xem log OCR                  | GET    | `/admin/logs/ocr`                   |
+| US25 | Xem log text extraction                  | GET    | `/admin/logs/extraction`                   |
 | US25 | Xem log hệ thống             | GET    | `/admin/logs/system`                |
 | US25 | Xem audit log                | GET    | `/admin/logs/audit`                 |
 
@@ -2847,10 +2847,10 @@ Cắt gọn theo user stories thực tế — bỏ các collection vượt scope
 | **`permissions`** (per-user ACL)   | Có                                 | **Bỏ** — US17 chỉ dùng `permission_links`                                                                           |
 | **`solutions.groupId`**            | Có (ref groups)                    | **Bỏ**                                                                                                              |
 | **`solutions.version`**            | Có (gắn history)                   | **Bỏ**                                                                                                              |
-| **`solutions` OCR fields**         | "Cần bổ sung vào schema"           | **Đã add chính thức** (`ocrStatus`, `ocrText`, `ocrLanguage`, `ocrConfidence`, `ocrProcessedAt`, `ocrErrorMessage`) |
+| **`solutions` text extraction fields**         | "Cần bổ sung vào schema"           | **Đã add chính thức** (`extractionStatus`, `extractedText`, `extractionLanguage`, `extractionConfidence`, `extractionProcessedAt`, `extractionErrorMessage`) |
 | **Notification target**            | `all` / `recipientIds` / `groupId` | `all` / `recipientIds` (bỏ broadcast theo group)                                                                    |
 | **Notification types**             | có `comment_*`, `group_*`          | bỏ các type tương ứng collection đã xoá                                                                             |
-| **Tổng API endpoints**             | 65                                 | **64** (gỡ các endpoint group/comment, gộp OCR vào solutions, bỏ refresh-token)                                     |
+| **Tổng API endpoints**             | 65                                 | **64** (gỡ các endpoint group/comment, gộp text extraction vào solutions, bỏ refresh-token)                                     |
 
 ---
 
@@ -2862,7 +2862,7 @@ Cắt gọn theo user stories thực tế — bỏ các collection vượt scope
 | **Naming convention** | `snake_case` (user_id, full_name)      | `camelCase` (accountId, fullName)                         |
 | **Roles**             | GUEST, USER, MODERATOR, ADMIN          | guest, user, admin (moderator → `groupMembership.role`)   |
 | **Storage unit**      | MB (`storage_used_mb`)                 | Bytes (`usedBytes`, `totalBytes`)                         |
-| **OCR storage**       | Implied separate `ocr_jobs`            | Inline trong `solutions` (ocrStatus, ocrText, ...)        |
+| **text extraction storage**       | Implied separate `extraction_jobs`            | Inline trong `solutions` (extractionStatus, extractedText, ...)        |
 | **AI Settings**       | Flat object hardcode                   | Mapping với `ai_configurations` collection (key-value)    |
 | **Notifications**     | Flat target=all/user_ids               | Fan-out on write với `sourceEventId`                      |
 | **Share endpoint**    | `DELETE /documents/{id}/share`         | `DELETE /documents/{id}/share/{shareId}` (multi-link)     |

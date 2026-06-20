@@ -243,7 +243,7 @@ erDiagram
     string title
     string storageKey
     string aiStatus
-    string ocrStatus
+    string extractionStatus
     boolean isPublic
   }
   FOLDERS {
@@ -274,7 +274,7 @@ Collections exposed today:
 | `accounts`           | `accounts`            | auth, profile, admin users, uploaders                         |
 | `storageQuotas`      | `storage_quotas`      | storage plan and usage tracking                               |
 | `activityLogs`       | `activity_logs`       | document/admin/category/notification audit entries            |
-| `solutions`          | `solutions`           | documents, OCR/AI status, soft delete, download count         |
+| `solutions`          | `solutions`           | documents, extraction/AI status, soft delete, download count         |
 | `folders`            | `folders`             | personal parent-reference folder tree and cascade soft delete |
 | `solutionCategories` | `solution_categories` | categories and document grouping                              |
 | `aiChatSessions`     | `ai_chat_sessions`    | AI chat data model and admin stats basis                      |
@@ -340,7 +340,7 @@ npm run dev -> tsx watch src/index.ts
 - Folder delete is owner-only, requires `confirm: true`, prevents move cycles, and cascade soft-deletes subtree documents using the same 30-day document retention metadata.
 - The repo uses MongoDB native driver, not Mongoose. Schema files are TypeScript classes/interfaces for document shape, not Mongoose models.
 - `ai_chat_sessions`, `ai_messages`, `document_embeddings`, and `ai_configurations` exist in the model/database layer, but no separate `/chat` router is mounted in the current `src/index.ts`.
-- OCR currently appears as document state fields in `solutions`; there is no separate OCR worker/process mounted in this Express app.
+- Text extraction (pdf-parse for PDF, mammoth for DOCX, UTF-8 read for TXT) runs inline during document upload in `documentService.uploadDocument` and fills `extractionStatus`/`extractedText`/`extractedAt`/`extractionErrorMessage` in `solutions`; there is no separate text extraction worker process mounted in this Express app.
 - Error flow is centralized through `ErrorWithStatus`, `EntityErr`, `wrapAsync`, and `defautHandler`.
 
 ## Suggested Diagram Export
