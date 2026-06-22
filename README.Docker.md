@@ -20,11 +20,11 @@ DB_NAME=aiStudyHubDb
 docker compose up -d --build
 ```
 
-The API is available at `http://localhost:5284` and Swagger is available at `http://localhost:5284/api-docs`.
+The API is available at `http://localhost:5285` and Swagger is available at `http://localhost:5285/api-docs`.
 
 ## Services
 
-- `server`: Express API, built from `Dockerfile`, exposed on host port `5284`.
+- `server`: Express API, built from `Dockerfile`, exposed on host port `5285`.
 - `uploads-data`: named volume for uploaded avatars and documents.
 
 ## Email OTP

@@ -31,7 +31,7 @@ Standalone Mermaid file: [docs/diagrams/system-architecture.mmd](./diagrams/syst
 | Docs       | `swagger-jsdoc`, `swagger-ui-express`, `src/swagger.ts`   | Sinh OpenAPI từ comment `@swagger` trong route files                                     |
 | Database   | MongoDB native driver, `src/services/database.service.ts` | Một `MongoClient`, typed collection getters, index cho favorites/share token/folder tree |
 | Email      | Nodemailer, `src/services/email.service.ts`               | Gửi OTP qua SMTP hoặc log ra console khi dev thiếu SMTP config                           |
-| Deploy     | `Dockerfile`, `compose.yaml`                              | Build production image, expose port `5284`, mount `uploads-data` volume                  |
+| Deploy     | `Dockerfile`, `compose.yaml`                              | Build production image, expose port `5285`, mount `uploads-data` volume                  |
 
 ## Main System Diagram
 
@@ -310,12 +310,12 @@ Avatar upload accepts `.jpg`, `.jpeg`, `.png` up to 2 MB. Document upload accept
 flowchart TB
   Dev[Developer / Docker Compose] --> Compose[compose.yaml]
   Compose --> Server[server container\nai-study-hub-api:latest]
-  Server --> Port[Host port 5284]
+  Server --> Port[Host port 5285]
   Server --> Volume[(uploads-data volume)]
   Server --> Env[.env]
   Env --> MongoURL[DATABASE_URL or DB_USERNAME/DB_PASSWORD Atlas URL]
   Server --> Mongo[(MongoDB / Atlas or local)]
-  Server --> Swagger[http://localhost:5284/api-docs]
+  Server --> Swagger[http://localhost:5285/api-docs]
 ```
 
 Production command path:

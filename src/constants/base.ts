@@ -3,7 +3,7 @@ import dotenv from 'dotenv'
 dotenv.config({ quiet: true })
 
 export const Base = {
-  port: 5284
+  port: 5285
 }
 
 export const BASE_URL = process.env.BASE_URL || `http://localhost:${Base.port}`

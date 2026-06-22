@@ -1,6 +1,6 @@
 services:
   server:
-    image: ai-study-hub-api:latest
+    image: anhvietanh1123/ai-study-hub-api:latest
     build:
       context: .
       dockerfile: Dockerfile
@@ -8,8 +8,12 @@ services:
       - .env
     environment:
       NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL}
+      DB_NAME: ${DB_NAME}
+      BASE_URL: ${BASE_URL}
+      CORS_ORIGINS: ${CORS_ORIGINS}
     ports:
-      - '5284:5284'
+      - '5285:5285'
     volumes:
       - uploads-data:/usr/src/app/uploads
     restart: unless-stopped
