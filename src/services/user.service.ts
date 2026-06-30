@@ -1,38 +1,20 @@
 import { ObjectId } from 'mongodb'
-import { AuthProvider, StoragePlan } from '~/constants/enum'
+import { AuthProvider } from '~/constants/enum'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { USER_MESSAGES } from '~/constants/message'
 import { ErrorWithStatus } from '~/models/Error'
 import { ChangePasswordReqBody, UpdateProfileReqBody } from '~/models/request/user.request'
-import { StorageQuota } from '~/models/StorageQuota.schema'
 import { hashPassword } from '~/utils/crypto'
 import databaseService from './database.service'
-
-const DEFAULT_TOTAL_BYTES = 500 * 1024 * 1024
-const DEFAULT_MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024
-const DEFAULT_MAX_FILES_COUNT = 100
+import helperService from './helpers/helper.service'
 
 class UserService {
   private toObjectId(accountId: string) {
-    return new ObjectId(accountId)
+    return helperService.toObjectId(accountId)
   }
 
   private async getActiveVerifiedAccount(accountId: ObjectId) {
-    const account = await databaseService.accounts.findOne({ _id: accountId })
-
-    if (!account) {
-      throw new ErrorWithStatus(USER_MESSAGES.USER_NOT_FOUND, HTTP_STATUS.NOT_FOUND)
-    }
-
-    if (!account.isActive) {
-      throw new ErrorWithStatus(USER_MESSAGES.USER_IS_INACTIVE, HTTP_STATUS.UNAUTHORIZED)
-    }
-
-    if (!account.isEmailVerified) {
-      throw new ErrorWithStatus(USER_MESSAGES.USER_NOT_VERIFIED, HTTP_STATUS.FORBIDDEN)
-    }
-
-    return account
+    return helperService.ensureActiveVerifiedAccount(accountId)
   }
 
   private buildAvatarUrl(file?: Express.Multer.File) {
@@ -44,37 +26,11 @@ class UserService {
   }
 
   private async getStorageQuota(accountId: ObjectId) {
-    const storageQuota = await databaseService.storageQuotas.findOne({ accountId })
-
-    return (
-      storageQuota ||
-      new StorageQuota({
-        accountId,
-        plan: StoragePlan.free,
-        totalBytes: DEFAULT_TOTAL_BYTES,
-        usedBytes: 0,
-        maxFileSizeBytes: DEFAULT_MAX_FILE_SIZE_BYTES,
-        maxFilesCount: DEFAULT_MAX_FILES_COUNT
-      })
-    )
+    return helperService.getStorageQuota(accountId)
   }
 
-  private formatStorage(storageQuota: StorageQuota) {
-    const usagePercent =
-      storageQuota.totalBytes > 0 ? Number(((storageQuota.usedBytes / storageQuota.totalBytes) * 100).toFixed(2)) : 0
-
-    return {
-      plan: storageQuota.plan,
-      usedBytes: storageQuota.usedBytes,
-      totalBytes: storageQuota.totalBytes,
-      maxFileSizeBytes: storageQuota.maxFileSizeBytes,
-      maxFilesCount: storageQuota.maxFilesCount,
-      aiQueriesUsed: storageQuota.aiQueriesUsed,
-      aiQueriesLimit: storageQuota.aiQueriesLimit,
-      usagePercent,
-      quotaResetDate: storageQuota.quotaResetDate,
-      updatedAt: storageQuota.updatedAt
-    }
+  private formatStorage(storageQuota: Awaited<ReturnType<typeof helperService.getStorageQuota>>) {
+    return helperService.formatStorage(storageQuota, { includeUsagePercent: true })
   }
 
   async getProfile(accountId: string) {

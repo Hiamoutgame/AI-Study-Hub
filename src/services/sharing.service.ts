@@ -3,39 +3,23 @@ import { Filter, ObjectId } from 'mongodb'
 import { BASE_URL } from '~/constants/base'
 import { ActivityAction, ActivityEntityType, PermissionLevel } from '~/constants/enum'
 import HTTP_STATUS from '~/constants/httpStatus'
-import { BOOKMARK_MESSAGES, DOCUMENT_MESSAGES, SHARING_MESSAGES, USER_MESSAGES } from '~/constants/message'
-import { ActivityLog } from '~/models/ActivityLog.schema'
+import { BOOKMARK_MESSAGES, SHARING_MESSAGES } from '~/constants/message'
 import { ErrorWithStatus } from '~/models/Error'
 import { Favorite } from '~/models/Favorite.schema'
 import { PermissionLink } from '~/models/PermissionLink.schema'
 import { AddBookmarkReqBody, CreateShareLinkReqBody, GetBookmarksQuery } from '~/models/request/sharing.request'
+import { RequestContext } from '~/models/request/common.request'
 import { Solution } from '~/models/Solution.schema'
 import databaseService from './database.service'
-
-type RequestContext = {
-  ipAddress?: string
-  userAgent?: string
-}
+import helperService from './helpers/helper.service'
 
 class SharingService {
   private toObjectId(id: string) {
-    return new ObjectId(id)
+    return helperService.toObjectId(id)
   }
 
   private parseBoolean(value: boolean | string | undefined, defaultValue = false) {
-    if (typeof value === 'boolean') {
-      return value
-    }
-
-    if (value === 'true') {
-      return true
-    }
-
-    if (value === 'false') {
-      return false
-    }
-
-    return defaultValue
+    return helperService.parseBoolean(value, defaultValue)
   }
 
   private parseNullablePositiveInt(value: number | string | null | undefined) {
@@ -72,50 +56,23 @@ class SharingService {
   }
 
   private getNotDeletedFilter(): Filter<Solution> {
-    return {
-      $or: [{ deletedAt: { $exists: false } }, { deletedAt: null }]
-    } as Filter<Solution>
+    return helperService.getNotDeletedFilter<Solution>()
   }
 
   private canViewDocument(document: Solution, accountId: ObjectId) {
-    return document.isPublic || document.uploaderId.equals(accountId)
+    return helperService.canViewDocument(document, accountId)
   }
 
   private async ensureActiveVerifiedAccount(accountId: ObjectId) {
-    const account = await databaseService.accounts.findOne({ _id: accountId })
-
-    if (!account) {
-      throw new ErrorWithStatus(USER_MESSAGES.USER_NOT_FOUND, HTTP_STATUS.NOT_FOUND)
-    }
-
-    if (!account.isActive) {
-      throw new ErrorWithStatus(USER_MESSAGES.USER_IS_INACTIVE, HTTP_STATUS.UNAUTHORIZED)
-    }
-
-    if (!account.isEmailVerified) {
-      throw new ErrorWithStatus(USER_MESSAGES.USER_NOT_VERIFIED, HTTP_STATUS.FORBIDDEN)
-    }
-
-    return account
+    return helperService.ensureActiveVerifiedAccount(accountId)
   }
 
   private async getNotDeletedDocument(solutionId: ObjectId) {
-    const document = await databaseService.solutions.findOne({
-      _id: solutionId,
-      ...this.getNotDeletedFilter()
-    })
-
-    if (document) {
-      return document
-    }
-
-    throw new ErrorWithStatus(DOCUMENT_MESSAGES.DOCUMENT_NOT_FOUND, HTTP_STATUS.NOT_FOUND)
+    return helperService.getNotDeletedDocument(solutionId)
   }
 
   private ensureCanViewDocument(document: Solution, accountId: ObjectId) {
-    if (!this.canViewDocument(document, accountId)) {
-      throw new ErrorWithStatus(DOCUMENT_MESSAGES.DOCUMENT_ACCESS_DENIED, HTTP_STATUS.FORBIDDEN)
-    }
+    helperService.ensureCanViewDocument(document, accountId)
   }
 
   private ensureDocumentOwner(document: Solution, accountId: ObjectId) {
@@ -137,17 +94,14 @@ class SharingService {
     metadata?: Record<string, unknown>
     context?: RequestContext
   }) {
-    await databaseService.activityLogs.insertOne(
-      new ActivityLog({
-        accountId,
-        action,
-        entityType: ActivityEntityType.solution,
-        entityId: solutionId,
-        metadata,
-        ipAddress: context?.ipAddress,
-        userAgent: context?.userAgent
-      })
-    )
+    await helperService.createActivityLog({
+      accountId,
+      action,
+      entityType: ActivityEntityType.solution,
+      entityId: solutionId,
+      metadata,
+      context
+    })
   }
 
   private formatShareLink(link: PermissionLink) {

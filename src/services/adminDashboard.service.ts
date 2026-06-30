@@ -286,6 +286,7 @@ class AdminDashboardService {
         pending: extractionStatus[ExtractionStatus.pending] || 0,
         processing: extractionStatus[ExtractionStatus.processing] || 0,
         completed: extractionStatus[ExtractionStatus.completed] || 0,
+        skipped: extractionStatus[ExtractionStatus.skipped] || 0,
         failed: extractionStatus[ExtractionStatus.failed] || 0
       },
       aiStatusBreakdown: {

@@ -31,6 +31,7 @@ export enum ActivityAction {
   shareLinkRevoke = 'share_link_revoke',
   extractStart = 'extract_start',
   extractComplete = 'extract_complete',
+  extractSkipped = 'extract_skipped',
   extractFailed = 'extract_failed',
   aiChatStart = 'ai_chat_start',
   aiMessageSend = 'ai_message_send',
@@ -82,6 +83,7 @@ export enum ExtractionStatus {
   pending = 'pending',
   processing = 'processing',
   completed = 'completed',
+  skipped = 'skipped',
   failed = 'failed'
 }
 

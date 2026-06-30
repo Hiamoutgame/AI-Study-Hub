@@ -91,11 +91,16 @@ const documentUpload = multer({
   storage: createStorage(DOCUMENT_UPLOAD_DIR),
   limits: { fileSize: DOCUMENT_MAX_SIZE_BYTES },
   fileFilter: createFileFilter({
-    allowedExtensions: ['.pdf', '.docx', '.txt'],
+    allowedExtensions: ['.pdf', '.docx', '.txt', '.md', '.jpg', '.jpeg', '.png', '.webp'],
     allowedMimeTypes: [
       'application/pdf',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'text/plain'
+      'text/plain',
+      'text/markdown',
+      'text/x-markdown',
+      'image/jpeg',
+      'image/png',
+      'image/webp'
     ],
     errorMessage: DOCUMENT_MESSAGES.FILE_TYPE_IS_INVALID
   })

@@ -12,9 +12,9 @@ interface PermissionLinkInput {
   canComment?: boolean
   requiresLogin?: boolean
   passwordHash?: string
-  maxUses?: number
+  maxUses?: number | null
   currentUses?: number
-  expiresAt?: Date
+  expiresAt?: Date | null
   isActive?: boolean
   note?: string
   lastUsedAt?: Date
@@ -32,9 +32,9 @@ export class PermissionLink implements PermissionLinkInput {
   canComment: boolean
   requiresLogin: boolean
   passwordHash: string
-  maxUses: number
+  maxUses: number | null
   currentUses: number
-  expiresAt: Date
+  expiresAt: Date | null
   isActive: boolean
   note: string
   lastUsedAt: Date
@@ -52,9 +52,9 @@ export class PermissionLink implements PermissionLinkInput {
     this.canComment = permissionLink.canComment || false
     this.requiresLogin = permissionLink.requiresLogin || false
     this.passwordHash = permissionLink.passwordHash || ''
-    this.maxUses = permissionLink.maxUses || 0
+    this.maxUses = permissionLink.maxUses ?? null
     this.currentUses = permissionLink.currentUses || 0
-    this.expiresAt = permissionLink.expiresAt || new Date('9999-12-31')
+    this.expiresAt = permissionLink.expiresAt ?? null
     this.isActive = permissionLink.isActive || true
     this.note = permissionLink.note || ''
     this.lastUsedAt = permissionLink.lastUsedAt || now

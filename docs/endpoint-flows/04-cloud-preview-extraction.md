@@ -1,94 +1,128 @@
-<!-- Sẽ đổi tên file thành 04-cloud-preview-extraction.md: text extraction đã được thay bằng text extraction tự động khi upload -->
-
 # 04 - Cloud Storage, Preview Và Text Extraction
 
-Nhóm này gồm US09 và US14. Trong API spec, preview gắn trực tiếp với document; text extraction chạy **tự động khi upload** (không còn endpoint text extraction riêng). Hiện tại code có local upload trong `uploads/documents` và đã trích xuất text từ tài liệu digital ngay khi upload; cloud adapter và preview endpoint chưa implement.
+Nhóm này gồm US09 và US14. Trong source hiện tại, text extraction đang chạy inline trong `POST /documents`. Preview endpoint và cloud adapter vẫn chưa implement.
+
+> Kế hoạch chuyển extraction/OCR sang xử lý bất đồng bộ nằm ở [../AsyncTextExtractionAndOcrPlan.vi.md](../AsyncTextExtractionAndOcrPlan.vi.md).
 
 ## Endpoint Map
 
-| US   | Method | Endpoint                        | Auth   | Trang thai  |
-| ---- | ------ | ------------------------------- | ------ | ----------- |
-| US09 | GET    | `/documents/{id}/preview`       | Bearer | Planned     |
-| US14 | (auto) | chạy trong `POST /documents`    | Bearer | Implemented |
-| US14 | GET    | `/documents/{id}/upload-status` | Bearer | Implemented |
+| US   | Method | Endpoint                            | Auth   | Trạng thái                               |
+| ---- | ------ | ----------------------------------- | ------ | ---------------------------------------- |
+| US09 | GET    | `/documents/:id/preview`            | Bearer | Planned                                  |
+| US14 | auto   | chạy inline trong `POST /documents` | Bearer | Implemented hiện tại, cần refactor async |
+| US14 | GET    | `/documents/:id/upload-status`      | Bearer | Implemented                              |
 
-> Không còn `POST /documents/{id}/extraction` và `GET /documents/{id}/extraction`. Trích xuất text diễn ra ngay trong luồng upload; trạng thái xem qua `GET /documents/{id}/upload-status`.
+Không còn `POST /documents/:id/extraction` và `GET /documents/:id/extraction` trong runtime hiện tại. Trạng thái xử lý xem qua `GET /documents/:id/upload-status`.
 
-## Schema Và Collection Flow
+## Hiện Trạng Source
 
-- Schema: `Solution`, `DocumentEmbedding`, `ActivityLog`.
-- Collections: `solutions`, `document_embeddings`, `activity_logs`.
-- Text extraction fields nằm inline trong `solutions`: `extractionStatus`, `extractedText`, `extractedAt`, `extractionErrorMessage`.
-- Preview dùng metadata file: `storageProvider`, `storageBucket`, `storageKey`, `publicUrl`, `mimeType`.
+Flow hiện tại:
 
-## Engine Trích Xuất
-
-- `.pdf` → `pdf-parse`
-- `.docx` → `mammoth`
-- `.txt` → đọc UTF-8
-
-> Đây là **text extraction**, không phải text extraction. PDF scan/ảnh không có text layer sẽ cho `extractedText` rỗng nhưng `extractionStatus = completed` (không có bước text extraction dự phòng).
-
-## Request Processing Flow
-
-1. Validate access token và document id (preview).
-2. Service load document từ `solutions`, check owner/public/share permission.
-3. Preview endpoint tạo signed URL hoặc trả local file URL tùy storage provider.
-4. **Text extraction (trong upload):** sau khi nhận file, service đọc nội dung theo phần mở rộng, gọi engine tương ứng, set `extractionStatus`, `extractedText`, `extractedAt`, `extractionErrorMessage` rồi lưu cùng document. Ghi `activity_logs` `extract_complete`/`extract_failed`.
-5. Theo dõi trạng thái qua `GET /documents/{id}/upload-status` (trả `extractionStatus`, `extractionErrorMessage`).
-6. Khi `extractionStatus = completed`, search document dùng `extractedText`.
-
-## Sơ đồ Luồng Xử lý
-
-```mermaid
-sequenceDiagram
-  actor Client
-  participant Route as documentRouter
-  participant Auth as accessTokenValidator
-  participant Upload as multer upload
-  participant Controller as uploadDocumentController
-  participant Service as documentService
-  participant Extract as extractionService
-  participant Solutions as solutions
-  participant Logs as activity_logs
-
-  Client->>Route: POST /documents (multipart file)
-  Route->>Auth: validate access token
-  Auth->>Route: next() with decoded user_id
-  Route->>Upload: nhận file (disk/memory)
-  Upload->>Controller: wrapAsync(uploadDocumentController)
-  Controller->>Service: uploadDocument(accountId, payload, file)
-  Service->>Extract: extractText(file) [pdf-parse/mammoth/utf-8]
-  Extract-->>Service: { status, text, errorMessage }
-  Service->>Solutions: insert document + extraction fields
-  Service->>Logs: insert extract_complete / extract_failed
-  Service-->>Controller: document
-  Controller-->>Client: 201 Created
-
-  Client->>Route: GET /documents/{id}/upload-status
-  Route->>Controller: getUploadStatusController
-  Controller->>Service: getUploadStatus()
-  Service->>Solutions: read extractionStatus
-  Service-->>Client: 200 { extractionStatus, ... }
+```txt
+POST /documents
+  -> upload file
+  -> validate metadata
+  -> documentService.uploadDocument
+  -> await extractionService.extractText(file)
+  -> insert/update solutions
+  -> response
 ```
 
-## Ảnh Tham khảo
+Điểm mạnh:
 
-![Cloud storage architecture](https://commons.wikimedia.org/wiki/Special:FilePath/Cloud_storage_architecture.png)
+- Flow đơn giản.
+- Upload xong là có extraction result ngay nếu file nhỏ.
+- Không cần worker/queue.
 
-Nguồn: [Wikimedia Commons - Cloud storage architecture](https://commons.wikimedia.org/wiki/File:Cloud_storage_architecture.png)
+Điểm mù:
 
-## Business Rules
+- File lớn có thể làm request lâu hoặc timeout.
+- API server phải xử lý CPU/RAM cho extraction.
+- Ảnh và scan chưa OCR.
+- Nếu sau này thêm OCR/AI, request upload sẽ càng nặng.
 
-- Preview không được bypass owner/public/share rules.
-- Text extraction không tạo collection riêng; status và kết quả nằm inline trong `solutions`.
-- Extraction failed phải lưu `extractionErrorMessage` để admin logs có thể query; lỗi extraction **không** được làm hỏng luồng upload (document vẫn được tạo).
-- Khi extraction completed, search document có thể dùng `extractedText`.
+## Engine Trích Xuất Hiện Tại
 
-## Test Cases
+- `.pdf` -> `pdf-parse`
+- `.docx` -> `mammoth`
+- `.txt`, `.md` -> đọc UTF-8
 
-- Preview private document non-owner bị 403.
-- Upload `.txt`/`.pdf`/`.docx` digital → `extractionStatus = completed`, `extractedText` có nội dung.
-- Upload PDF scan không có text layer → `extractionStatus = completed`, `extractedText` rỗng.
-- Engine lỗi → `extractionStatus = failed` + `extractionErrorMessage`, document vẫn được tạo.
-- `GET /documents/{id}/upload-status` trả đúng `extractionStatus`.
+Đây là digital text extraction, không phải OCR.
+
+OCR là nhận dạng chữ từ ảnh hoặc scan.
+
+Hiện tại:
+
+- PDF scan không có text layer có thể `completed` với `extractedText = ""`.
+- Image files `.jpg`, `.jpeg`, `.png`, `.webp` upload thành công nhưng `extractionStatus = skipped`.
+
+## Target Flow Đề Xuất
+
+```txt
+POST /documents
+  -> validate user/category/folder/quota
+  -> save file
+  -> insert Solution with extractionStatus = pending
+  -> create extraction job
+  -> response ngay cho client
+
+document extraction worker
+  -> claim pending job
+  -> set extractionStatus = processing
+  -> extract text hoặc OCR
+  -> update Solution
+  -> mark job completed/skipped/failed
+
+GET /documents/:id/upload-status
+  -> client polling trạng thái
+```
+
+Polling nghĩa là frontend hỏi trạng thái định kỳ, ví dụ vài giây gọi lại endpoint status.
+
+## Business Rules Hiện Tại
+
+- Text extraction không tạo collection riêng; status và kết quả nằm trong `solutions`.
+- Lỗi extraction không được làm hỏng luồng upload; document vẫn phải tồn tại.
+- Image files không OCR trong v1; service lưu `extractionStatus = skipped` và message giải thích rõ.
+- Khi extraction `completed`, search document có thể dùng `extractedText`.
+
+## Business Rules Sau Khi Refactor Async
+
+- `POST /documents` không chờ extraction/OCR xong.
+- Document mới tạo nên có `extractionStatus = pending`.
+- Worker chuyển status sang `processing`, rồi `completed`, `skipped`, hoặc `failed`.
+- Worker phải retry được khi lỗi tạm thời.
+- Worker không được xử lý document đã soft-delete.
+- Search theo `extractedText` chỉ đầy đủ sau khi status `completed`.
+- Download/bookmark/share vẫn hoạt động khi extraction đang `pending` hoặc `processing`.
+
+## Storage Và Cloud Note
+
+Hiện tại file nằm ở local `uploads/documents` hoặc Docker volume `uploads-data`. Worker muốn đọc file thì phải dùng chung storage này.
+
+Nếu chuyển sang cloud:
+
+- File nên nằm ở S3/R2/Cloudinary.
+- API tạo metadata và enqueue job.
+- Worker đọc file từ cloud storage.
+- Có thể dùng S3 Event hoặc queue như SQS/BullMQ.
+
+Không nên đưa Step Functions vào phase đầu nếu project vẫn đang local/demo.
+
+## Test Cases Hiện Tại
+
+- Upload `.txt` / `.md` / `.pdf` / `.docx` digital -> `completed`.
+- Upload PDF scan không có text layer -> `completed` với text rỗng.
+- Upload `.png` / `.jpg` / `.webp` -> `skipped`.
+- Engine lỗi -> `failed` + `extractionErrorMessage`, document vẫn được tạo.
+- `GET /documents/:id/upload-status` trả đúng `extractionStatus`.
+
+## Test Cases Sau Khi Refactor Async
+
+- Upload document trả response nhanh với `extractionStatus = pending`.
+- Job được tạo trong `document_extraction_jobs`.
+- Worker xử lý `.txt/.md` thành `completed`.
+- Worker xử lý image phase đầu thành `skipped`.
+- Worker lỗi retry đúng số lần rồi thành `failed`.
+- Server restart không làm mất job pending.
+- `GET /documents/:id/upload-status` phản ánh đúng trạng thái worker update.

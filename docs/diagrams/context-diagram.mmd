@@ -1,0 +1,27 @@
+flowchart LR
+  classDef actor fill:#fff7ed,stroke:#c2410c,color:#7c2d12
+  classDef system fill:#e0f2fe,stroke:#0369a1,color:#0c4a6e
+  classDef external fill:#ecfdf5,stroke:#047857,color:#064e3b
+  classDef planned fill:#f5f3ff,stroke:#7c3aed,color:#3b0764,stroke-dasharray: 6 4
+  classDef note fill:#f8fafc,stroke:#94a3b8,color:#334155
+
+  Guest["Guest<br/>US01, email-token flows"]:::actor
+  Student["Student / User<br/>US02-US18"]:::actor
+  Admin["Admin<br/>US19-US25"]:::actor
+
+  System["AI Study Hub System<br/><br/>Centralized study-document platform<br/>Account, profile, documents, preview,<br/>text extraction, folders, bookmarks,<br/>sharing, notifications, admin controls,<br/>AI learning support"]:::system
+
+  Email["Email / SMTP Service<br/>verification, OTP, password reset"]:::external
+  FileStore["File Storage<br/>document and avatar binaries"]:::external
+  AI["AI Provider / Vector Search<br/>chat, summary, explanation, embeddings"]:::planned
+
+  SourceNote["Source of truth<br/>ContextProject.md = goals and actors<br/>DescriptionProject.md = US01-US25<br/>src/app.ts = current/planned runtime check"]:::note
+
+  Guest -->|"register account, verify email, resend verification, reset password, open public share link"| System
+  Student -->|"login/logout, profile, upload/search/filter/preview/download documents, folders, bookmarks, sharing, notifications, AI study flows"| System
+  Admin -->|"manage users, documents, categories, notifications, dashboard/statistics, AI settings, system logs"| System
+
+  System -->|"send verification and password reset email"| Email
+  System <-->|"store and serve uploaded avatars/documents"| FileStore
+  System -.->|"planned AI chat, summary, explanation, semantic retrieval"| AI
+  SourceNote -.-> System

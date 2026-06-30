@@ -8,7 +8,6 @@ import {
 } from '~/constants/enum'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { NOTIFICATION_MESSAGES } from '~/constants/message'
-import { ActivityLog } from '~/models/ActivityLog.schema'
 import { ErrorWithStatus } from '~/models/Error'
 import { Notification } from '~/models/Notification.schema'
 import {
@@ -17,23 +16,19 @@ import {
   SendNotificationReqBody
 } from '~/models/request/notification.request'
 import databaseService from './database.service'
+import helperService from './helpers/helper.service'
 
 class NotificationService {
   private toObjectId(id: string) {
-    return new ObjectId(id)
+    return helperService.toObjectId(id)
   }
 
   private parsePagination(query: { page?: string; limit?: string }) {
-    const page = Number(query.page || 1)
-    const limit = Number(query.limit || 20)
-    return { page, limit, skip: (page - 1) * limit }
+    return helperService.parsePagination(query)
   }
 
   private parseBoolean(value: boolean | string | undefined) {
-    if (typeof value === 'boolean') {
-      return value
-    }
-    return value === 'true'
+    return helperService.parseBoolean(value)
   }
 
   private async createActivityLog({
@@ -45,14 +40,12 @@ class NotificationService {
     sourceEventId: string
     metadata?: Record<string, unknown>
   }) {
-    await databaseService.activityLogs.insertOne(
-      new ActivityLog({
-        accountId: adminId,
-        action: ActivityAction.adminSendNotification,
-        entityType: ActivityEntityType.account,
-        metadata: { sourceEventId, ...metadata }
-      })
-    )
+    await helperService.createActivityLog({
+      accountId: adminId,
+      action: ActivityAction.adminSendNotification,
+      entityType: ActivityEntityType.account,
+      metadata: { sourceEventId, ...metadata }
+    })
   }
 
   private async resolveRecipients(payload: SendNotificationReqBody) {

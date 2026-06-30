@@ -7,12 +7,10 @@ import {
   AiStatus,
   ExtractionStatus,
   SolutionStatus,
-  StoragePlan,
   StorageProvider
 } from '~/constants/enum'
 import HTTP_STATUS from '~/constants/httpStatus'
-import { DOCUMENT_MESSAGES, USER_MESSAGES } from '~/constants/message'
-import { ActivityLog } from '~/models/ActivityLog.schema'
+import { DOCUMENT_MESSAGES } from '~/constants/message'
 import { ErrorWithStatus } from '~/models/Error'
 import {
   DeleteDocumentReqBody,
@@ -20,58 +18,24 @@ import {
   UpdateDocumentReqBody,
   UploadDocumentReqBody
 } from '~/models/request/document.request'
+import { RequestContext } from '~/models/request/common.request'
 import { Solution } from '~/models/Solution.schema'
-import { StorageQuota } from '~/models/StorageQuota.schema'
+import { DocumentExtractionJob } from '~/models/DocumentExtractionJob.schema'
 import databaseService from './database.service'
-import extractionService from './extraction.service'
 import folderService from './folder.service'
-
-const DEFAULT_TOTAL_BYTES = 500 * 1024 * 1024
-const DEFAULT_MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024
-const DEFAULT_MAX_FILES_COUNT = 100
-
-type RequestContext = {
-  ipAddress?: string
-  userAgent?: string
-}
+import helperService from './helpers/helper.service'
 
 class DocumentService {
   private toObjectId(id: string) {
-    return new ObjectId(id)
+    return helperService.toObjectId(id)
   }
 
   private async ensureActiveVerifiedAccount(accountId: ObjectId) {
-    const account = await databaseService.accounts.findOne({ _id: accountId })
-
-    if (!account) {
-      throw new ErrorWithStatus(USER_MESSAGES.USER_NOT_FOUND, HTTP_STATUS.NOT_FOUND)
-    }
-
-    if (!account.isActive) {
-      throw new ErrorWithStatus(USER_MESSAGES.USER_IS_INACTIVE, HTTP_STATUS.UNAUTHORIZED)
-    }
-
-    if (!account.isEmailVerified) {
-      throw new ErrorWithStatus(USER_MESSAGES.USER_NOT_VERIFIED, HTTP_STATUS.FORBIDDEN)
-    }
-
-    return account
+    return helperService.ensureActiveVerifiedAccount(accountId)
   }
 
   private parseBoolean(value: boolean | string | undefined, defaultValue = false) {
-    if (typeof value === 'boolean') {
-      return value
-    }
-
-    if (value === 'true') {
-      return true
-    }
-
-    if (value === 'false') {
-      return false
-    }
-
-    return defaultValue
+    return helperService.parseBoolean(value, defaultValue)
   }
 
   private parseTags(value: string[] | string | undefined) {
@@ -104,13 +68,11 @@ class DocumentService {
   }
 
   private escapeRegex(value: string) {
-    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    return helperService.escapeRegex(value)
   }
 
   private getNotDeletedFilter(): Filter<Solution> {
-    return {
-      $or: [{ deletedAt: { $exists: false } }, { deletedAt: null }]
-    } as Filter<Solution>
+    return helperService.getNotDeletedFilter<Solution>()
   }
 
   private async validateCategory(categoryId?: string) {
@@ -132,52 +94,15 @@ class DocumentService {
   }
 
   private async getStorageQuota(accountId: ObjectId) {
-    const storageQuota = await databaseService.storageQuotas.findOne({ accountId })
-
-    return (
-      storageQuota ||
-      new StorageQuota({
-        accountId,
-        plan: StoragePlan.free,
-        totalBytes: DEFAULT_TOTAL_BYTES,
-        usedBytes: 0,
-        maxFileSizeBytes: DEFAULT_MAX_FILE_SIZE_BYTES,
-        maxFilesCount: DEFAULT_MAX_FILES_COUNT
-      })
-    )
+    return helperService.getStorageQuota(accountId)
   }
 
   private async ensureStorageAvailable(accountId: ObjectId, fileSizeBytes: number) {
-    const storageQuota = await this.getStorageQuota(accountId)
-
-    if (fileSizeBytes > storageQuota.maxFileSizeBytes) {
-      throw new ErrorWithStatus(DOCUMENT_MESSAGES.FILE_TOO_LARGE, HTTP_STATUS.BAD_REQUEST)
-    }
-
-    if (storageQuota.usedBytes + fileSizeBytes > storageQuota.totalBytes) {
-      throw new ErrorWithStatus(DOCUMENT_MESSAGES.STORAGE_QUOTA_EXCEEDED, HTTP_STATUS.BAD_REQUEST)
-    }
+    await helperService.ensureStorageAvailable(accountId, fileSizeBytes)
   }
 
   private async increaseStorageUsage(accountId: ObjectId, fileSizeBytes: number) {
-    await databaseService.storageQuotas.updateOne(
-      { accountId },
-      {
-        $setOnInsert: {
-          accountId,
-          plan: StoragePlan.free,
-          totalBytes: DEFAULT_TOTAL_BYTES,
-          maxFileSizeBytes: DEFAULT_MAX_FILE_SIZE_BYTES,
-          maxFilesCount: DEFAULT_MAX_FILES_COUNT,
-          aiQueriesUsed: 0,
-          aiQueriesLimit: 50,
-          quotaResetDate: new Date()
-        },
-        $inc: { usedBytes: fileSizeBytes },
-        $set: { updatedAt: new Date() }
-      },
-      { upsert: true }
-    )
+    await helperService.increaseStorageUsage(accountId, fileSizeBytes)
   }
 
   private async createActivityLog({
@@ -193,41 +118,22 @@ class DocumentService {
     metadata?: Record<string, unknown>
     context?: RequestContext
   }) {
-    await databaseService.activityLogs.insertOne(
-      new ActivityLog({
-        accountId,
-        action,
-        entityType: ActivityEntityType.solution,
-        entityId: solutionId,
-        metadata,
-        ipAddress: context?.ipAddress,
-        userAgent: context?.userAgent
-      })
-    )
+    await helperService.createActivityLog({
+      accountId,
+      action,
+      entityType: ActivityEntityType.solution,
+      entityId: solutionId,
+      metadata,
+      context
+    })
   }
 
   private async getNotDeletedDocument(solutionId: ObjectId) {
-    const document = await databaseService.solutions.findOne({
-      _id: solutionId,
-      ...this.getNotDeletedFilter()
-    })
-
-    if (document) {
-      return document
-    }
-
-    const deletedDocument = await databaseService.solutions.findOne({ _id: solutionId })
-    if (deletedDocument?.deletedAt) {
-      throw new ErrorWithStatus(DOCUMENT_MESSAGES.DOCUMENT_ALREADY_DELETED, HTTP_STATUS.NOT_FOUND)
-    }
-
-    throw new ErrorWithStatus(DOCUMENT_MESSAGES.DOCUMENT_NOT_FOUND, HTTP_STATUS.NOT_FOUND)
+    return helperService.getNotDeletedDocument(solutionId, { includeDeletedMessage: true })
   }
 
   private ensureCanViewDocument(document: Solution, accountId: ObjectId) {
-    if (!this.canViewDocument(document, accountId)) {
-      throw new ErrorWithStatus(DOCUMENT_MESSAGES.DOCUMENT_ACCESS_DENIED, HTTP_STATUS.FORBIDDEN)
-    }
+    helperService.ensureCanViewDocument(document, accountId)
   }
 
   private ensureCanOwnDocument(document: Solution, accountId: ObjectId, errorMessage: string) {
@@ -249,7 +155,7 @@ class DocumentService {
   }
 
   private canViewDocument(document: Solution, accountId: ObjectId) {
-    return document.isPublic || document.uploaderId.equals(accountId)
+    return helperService.canViewDocument(document, accountId)
   }
 
   private async getCategoryMap(categoryIds: ObjectId[]) {
@@ -287,20 +193,7 @@ class DocumentService {
   }
 
   private async decreaseStorageUsage(accountId: ObjectId, fileSizeBytes: number) {
-    const storageQuota = await databaseService.storageQuotas.findOne({ accountId })
-    if (!storageQuota) {
-      return
-    }
-
-    await databaseService.storageQuotas.updateOne(
-      { accountId },
-      {
-        $set: {
-          usedBytes: Math.max(storageQuota.usedBytes - fileSizeBytes, 0),
-          updatedAt: new Date()
-        }
-      }
-    )
+    await helperService.decreaseStorageUsage(accountId, fileSizeBytes)
   }
 
   async uploadDocument({
@@ -321,6 +214,7 @@ class DocumentService {
     const uploaderId = this.toObjectId(accountId)
     const solutionId = new ObjectId()
     let documentInserted = false
+    let jobInserted = false
     let storageUsageIncreased = false
 
     try {
@@ -330,8 +224,8 @@ class DocumentService {
       const folderId = await folderService.validateFolderAccess(payload.folderId, uploaderId)
       await this.ensureStorageAvailable(uploaderId, file.size)
 
-      // Trich xuat text tu tai lieu digital (PDF/DOCX/TXT) ngay khi upload de phuc vu search & AI.
-      const extraction = await extractionService.extractText(file)
+      // Trich xuat text se duoc xu ly bat dong bo qua worker de tang toc do upload.
+      // Trang thai cua Solution se duoc dat la pending.
       const now = new Date()
       const document = new Solution({
         _id: solutionId,
@@ -354,16 +248,28 @@ class DocumentService {
         isPublic: this.parseBoolean(payload.isPublic),
         language: payload.language?.trim() || 'vi',
         aiStatus: AiStatus.pending,
-        extractionStatus: extraction.status,
-        extractedText: extraction.text,
-        extractedAt: extraction.status === ExtractionStatus.completed ? now : undefined,
-        extractionErrorMessage: extraction.errorMessage,
+        extractionStatus: ExtractionStatus.pending,
+        extractedText: '',
+        extractedAt: undefined,
+        extractionErrorMessage: '',
         createdAt: now,
         updatedAt: now
       })
 
       await databaseService.solutions.insertOne(document)
       documentInserted = true
+
+      // Tao job cho worker xu ly viec trich xuat
+      const job = new DocumentExtractionJob({
+        solutionId,
+        uploaderId,
+        storageKey: document.storageKey,
+        fileExtension: document.fileExtension,
+        mimeType: document.mimeType
+      })
+      await databaseService.documentExtractionJobs.insertOne(job)
+      jobInserted = true
+
       await this.increaseStorageUsage(uploaderId, file.size)
       storageUsageIncreased = true
       await this.createActivityLog({
@@ -373,25 +279,12 @@ class DocumentService {
         metadata: { fileName: document.fileName, fileSizeBytes: document.fileSizeBytes },
         context
       })
-      await this.createActivityLog({
-        accountId: uploaderId,
-        action:
-          extraction.status === ExtractionStatus.completed
-            ? ActivityAction.extractComplete
-            : ActivityAction.extractFailed,
-        solutionId,
-        metadata: {
-          extractionStatus: extraction.status,
-          extractedChars: extraction.text.length,
-          errorMessage: extraction.errorMessage || undefined
-        },
-        context
-      })
 
       return document
     } catch (error) {
       await Promise.allSettled([
         documentInserted ? databaseService.solutions.deleteOne({ _id: solutionId, uploaderId }) : Promise.resolve(),
+        jobInserted ? databaseService.documentExtractionJobs.deleteOne({ solutionId }) : Promise.resolve(),
         storageUsageIncreased ? this.decreaseStorageUsage(uploaderId, file.size) : Promise.resolve(),
         this.removeUploadedFile(file)
       ])

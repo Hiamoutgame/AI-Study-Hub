@@ -506,7 +506,7 @@ const swaggerDefinition = {
           },
           extractionStatus: {
             type: 'string',
-            enum: ['pending', 'processing', 'completed', 'failed'],
+            enum: ['pending', 'processing', 'completed', 'skipped', 'failed'],
             example: 'pending'
           },
           viewCount: {
@@ -676,7 +676,7 @@ const swaggerDefinition = {
           },
           extractionStatus: {
             type: 'string',
-            enum: ['pending', 'processing', 'completed', 'failed'],
+            enum: ['pending', 'processing', 'completed', 'skipped', 'failed'],
             example: 'pending'
           },
           extractedText: {
@@ -790,7 +790,7 @@ const swaggerDefinition = {
           },
           extractionStatus: {
             type: 'string',
-            enum: ['pending', 'processing', 'completed', 'failed'],
+            enum: ['pending', 'processing', 'completed', 'skipped', 'failed'],
             example: 'pending'
           },
           extractionErrorMessage: {
@@ -1163,7 +1163,7 @@ const swaggerDefinition = {
           mimeType: { type: 'string' },
           uploadedBy: { $ref: '#/components/schemas/AdminDocumentUploaderSummary', nullable: true },
           category: { $ref: '#/components/schemas/AdminDocumentCategorySummary', nullable: true },
-          extractionStatus: { type: 'string' },
+          extractionStatus: { type: 'string', enum: ['pending', 'processing', 'completed', 'skipped', 'failed'] },
           aiStatus: { type: 'string' },
           status: { type: 'string' },
           flagCount: { type: 'number' },
@@ -1541,7 +1541,16 @@ const swaggerDefinition = {
             properties: {
               totalDocuments: { type: 'number' },
               fileTypeBreakdown: { type: 'object' },
-              extractionStatusBreakdown: { type: 'object' },
+              extractionStatusBreakdown: {
+                type: 'object',
+                properties: {
+                  pending: { type: 'number' },
+                  processing: { type: 'number' },
+                  completed: { type: 'number' },
+                  skipped: { type: 'number' },
+                  failed: { type: 'number' }
+                }
+              },
               aiStatusBreakdown: { type: 'object' },
               topUploaders: {
                 type: 'array',

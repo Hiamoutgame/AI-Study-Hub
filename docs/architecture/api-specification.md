@@ -489,16 +489,17 @@ Tất cả response đều bọc trong envelope chuẩn:
 
 **Request Form-data:**
 
-| Trường             | Kiểu     | Bắt buộc | Mô tả                                                  |
-| ------------------ | -------- | -------- | ------------------------------------------------------ |
-| `file`             | file     | ✅       | File tài liệu (PDF, DOCX, TXT, max theo plan)          |
-| `title`            | string   | ✅       | Tiêu đề tài liệu                                       |
-| `description`      | string   | ❌       | Mô tả tài liệu                                         |
-| `categoryId`       | string   | ❌       | ObjectId danh mục                                      |
-| `tags`             | string[] | ❌       | Danh sách tag (vd: `["giải tích", "chương 1"]`)        |
-| `language`         | string   | ❌       | Mã ngôn ngữ (default: `"vi"`)                          |
-| `isPublic`         | boolean  | ❌       | Công khai (default: `false`)                           |
-| `enableExtraction` | boolean  | ❌       | Bật text extraction ngay sau upload (default: `false`) |
+| Trường        | Kiểu     | Bắt buộc | Mô tả                                                                   |
+| ------------- | -------- | -------- | ----------------------------------------------------------------------- |
+| `file`        | file     | ✅       | File tài liệu (PDF, DOCX, TXT, MD, JPG, JPEG, PNG, WEBP; max theo plan) |
+| `title`       | string   | ✅       | Tiêu đề tài liệu                                                        |
+| `description` | string   | ❌       | Mô tả tài liệu                                                          |
+| `categoryId`  | string   | ❌       | ObjectId danh mục                                                       |
+| `tags`        | string[] | ❌       | Danh sách tag (vd: `["giải tích", "chương 1"]`)                         |
+| `language`    | string   | ❌       | Mã ngôn ngữ (default: `"vi"`)                                           |
+| `isPublic`    | boolean  | ❌       | Công khai (default: `false`)                                            |
+
+> Text extraction chay tu dong trong luong upload cho tai lieu so (`pdf`, `docx`, `txt`, `md`). Anh van upload duoc nhung `extractionStatus = "skipped"` trong v1.
 
 **Response `201`:**
 
@@ -513,18 +514,18 @@ Tất cả response đều bọc trong envelope chuẩn:
     "title": "Giáo trình Giải tích 1",
     "description": "Tài liệu ôn tập chương 1-3",
     "tags": ["giải tích", "chương 1"],
-    "fileName": "giai-tich-1.pdf",
-    "fileExtension": ".pdf",
+    "fileName": "giai-tich-1.md",
+    "fileExtension": ".md",
     "fileSizeBytes": 4404019,
-    "mimeType": "application/pdf",
+    "mimeType": "text/markdown",
     "storageProvider": "s3",
     "storageBucket": "aistudyhub-prod",
-    "storageKey": "solutions/64a1b2c3d4e5f6a7b8c9d002/giai-tich-1.pdf",
+    "storageKey": "solutions/64a1b2c3d4e5f6a7b8c9d002/giai-tich-1.md",
     "publicUrl": null,
     "thumbnailUrl": "https://cdn.aistudyhub.io/thumbs/64a1b2c3d4e5f6a7b8c9d002.jpg",
     "status": "active",
     "aiStatus": "pending",
-    "extractionStatus": "pending",
+    "extractionStatus": "completed",
     "isPublic": false,
     "language": "vi",
     "pageCount": null,
@@ -812,7 +813,7 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
 | ------------ | --------------- |
 | Auth yêu cầu | ✅ Bearer Token |
 
-> Dùng để polling trạng thái sau khi upload (xử lý cloud, text extraction, AI embedding).
+> Dung de xem trang thai hien tai cua document sau upload. Trong backend hien tai, text extraction chay inline trong luong upload; gia tri thuong gap la `completed`, `skipped`, hoac `failed`.
 
 **Response `200`:**
 
@@ -823,14 +824,15 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
   "data": {
     "_id": "64a1b2c3d4e5f6a7b8c9d002",
     "status": "active",
-    "extractionStatus": "processing",
+    "fileName": "diagram.png",
+    "fileSizeBytes": 245120,
+    "extractionStatus": "skipped",
     "aiStatus": "pending",
-    "steps": [
-      { "step": "uploadCloud", "status": "completed", "completedAt": "2024-10-15T10:30:05.000Z" },
-      { "step": "generateThumbnail", "status": "completed", "completedAt": "2024-10-15T10:30:10.000Z" },
-      { "step": "extractionProcessing", "status": "processing", "startedAt": "2024-10-15T10:30:12.000Z" },
-      { "step": "aiEmbedding", "status": "pending", "startedAt": null }
-    ]
+    "aiErrorMessage": "",
+    "extractionErrorMessage": "Digital text extraction is not supported for image files in v1",
+    "storageProvider": "s3",
+    "storageBucket": "local",
+    "storageKey": "uploads/documents/1717000000000-diagram.png"
   }
 }
 ```
@@ -847,69 +849,15 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
 
 ---
 
-### US14 — Yêu cầu text extraction cho Tài liệu
+### US14 — Digital text extraction trong luong upload
 
-**`POST /documents/{id}/extraction`**
+Text extraction khong co endpoint rieng trong runtime hien tai. Backend tu dong xu ly trong `POST /documents` va luu ket qua inline trong `solutions`.
 
-| Thông tin    | Chi tiết        |
-| ------------ | --------------- |
-| Auth yêu cầu | ✅ Bearer Token |
-| Quyền        | Chỉ chủ sở hữu  |
+- `.pdf`, `.docx`, `.txt`, `.md` -> co gang trich text ngay khi upload
+- PDF scan khong co text layer -> co the `completed` voi `extractedText = ""`
+- `.jpg`, `.jpeg`, `.png`, `.webp` -> upload thanh cong nhung `extractionStatus = "skipped"`
 
-**Request Body:**
-
-| Trường     | Kiểu   | Bắt buộc | Mô tả                                                      |
-| ---------- | ------ | -------- | ---------------------------------------------------------- |
-| `language` | string | ❌       | Ngôn ngữ tài liệu: `"vie"` (default), `"eng"`, `"vie+eng"` |
-
-```json
-{
-  "language": "vie"
-}
-```
-
-**Response `202 Accepted`:**
-
-```json
-{
-  "success": true,
-  "message": "Yêu cầu text extraction đã được tiếp nhận và đang xử lý.",
-  "data": {
-    "_id": "64a1b2c3d4e5f6a7b8c9d002",
-    "extractionStatus": "processing",
-    "estimatedSeconds": 30,
-    "pollUrl": "/api/v1/documents/64a1b2c3d4e5f6a7b8c9d002/upload-status"
-  }
-}
-```
-
----
-
-### US14 — Xem kết quả text extraction
-
-**`GET /documents/{id}/extraction`**
-
-| Thông tin    | Chi tiết        |
-| ------------ | --------------- |
-| Auth yêu cầu | ✅ Bearer Token |
-
-**Response `200`:**
-
-```json
-{
-  "success": true,
-  "message": "Kết quả text extraction.",
-  "data": {
-    "_id": "64a1b2c3d4e5f6a7b8c9d002",
-    "extractionStatus": "completed",
-    "extractionLanguage": "vie",
-    "extractedText": "Chương 1: Giới hạn và liên tục của hàm số...",
-    "pageCount": 120,
-    "extractionConfidence": 0.94,
-    "extractionProcessedAt": "2024-10-15T10:32:00.000Z"
-  }
-}
-```
+`GET /documents/{id}/upload-status` la endpoint chuan de doc `extractionStatus` va `extractionErrorMessage`.
 
 ---
 
@@ -1799,18 +1747,18 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
 
 **Query Parameters:**
 
-| Tham số            | Kiểu    | Bắt buộc | Mô tả                                                  |
-| ------------------ | ------- | -------- | ------------------------------------------------------ |
-| `q`                | string  | ❌       | Tìm theo `title`                                       |
-| `uploaderId`       | string  | ❌       | Lọc theo ObjectId người upload                         |
-| `categoryId`       | string  | ❌       | Lọc theo danh mục                                      |
-| `isPublic`         | boolean | ❌       | `true` / `false`                                       |
-| `extractionStatus` | string  | ❌       | `"pending"`, `"processing"`, `"completed"`, `"failed"` |
-| `aiStatus`         | string  | ❌       | `"pending"`, `"processing"`, `"ready"`, `"failed"`     |
-| `status`           | string  | ❌       | `"active"`, `"processing"`, `"error"`, `"archived"`    |
-| `flagged`          | boolean | ❌       | Lọc tài liệu bị báo cáo vi phạm                        |
-| `page`             | integer | ❌       | Trang                                                  |
-| `limit`            | integer | ❌       | Số bản ghi                                             |
+| Tham số            | Kiểu    | Bắt buộc | Mô tả                                                               |
+| ------------------ | ------- | -------- | ------------------------------------------------------------------- |
+| `q`                | string  | ❌       | Tìm theo `title`                                                    |
+| `uploaderId`       | string  | ❌       | Lọc theo ObjectId người upload                                      |
+| `categoryId`       | string  | ❌       | Lọc theo danh mục                                                   |
+| `isPublic`         | boolean | ❌       | `true` / `false`                                                    |
+| `extractionStatus` | string  | ❌       | `"pending"`, `"processing"`, `"completed"`, `"skipped"`, `"failed"` |
+| `aiStatus`         | string  | ❌       | `"pending"`, `"processing"`, `"ready"`, `"failed"`                  |
+| `status`           | string  | ❌       | `"active"`, `"processing"`, `"error"`, `"archived"`                 |
+| `flagged`          | boolean | ❌       | Lọc tài liệu bị báo cáo vi phạm                                     |
+| `page`             | integer | ❌       | Trang                                                               |
+| `limit`            | integer | ❌       | Số bản ghi                                                          |
 
 **Response `200`:**
 
@@ -1944,7 +1892,7 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
       "color": "#4A90E2",
       "type": "system",
       "parentId": null,
-      "acceptedExtensions": [".pdf", ".docx"],
+      "acceptedExtensions": [".pdf", ".docx", ".txt", ".md", ".jpg", ".jpeg", ".png", ".webp"],
       "sortOrder": 1,
       "isActive": true,
       "documentCount": 150,
@@ -1967,17 +1915,17 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
 
 **Request Body:**
 
-| Trường               | Kiểu     | Bắt buộc | Mô tả                                 |
-| -------------------- | -------- | -------- | ------------------------------------- |
-| `name`               | string   | ✅       | Tên danh mục (max 100)                |
-| `slug`               | string   | ✅       | URL slug                              |
-| `description`        | string   | ❌       | Mô tả danh mục                        |
-| `icon`               | string   | ❌       | Tên icon                              |
-| `color`              | string   | ❌       | Màu hiển thị (hex, default `#999999`) |
-| `type`               | string   | ❌       | `"system"`, `"custom"` (default)      |
-| `parentId`           | string   | ❌       | ObjectId danh mục cha                 |
-| `acceptedExtensions` | string[] | ❌       | VD: `[".pdf", ".docx"]`               |
-| `sortOrder`          | integer  | ❌       | Thứ tự hiển thị                       |
+| Trường               | Kiểu     | Bắt buộc | Mô tả                                                                    |
+| -------------------- | -------- | -------- | ------------------------------------------------------------------------ |
+| `name`               | string   | ✅       | Tên danh mục (max 100)                                                   |
+| `slug`               | string   | ✅       | URL slug                                                                 |
+| `description`        | string   | ❌       | Mô tả danh mục                                                           |
+| `icon`               | string   | ❌       | Tên icon                                                                 |
+| `color`              | string   | ❌       | Màu hiển thị (hex, default `#999999`)                                    |
+| `type`               | string   | ❌       | `"system"`, `"custom"` (default)                                         |
+| `parentId`           | string   | ❌       | ObjectId danh mục cha                                                    |
+| `acceptedExtensions` | string[] | ❌       | VD: `[".pdf", ".docx", ".txt", ".md", ".jpg", ".jpeg", ".png", ".webp"]` |
+| `sortOrder`          | integer  | ❌       | Thứ tự hiển thị                                                          |
 
 ```json
 {
@@ -2589,13 +2537,13 @@ GET /documents?q=giải+tích&categoryId=64a1b2c3d4e5f6a7b8c9d005&page=1&limit=1
 
 **Query Params:**
 
-| Tham số            | Kiểu    | Mô tả                                         |
-| ------------------ | ------- | --------------------------------------------- |
-| `extractionStatus` | string  | ❌ `"completed"`, `"failed"`, `"processing"`  |
-| `from`             | string  | ❌ ISO8601 — lọc theo `extractionProcessedAt` |
-| `to`               | string  | ❌ ISO8601                                    |
-| `page`             | integer | ❌                                            |
-| `limit`            | integer | ❌                                            |
+| Tham số            | Kiểu    | Mô tả                                                     |
+| ------------------ | ------- | --------------------------------------------------------- |
+| `extractionStatus` | string  | ❌ `"completed"`, `"skipped"`, `"failed"`, `"processing"` |
+| `from`             | string  | ❌ ISO8601 — lọc theo `extractionProcessedAt`             |
+| `to`               | string  | ❌ ISO8601                                                |
+| `page`             | integer | ❌                                                        |
+| `limit`            | integer | ❌                                                        |
 
 **Response `200`:**
 

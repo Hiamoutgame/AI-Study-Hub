@@ -111,7 +111,8 @@ export const USER_MESSAGES = {
 export const DOCUMENT_MESSAGES = {
   FILE_IS_REQUIRED: 'Document file is required',
   FILE_TOO_LARGE: 'Document file exceeds storage plan limit',
-  FILE_TYPE_IS_INVALID: 'Document file must be a pdf, docx, or txt file',
+  FILE_TYPE_IS_INVALID: 'Document file must be a pdf, docx, txt, md, jpg, jpeg, png, or webp file',
+  EXTRACTION_SKIPPED_FOR_IMAGE: 'Digital text extraction is not supported for image files in v1',
   STORAGE_QUOTA_EXCEEDED: 'Storage quota exceeded',
   TITLE_IS_REQUIRED: 'Title is required',
   TITLE_MUST_BE_A_STRING: 'Title must be a string',

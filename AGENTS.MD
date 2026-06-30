@@ -35,28 +35,9 @@ Client
 
 ## Request Lifecycle
 
-Một request API đi qua các bước chính:
+> Chi tiết request lifecycle với sequence diagram xem tại [docs/architecture/system-architecture.md](docs/architecture/system-architecture.md#request-lifecycle).
 
-```txt
-Client request
-  -> Express app trong src/app.ts
-  -> app.use('/account', accountRouter)
-  -> accountRouter.get/post/put/delete(...)
-  -> validation middleware nếu endpoint cần validate
-       -> validate(checkSchema(...))
-       -> validation.run(req)
-       -> validationResult(req)
-       -> next() nếu input hợp lệ
-       -> next(EntityErr) nếu lỗi field 422
-       -> next(ErrorWithStatus) nếu lỗi có status riêng như 401
-  -> wrapAsync(controller)
-       -> controller gọi service
-       -> controller trả res.status(...).json(...)
-       -> nếu throw error thì wrapAsync đẩy vào next(err)
-  -> defautHandler
-       -> ErrorWithStatus: trả status từ error
-       -> Error thường: trả 500
-```
+Tóm tắt: Client → `src/app.ts` → route → validator middleware → `wrapAsync(controller)` → service → `databaseService` → response hoặc `defautHandler`.
 
 `src/index.ts` chỉ còn vai trò boot:
 
@@ -335,7 +316,7 @@ Checklist khi thêm API mới:
 - Giữ controller mỏng, đưa nghiệp vụ vào service.
 - Giữ constants và models đồng bộ với service/controller.
 - Không tạo abstraction mới nếu pattern hiện có đã đủ.
-- Khi sửa validation/error flow, xem thêm `docs/validations.md` vì file đó mô tả chi tiết cách `validate`, `wrapAsync`, `ErrorWithStatus`, `EntityErr`, và `defautHandler` phối hợp với nhau.
+- Khi sửa validation/error flow, xem thêm `docs/architecture/validation-error-flow.md` vì file đó mô tả chi tiết cách `validate`, `wrapAsync`, `ErrorWithStatus`, `EntityErr`, và `defautHandler` phối hợp với nhau.
 - **App đã được tách thành `src/app.ts` và `src/index.ts`** — đây là điều kiện để Supertest chạy integration test không cần mở port thật. Không được gộp lại.
 - **Khi viết test mới:** chạy `npm run test:unit` trước (không cần DB), sau đó `npm run test:integration` với MongoDB local có DB tên kết thúc `_test`.
 - Routes hiện có: `/account`, `/users`, `/documents`, `/admin`, `/categories`, `/shared`, `/folders`. Xem `src/app.ts` để biết đầy đủ.

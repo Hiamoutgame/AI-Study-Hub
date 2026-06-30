@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import mammoth from 'mammoth'
 import { PDFParse } from 'pdf-parse'
+import { DOCUMENT_MESSAGES } from '~/constants/message'
 import { ExtractionStatus } from '~/constants/enum'
 
 export interface ExtractionResult {
@@ -52,10 +53,19 @@ export const extractText = async (file: Express.Multer.File): Promise<Extraction
         text = result.value
         break
       }
-      case '.txt': {
+      case '.txt':
+      case '.md':
         text = buffer.toString('utf-8')
         break
-      }
+      case '.jpg':
+      case '.jpeg':
+      case '.png':
+      case '.webp':
+        return {
+          status: ExtractionStatus.skipped,
+          text: '',
+          errorMessage: DOCUMENT_MESSAGES.EXTRACTION_SKIPPED_FOR_IMAGE
+        }
       default:
         return {
           status: ExtractionStatus.failed,

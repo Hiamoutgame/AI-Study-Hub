@@ -1,9 +1,8 @@
 import { Filter, ObjectId } from 'mongodb'
-import { ActivityAction, ActivityEntityType, StoragePlan, UserRole } from '~/constants/enum'
+import { ActivityAction, ActivityEntityType, UserRole } from '~/constants/enum'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { ADMIN_MESSAGES, USER_MESSAGES } from '~/constants/message'
 import { Account } from '~/models/Account.schema'
-import { ActivityLog } from '~/models/ActivityLog.schema'
 import { ErrorWithStatus } from '~/models/Error'
 import {
   AdminUsersQuery,
@@ -14,50 +13,27 @@ import {
 } from '~/models/request/admin.request'
 import { StorageQuota } from '~/models/StorageQuota.schema'
 import databaseService from './database.service'
-
-const DEFAULT_TOTAL_BYTES = 500 * 1024 * 1024
-const DEFAULT_MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024
-const DEFAULT_MAX_FILES_COUNT = 100
+import helperService from './helpers/helper.service'
 
 class AdminUserService {
   private toObjectId(id: string) {
-    return new ObjectId(id)
+    return helperService.toObjectId(id)
   }
 
   private escapeRegex(value: string) {
-    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    return helperService.escapeRegex(value)
   }
 
   private parsePagination(query: { page?: string; limit?: string }) {
-    const page = Number(query.page || 1)
-    const limit = Number(query.limit || 20)
-    return { page, limit, skip: (page - 1) * limit }
+    return helperService.parsePagination(query)
   }
 
   private getFallbackQuota(accountId: ObjectId) {
-    return new StorageQuota({
-      accountId,
-      plan: StoragePlan.free,
-      totalBytes: DEFAULT_TOTAL_BYTES,
-      usedBytes: 0,
-      maxFileSizeBytes: DEFAULT_MAX_FILE_SIZE_BYTES,
-      maxFilesCount: DEFAULT_MAX_FILES_COUNT
-    })
+    return helperService.getFallbackStorageQuota(accountId)
   }
 
   private formatStorage(quota?: StorageQuota, accountId?: ObjectId) {
-    const storageQuota = quota || this.getFallbackQuota(accountId as ObjectId)
-    return {
-      plan: storageQuota.plan,
-      usedBytes: storageQuota.usedBytes,
-      totalBytes: storageQuota.totalBytes,
-      maxFileSizeBytes: storageQuota.maxFileSizeBytes,
-      maxFilesCount: storageQuota.maxFilesCount,
-      aiQueriesUsed: storageQuota.aiQueriesUsed,
-      aiQueriesLimit: storageQuota.aiQueriesLimit,
-      quotaResetDate: storageQuota.quotaResetDate,
-      updatedAt: storageQuota.updatedAt
-    }
+    return helperService.formatStorage(quota || this.getFallbackQuota(accountId as ObjectId))
   }
 
   private getPublicAdminUser(account: Account) {
@@ -94,15 +70,13 @@ class AdminUserService {
     targetId: ObjectId
     metadata?: Record<string, unknown>
   }) {
-    await databaseService.activityLogs.insertOne(
-      new ActivityLog({
-        accountId: adminId,
-        action,
-        entityType: ActivityEntityType.account,
-        entityId: targetId,
-        metadata
-      })
-    )
+    await helperService.createActivityLog({
+      accountId: adminId,
+      action,
+      entityType: ActivityEntityType.account,
+      entityId: targetId,
+      metadata
+    })
   }
 
   private async getAccountOrThrow(accountId: ObjectId) {
@@ -358,7 +332,7 @@ class AdminUserService {
         $setOnInsert: {
           accountId: targetObjectId,
           usedBytes: 0,
-          maxFilesCount: DEFAULT_MAX_FILES_COUNT,
+          maxFilesCount: helperService.getFallbackStorageQuota(targetObjectId).maxFilesCount,
           aiQueriesUsed: 0,
           quotaResetDate: updatedAt
         },

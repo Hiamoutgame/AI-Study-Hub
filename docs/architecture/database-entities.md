@@ -835,6 +835,51 @@ ActivityLog → mọi hành động user + admin + text extraction/AI events
 PermissionLink.lastUsedAt + currentUses → tracking share link
 ```
 
+### Planned: Async Document Extraction Jobs
+
+Source hiện tại chưa có collection này. Đây là collection đề xuất cho phase chuyển text extraction/OCR sang xử lý nền local-first trước khi dùng BullMQ/SQS.
+
+Tên collection đề xuất:
+
+```txt
+document_extraction_jobs
+```
+
+Mục đích:
+
+- Lưu job extraction/OCR cần xử lý sau khi `POST /documents` tạo document.
+- Giúp upload trả response nhanh thay vì chờ `extractionService.extractText(...)`.
+- Cho phép retry, lock job, phát hiện stuck job và lưu lỗi xử lý.
+
+Field đề xuất:
+
+| Field           | Type       | Mô tả                                                     |
+| --------------- | ---------- | --------------------------------------------------------- |
+| `_id`           | `ObjectId` | Khóa chính                                                |
+| `solutionId`    | `ObjectId` | Tài liệu cần xử lý                                        |
+| `uploaderId`    | `ObjectId` | User upload tài liệu                                      |
+| `storageKey`    | `String`   | Đường dẫn/key file để worker đọc                          |
+| `fileExtension` | `String`   | Đuôi file                                                 |
+| `mimeType`      | `String`   | MIME type                                                 |
+| `status`        | `String`   | `pending`, `processing`, `completed`, `skipped`, `failed` |
+| `attempts`      | `Number`   | Số lần đã thử                                             |
+| `maxAttempts`   | `Number`   | Số lần thử tối đa                                         |
+| `lockedAt`      | `Date`     | Thời điểm worker lock job                                 |
+| `lockedBy`      | `String`   | Worker id                                                 |
+| `lastError`     | `String`   | Lỗi gần nhất                                              |
+| `startedAt`     | `Date`     | Bắt đầu xử lý                                             |
+| `finishedAt`    | `Date`     | Kết thúc xử lý                                            |
+| `createdAt`     | `Date`     | Ngày tạo                                                  |
+| `updatedAt`     | `Date`     | Ngày cập nhật                                             |
+
+Index đề xuất:
+
+```js
+documentExtractionJobSchema.index({ status: 1, createdAt: 1 })
+documentExtractionJobSchema.index({ solutionId: 1 })
+documentExtractionJobSchema.index({ lockedAt: 1 })
+```
+
 ---
 
 ## 10. Changelog v2.0 → v2.1
@@ -866,7 +911,7 @@ PermissionLink.lastUsedAt + currentUses → tracking share link
 
 ### Tác động đến tài liệu khác
 
-- **`DescriptionProject.md`** cần update tương ứng:
+- **`api-specification.md`** cần update tương ứng:
   - Bỏ field `groupId` trong request/response của `/documents`, `/chat/sessions`, `/categories`
   - Bỏ field `version` trong response `/documents/{id}`
   - Section 1.4 "Mapping API ↔ Collection": bỏ dòng `permission_links` duplicate, bỏ `groupMembership`

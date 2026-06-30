@@ -1,7 +1,7 @@
 import { Filter, ObjectId } from 'mongodb'
 import { SolutionStatus } from '~/constants/enum'
 import HTTP_STATUS from '~/constants/httpStatus'
-import { FOLDER_MESSAGES, USER_MESSAGES } from '~/constants/message'
+import { FOLDER_MESSAGES } from '~/constants/message'
 import { ErrorWithStatus } from '~/models/Error'
 import { Folder } from '~/models/Folder.schema'
 import {
@@ -12,22 +12,19 @@ import {
 } from '~/models/request/folder.request'
 import { Solution } from '~/models/Solution.schema'
 import databaseService from './database.service'
+import helperService from './helpers/helper.service'
 
 class FolderService {
   private toObjectId(id: string) {
-    return new ObjectId(id)
+    return helperService.toObjectId(id)
   }
 
   private getNotDeletedFolderFilter(): Filter<Folder> {
-    return {
-      $or: [{ deletedAt: { $exists: false } }, { deletedAt: null }]
-    } as Filter<Folder>
+    return helperService.getNotDeletedFilter<Folder>()
   }
 
   private getNotDeletedDocumentFilter(): Filter<Solution> {
-    return {
-      $or: [{ deletedAt: { $exists: false } }, { deletedAt: null }]
-    } as Filter<Solution>
+    return helperService.getNotDeletedFilter<Solution>()
   }
 
   private getRootFolderFilter(): Filter<Folder> {
@@ -43,17 +40,7 @@ class FolderService {
   }
 
   private async ensureActiveVerifiedAccount(accountId: ObjectId) {
-    const account = await databaseService.accounts.findOne({ _id: accountId })
-
-    if (!account) {
-      throw new ErrorWithStatus(USER_MESSAGES.USER_NOT_FOUND, HTTP_STATUS.NOT_FOUND)
-    }
-    if (!account.isActive) {
-      throw new ErrorWithStatus(USER_MESSAGES.USER_IS_INACTIVE, HTTP_STATUS.UNAUTHORIZED)
-    }
-    if (!account.isEmailVerified) {
-      throw new ErrorWithStatus(USER_MESSAGES.USER_NOT_VERIFIED, HTTP_STATUS.FORBIDDEN)
-    }
+    await helperService.ensureActiveVerifiedAccount(accountId)
   }
 
   private async getOwnedFolder(folderId: ObjectId, ownerId: ObjectId) {
@@ -217,7 +204,7 @@ class FolderService {
     ]
 
     if (query.q) {
-      const regex = query.q.replace(/[.*+?^\${}()|[\]\\]/g, '\\$&')
+      const regex = helperService.escapeRegex(query.q)
       folderFilters.push({ name: { $regex: regex, $options: 'i' } })
       documentFilters.push({
         $or: [{ title: { $regex: regex, $options: 'i' } }, { fileName: { $regex: regex, $options: 'i' } }]

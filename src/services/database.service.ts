@@ -14,6 +14,7 @@ import { PermissionLink } from '~/models/PermissionLink.schema'
 import { Solution } from '~/models/Solution.schema'
 import { SolutionCategory } from '~/models/SolutionCategory.schema'
 import { StorageQuota } from '~/models/StorageQuota.schema'
+import { DocumentExtractionJob } from '~/models/DocumentExtractionJob.schema'
 
 if (DNS_SERVERS.length) {
   dns.setServers(DNS_SERVERS)
@@ -50,7 +51,11 @@ class DatabaseService {
       this.permissionLinks.createIndex({ token: 1 }, { unique: true }),
       this.folders.createIndex({ ownerId: 1, parentId: 1, createdAt: -1 }),
       this.folders.createIndex({ ownerId: 1, parentId: 1, name: 1 }),
-      this.solutions.createIndex({ uploaderId: 1, folderId: 1, createdAt: -1 })
+      this.solutions.createIndex({ uploaderId: 1, folderId: 1, createdAt: -1 }),
+      // Các index hỗ trợ truy vấn và khóa job xử lý trích xuất văn bản bất đồng bộ
+      this.documentExtractionJobs.createIndex({ status: 1, createdAt: 1 }),
+      this.documentExtractionJobs.createIndex({ solutionId: 1 }),
+      this.documentExtractionJobs.createIndex({ lockedAt: 1 })
     ])
   }
 
@@ -104,6 +109,14 @@ class DatabaseService {
 
   get notifications(): Collection<Notification> {
     return this.dbName.collection('notifications')
+  }
+
+  /**
+   * Getter truy cập collection 'document_extraction_jobs' từ database.
+   * Dùng để quản lý vòng đời và trạng thái các công việc trích xuất chữ nền (async OCR/extraction).
+   */
+  get documentExtractionJobs(): Collection<DocumentExtractionJob> {
+    return this.dbName.collection('document_extraction_jobs')
   }
 }
 

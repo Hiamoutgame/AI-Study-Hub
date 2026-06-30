@@ -50,6 +50,7 @@ const documentRouter = express.Router()
  *               file:
  *                 type: string
  *                 format: binary
+ *                 description: Supports pdf, docx, txt, md, jpg, jpeg, png, and webp
  *               title:
  *                 type: string
  *               description:

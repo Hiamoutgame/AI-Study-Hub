@@ -1,71 +1,76 @@
 # 10 - Admin Dashboard Và Statistics
 
-Nhóm này gồm US23, cung cấp dashboard và thống kê chi tiết về users/documents. Endpoint chưa implement trong `src`.
+Nhóm này gồm US23, cung cấp dashboard và thống kê chi tiết về users/documents. Source hiện tại đã implement.
+
+Code chính:
+
+- `src/routes/admin.route.ts`
+- `src/middlewares/admin.middlewares.ts`
+- `src/controllers/admin.controller.ts`
+- `src/services/adminDashboard.service.ts`
 
 ## Endpoint Map
 
-| US   | Method | Endpoint                 | Auth         | Trang thai |
-| ---- | ------ | ------------------------ | ------------ | ---------- |
-| US23 | GET    | `/admin/dashboard`       | Admin Bearer | Planned    |
-| US23 | GET    | `/admin/stats/users`     | Admin Bearer | Planned    |
-| US23 | GET    | `/admin/stats/documents` | Admin Bearer | Planned    |
+| US   | Method | Endpoint                 | Auth         | Trạng thái  |
+| ---- | ------ | ------------------------ | ------------ | ----------- |
+| US23 | GET    | `/admin/dashboard`       | Admin Bearer | Implemented |
+| US23 | GET    | `/admin/stats/users`     | Admin Bearer | Implemented |
+| US23 | GET    | `/admin/stats/documents` | Admin Bearer | Implemented |
 
 ## Schema Và Collection Flow
 
-- Collections: `accounts`, `solutions`, `activity_logs`, `storage_quotas`, `ai_messages`.
-- Schema liên quan: `Account`, `Solution`, `ActivityLog`, `StorageQuota`, `AiMessage`.
+- Collections: `accounts`, `solutions`, `storage_quotas`, `activity_logs`, `ai_chat_sessions`, `ai_messages`.
+- Schema liên quan: `Account`, `Solution`, `StorageQuota`, `ActivityLog`, `AiChatSession`, `AiMessage`.
 
 ## Request Processing Flow
 
-1. Validate admin token và query period/from/to.
-2. Dashboard aggregate tổng user, active user, documents, storage usage, text extraction/AI status.
-3. User stats aggregate theo ngày, role, active/locked, verified status.
-4. Document stats aggregate upload count, public/private, category, file size, top uploaders.
-5. Response nên có `meta.period` hoặc params đã dùng để frontend hiển thị.
+1. Validate access token.
+2. `adminRoleValidator` kiểm tra current account là admin.
+3. Validator kiểm tra query `period`, `from`, `to`, `groupBy`.
+4. Controller gọi `adminDashboardService`.
+5. Service count/aggregate nhiều collection.
+6. Response trả summary hoặc series thống kê cho frontend.
 
-## Sơ đồ Luồng Xử lý
+## Sơ Đồ Luồng Xử Lý
 
 ```mermaid
 sequenceDiagram
   actor Admin
-  participant Route as admin stats routes
-  participant Auth as admin auth
-  participant Controller as adminDashboardController
+  participant Route as admin.route.ts
+  participant Auth as adminAuth
+  participant Controller as admin.controller
   participant Service as adminDashboardService
   participant Accounts as accounts
   participant Solutions as solutions
-  participant Logs as activity_logs
   participant Quotas as storage_quotas
+  participant Logs as activity_logs
 
   Admin->>Route: GET /admin/dashboard?period=month
   Route->>Auth: bearer + admin role
-  Auth->>Route: next() with decoded admin_id
-  Route->>Controller: wrapAsync(getDashboardController)
-  Controller->>Service: getDashboard(period)
+  Auth->>Route: next() with admin_id
+  Route->>Controller: wrapAsync(getAdminDashboardController)
+  Controller->>Service: getDashboard(query)
   Service->>Accounts: count users by status
   Service->>Solutions: aggregate documents/status/storage
   Service->>Quotas: aggregate usedBytes/totalBytes
   Service->>Logs: aggregate recent activities
   Service-->>Controller: dashboard summary
-  Controller-->>Admin: 200 dashboard stats
+  Controller-->>Admin: 200 message + data
 ```
-
-## Ảnh Tham khảo
-
-![Web API diagram](https://commons.wikimedia.org/wiki/Special:FilePath/Web_API_diagram.svg)
-
-Nguồn: [Wikimedia Commons - Web API diagram](https://commons.wikimedia.org/wiki/File:Web_API_diagram.svg)
 
 ## Business Rules
 
-- Chỉ admin được xem stats.
-- Aggregation nên có default period để tránh query quá lớn.
-- Không trả thông tin nhạy cảm như password hash/token trong top users.
-- Query stats nên ưu tiên aggregate pipeline thay vì load all vào memory.
+- Chỉ admin được xem dashboard/stats.
+- Dashboard hỗ trợ `period` như `today`, `week`, `month`, `year`.
+- Stats users/documents hỗ trợ `from`, `to`, `groupBy`.
+- Không trả thông tin nhạy cảm như password hash/token.
+- Service nên dùng count/aggregate thay vì load toàn bộ collection vào memory.
 
-## Test Cases
+## Test Cases Nên Có
 
+- Non-admin bị chặn.
 - Dashboard default period.
-- Stats users theo from/to.
-- Stats documents theo category/status.
-- Non-admin bị 403.
+- Dashboard theo `period`.
+- Stats users theo `from/to/groupBy`.
+- Stats documents theo `from/to/groupBy`.
+- Response không lộ field nhạy cảm.

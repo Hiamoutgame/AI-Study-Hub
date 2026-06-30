@@ -276,7 +276,7 @@ adminRouter.delete(
  *         schema: { type: boolean }
  *       - in: query
  *         name: extractionStatus
- *         schema: { type: string }
+ *         schema: { type: string, enum: [pending, processing, completed, skipped, failed] }
  *       - in: query
  *         name: aiStatus
  *         schema: { type: string }

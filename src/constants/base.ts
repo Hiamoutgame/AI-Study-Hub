@@ -31,3 +31,15 @@ export const SMTP_PORT = Number(process.env.SMTP_PORT) || 587
 export const SMTP_USER = process.env.SMTP_USER as string
 export const SMTP_PASS = process.env.SMTP_PASS as string
 export const EMAIL_FROM = (process.env.EMAIL_FROM || process.env.SMTP_USER) as string
+
+// Cau hinh cho Async Extraction & OCR Worker
+export const EXTRACTION_WORKER_ENABLED = process.env.EXTRACTION_WORKER_ENABLED as boolean | string
+
+//giới hạn số lần retry
+export const EXTRACTION_JOB_MAX_ATTEMPTS = Number(process.env.EXTRACTION_JOB_MAX_ATTEMPTS)
+
+//job processing quá lâu có thể reset lại.
+export const EXTRACTION_JOB_LOCK_TTL_MS = Number(process.env.EXTRACTION_JOB_LOCK_TTL_MS)
+
+//worker kiểm tra job mỗi 5 giây
+export const EXTRACTION_WORKER_POLL_INTERVAL_MS = Number(process.env.EXTRACTION_WORKER_POLL_INTERVAL_MS)

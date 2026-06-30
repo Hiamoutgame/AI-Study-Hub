@@ -12,10 +12,11 @@ flowchart TB
   Browser[Browser static file request]:::client
 
   subgraph Runtime["Node.js runtime"]
-    Express["src/index.ts\nExpress 5 app"]:::entry
+    Bootstrap["src/index.ts\nconnect MongoDB + app.listen"]:::entry
+    App["src/app.ts\nExpress 5 app config"]:::entry
     CORS["cors(CORS_ORIGINS)"]:::layer
     JSON["express.json()"]:::layer
-    StaticUploads["/uploads\nexpress.static('uploads')"]:::layer
+    StaticUploads["/uploads\nexpress.static(UPLOAD_ROOT)"]:::layer
     SwaggerUI["/api-docs\nswagger-ui-express + swagger-jsdoc"]:::layer
     ErrorHandler["defautHandler\nErrorWithStatus / EntityErr / 500"]:::entry
   end
@@ -27,10 +28,11 @@ flowchart TB
     AdminRoute["/admin\nadmin.route.ts"]:::layer
     CategoryRoute["/categories\ncategory.route.ts"]:::layer
     SharedRoute["/shared\nshared.route.ts"]:::layer
+    FolderRoute["/folders\nfolder.route.ts"]:::layer
   end
 
   subgraph Middlewares["src/middlewares"]
-    Validators["validate(checkSchema(...))\nrequest/body/query/params"]:::layer
+    Validators["validate(checkSchema(...))\nbody/query/params/headers"]:::layer
     AccessToken["accessTokenValidator\nJWT -> req.decoded_authorization"]:::layer
     AdminRole["adminRoleValidator\nrole = admin"]:::layer
     Upload["upload.middlewares.ts\nMulter avatar/document upload"]:::layer
@@ -40,6 +42,7 @@ flowchart TB
     AccountController["account.controller.ts"]:::layer
     UserController["user.controller.ts"]:::layer
     DocumentController["document.controller.ts"]:::layer
+    FolderController["folder.controller.ts"]:::layer
     SharingController["sharing.controller.ts"]:::layer
     AdminController["admin.controller.ts"]:::layer
     CategoryController["category.controller.ts"]:::layer
@@ -51,6 +54,8 @@ flowchart TB
     EmailService["email.service.ts\nSMTP or dev console OTP"]:::service
     UserService["user.service.ts"]:::service
     DocumentService["document.service.ts"]:::service
+    ExtractionService["extraction.service.ts\nPDF/DOCX/TXT/MD extraction"]:::service
+    FolderService["folder.service.ts"]:::service
     SharingService["sharing.service.ts"]:::service
     CategoryService["category.service.ts"]:::service
     NotificationService["notification.service.ts"]:::service
@@ -77,6 +82,7 @@ flowchart TB
     StorageQuotas[(storage_quotas)]:::data
     ActivityLogs[(activity_logs)]:::data
     Solutions[(solutions)]:::data
+    Folders[(folders)]:::data
     SolutionCategories[(solution_categories)]:::data
     AiChatSessions[(ai_chat_sessions)]:::data
     AiMessages[(ai_messages)]:::data
@@ -93,9 +99,10 @@ flowchart TB
     Docker["Docker Compose\nserver on 5285"]:::external
   end
 
-  Client --> Express
+  Bootstrap --> App
+  Client --> App
   Browser --> StaticUploads
-  Express --> CORS --> JSON
+  App --> CORS --> JSON
   JSON --> SwaggerUI
   JSON --> AccountRoute
   JSON --> UserRoute
@@ -103,7 +110,7 @@ flowchart TB
   JSON --> AdminRoute
   JSON --> CategoryRoute
   JSON --> SharedRoute
-  JSON --> FolderRoute[folders - folder.route.ts]:::layer
+  JSON --> FolderRoute
 
   AccountRoute --> Validators --> AccountController
   AccountRoute --> AccessToken --> AccountController
@@ -116,13 +123,14 @@ flowchart TB
   AdminRoute --> AccessToken --> AdminRole --> AdminController
   CategoryRoute --> AccessToken --> Validators --> CategoryController
   SharedRoute --> Validators --> SharingController
-  FolderRoute --> AccessToken --> Validators --> FolderController[folder.controller.ts]:::layer
+  FolderRoute --> AccessToken --> Validators --> FolderController
 
   AccountController --> AccountService
   AccountService --> EmailService
   UserController --> UserService
   DocumentController --> DocumentService
-  FolderController --> FolderService[folder.service.ts]:::service
+  DocumentService --> ExtractionService
+  FolderController --> FolderService
   SharingController --> SharingService
   CategoryController --> CategoryService
   NotificationController --> NotificationService
@@ -135,6 +143,7 @@ flowchart TB
   AccountService --> DatabaseService
   UserService --> DatabaseService
   DocumentService --> DatabaseService
+  ExtractionService --> Uploads
   FolderService --> DatabaseService
   SharingService --> DatabaseService
   CategoryService --> DatabaseService
@@ -146,9 +155,10 @@ flowchart TB
   Upload --> Uploads
   StaticUploads --> Uploads
   EmailService --> SMTP
-  Env --> Express
+  Env --> Bootstrap
+  Env --> App
   Env --> DatabaseService
-  Docker --> Express
+  Docker --> Bootstrap
   SwaggerUI --> Routes
 
   DatabaseService --> Mongo
@@ -156,7 +166,7 @@ flowchart TB
   Mongo --> StorageQuotas
   Mongo --> ActivityLogs
   Mongo --> Solutions
-  Mongo --> Folders[(folders)]
+  Mongo --> Folders
   Mongo --> SolutionCategories
   Mongo --> AiChatSessions
   Mongo --> AiMessages

@@ -2,7 +2,6 @@ import { Filter, ObjectId } from 'mongodb'
 import { ActivityAction, ActivityEntityType, SolutionCategoryType } from '~/constants/enum'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { CATEGORY_MESSAGES } from '~/constants/message'
-import { ActivityLog } from '~/models/ActivityLog.schema'
 import { ErrorWithStatus } from '~/models/Error'
 import {
   CreateCategoryReqBody,
@@ -12,23 +11,15 @@ import {
 } from '~/models/request/category.request'
 import { SolutionCategory } from '~/models/SolutionCategory.schema'
 import databaseService from './database.service'
+import helperService from './helpers/helper.service'
 
 class CategoryService {
   private toObjectId(id: string) {
-    return new ObjectId(id)
+    return helperService.toObjectId(id)
   }
 
   private parseBoolean(value: boolean | string | undefined, defaultValue = true) {
-    if (typeof value === 'boolean') {
-      return value
-    }
-    if (value === 'true') {
-      return true
-    }
-    if (value === 'false') {
-      return false
-    }
-    return defaultValue
+    return helperService.parseBoolean(value, defaultValue)
   }
 
   private async createActivityLog({
@@ -42,15 +33,13 @@ class CategoryService {
     categoryId: ObjectId
     metadata?: Record<string, unknown>
   }) {
-    await databaseService.activityLogs.insertOne(
-      new ActivityLog({
-        accountId: adminId,
-        action,
-        entityType: ActivityEntityType.category,
-        entityId: categoryId,
-        metadata
-      })
-    )
+    await helperService.createActivityLog({
+      accountId: adminId,
+      action,
+      entityType: ActivityEntityType.category,
+      entityId: categoryId,
+      metadata
+    })
   }
 
   private async getCategoryOrThrow(categoryId: ObjectId) {

@@ -10,40 +10,29 @@ import {
   SolutionStatus
 } from '~/constants/enum'
 import HTTP_STATUS from '~/constants/httpStatus'
-import { ADMIN_MESSAGES, DOCUMENT_MESSAGES } from '~/constants/message'
-import { ActivityLog } from '~/models/ActivityLog.schema'
+import { DOCUMENT_MESSAGES } from '~/constants/message'
 import { ErrorWithStatus } from '~/models/Error'
 import { Notification } from '~/models/Notification.schema'
 import { AdminDeleteDocumentReqBody, AdminDocumentsQuery, FlagDocumentReqBody } from '~/models/request/admin.request'
 import { Solution } from '~/models/Solution.schema'
 import databaseService from './database.service'
+import helperService from './helpers/helper.service'
 
 class AdminDocumentService {
   private toObjectId(id: string) {
-    return new ObjectId(id)
+    return helperService.toObjectId(id)
   }
 
   private parsePagination(query: { page?: string; limit?: string }) {
-    const page = Number(query.page || 1)
-    const limit = Number(query.limit || 20)
-    return { page, limit, skip: (page - 1) * limit }
+    return helperService.parsePagination(query)
   }
 
   private parseBoolean(value: boolean | string | undefined, defaultValue = false) {
-    if (typeof value === 'boolean') {
-      return value
-    }
-    if (value === 'true') {
-      return true
-    }
-    if (value === 'false') {
-      return false
-    }
-    return defaultValue
+    return helperService.parseBoolean(value, defaultValue)
   }
 
   private escapeRegex(value: string) {
-    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    return helperService.escapeRegex(value)
   }
 
   private async createActivityLog({
@@ -57,32 +46,17 @@ class AdminDocumentService {
     solutionId: ObjectId
     metadata?: Record<string, unknown>
   }) {
-    await databaseService.activityLogs.insertOne(
-      new ActivityLog({
-        accountId: adminId,
-        action,
-        entityType: ActivityEntityType.solution,
-        entityId: solutionId,
-        metadata
-      })
-    )
+    await helperService.createActivityLog({
+      accountId: adminId,
+      action,
+      entityType: ActivityEntityType.solution,
+      entityId: solutionId,
+      metadata
+    })
   }
 
   private async decreaseStorageUsage(accountId: ObjectId, fileSizeBytes: number) {
-    const storageQuota = await databaseService.storageQuotas.findOne({ accountId })
-    if (!storageQuota) {
-      return
-    }
-
-    await databaseService.storageQuotas.updateOne(
-      { accountId },
-      {
-        $set: {
-          usedBytes: Math.max(storageQuota.usedBytes - fileSizeBytes, 0),
-          updatedAt: new Date()
-        }
-      }
-    )
+    await helperService.decreaseStorageUsage(accountId, fileSizeBytes)
   }
 
   private async notifyUploader({

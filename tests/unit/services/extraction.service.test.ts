@@ -40,6 +40,14 @@ describe('extraction.service', () => {
     expect(result.errorMessage).toBe('')
   })
 
+  it('extracts markdown from a .md buffer and trims it', async () => {
+    const result = await extractText(makeFile('notes.md', Buffer.from('  # Title\n\nBody  ')))
+
+    expect(result.status).toBe(ExtractionStatus.completed)
+    expect(result.text).toBe('# Title\n\nBody')
+    expect(result.errorMessage).toBe('')
+  })
+
   it('extracts text from a .pdf via pdf-parse', async () => {
     getTextMock.mockResolvedValueOnce({ text: 'PDF extracted content' })
     const buffer = Buffer.from('%PDF-1.4 fake')
@@ -62,12 +70,20 @@ describe('extraction.service', () => {
     expect(result.text).toBe('DOCX extracted content')
   })
 
-  it('marks unsupported extensions as failed', async () => {
+  it('marks image files as skipped', async () => {
     const result = await extractText(makeFile('image.png', Buffer.from('binary')))
+
+    expect(result.status).toBe(ExtractionStatus.skipped)
+    expect(result.text).toBe('')
+    expect(result.errorMessage).toContain('Digital text extraction')
+  })
+
+  it('marks unsupported extensions as failed', async () => {
+    const result = await extractText(makeFile('archive.exe', Buffer.from('binary')))
 
     expect(result.status).toBe(ExtractionStatus.failed)
     expect(result.text).toBe('')
-    expect(result.errorMessage).toContain('.png')
+    expect(result.errorMessage).toContain('.exe')
   })
 
   it('returns failed (never throws) when the parser errors', async () => {
