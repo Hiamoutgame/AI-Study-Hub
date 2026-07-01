@@ -43,3 +43,12 @@ export const EXTRACTION_JOB_LOCK_TTL_MS = Number(process.env.EXTRACTION_JOB_LOCK
 
 //worker kiểm tra job mỗi 5 giây
 export const EXTRACTION_WORKER_POLL_INTERVAL_MS = Number(process.env.EXTRACTION_WORKER_POLL_INTERVAL_MS)
+
+//Cấu hình Cloudinary
+export const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME as string
+export const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY as string
+export const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET as string
+export const STORAGE_PROVIDER = process.env.STORAGE_PROVIDER || 'local'
+
+export const CLOUDINARY_URL =
+  `cloudinary://${CLOUDINARY_API_KEY}:${CLOUDINARY_API_SECRET}@${CLOUDINARY_CLOUD_NAME}` as string

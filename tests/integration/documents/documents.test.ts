@@ -3,7 +3,7 @@ import path from 'node:path'
 import { ObjectId } from 'mongodb'
 import request from 'supertest'
 import app from '~/app'
-import { ExtractionStatus, PermissionLevel } from '~/constants/enum'
+import { ExtractionStatus, PermissionLevel, StorageProvider } from '~/constants/enum'
 import { DOCUMENT_MESSAGES } from '~/constants/message'
 import databaseService from '~/services/database.service'
 import documentService from '~/services/document.service'
@@ -31,10 +31,19 @@ describe('document routes', () => {
       title: 'TypeScript Notes',
       fileName: 'notes.txt',
       tags: ['typescript', 'backend'],
+      publicUrl: '',
       extractionStatus: 'pending',
       extractedText: ''
     })
+    expect(uploadResponse.body.data.storageKey).toBeUndefined()
     await expect(databaseService.solutions.countDocuments({ uploaderId: account._id })).resolves.toBe(1)
+    const extractionJob = await databaseService.documentExtractionJobs.findOne({
+      solutionId: new ObjectId(uploadResponse.body.data._id)
+    })
+    expect(extractionJob).toMatchObject({
+      storageProvider: StorageProvider.s3,
+      storageBucket: 'local'
+    })
 
     const listResponse = await request(app).get('/documents').set('Authorization', authorization).expect(200)
 
@@ -97,8 +106,10 @@ describe('document routes', () => {
 
     expect(uploadStatusResponse.body.data).toMatchObject({
       extractionStatus: ExtractionStatus.pending,
-      extractionErrorMessage: ''
+      extractionErrorMessage: '',
+      publicUrl: ''
     })
+    expect(uploadStatusResponse.body.data.storageKey).toBeUndefined()
 
     const searchResponse = await request(app)
       .get('/documents?q=Architecture')
@@ -181,6 +192,25 @@ describe('document routes', () => {
     const authorization = await createAuthHeader(viewer)
 
     await request(app).get(`/documents/${document._id}`).set('Authorization', authorization).expect(403)
+  })
+
+  it('does not expose storageKey for private cloud documents', async () => {
+    const owner = await seedAccount()
+    const authorization = await createAuthHeader(owner)
+    const storageKey = 'https://res.cloudinary.com/demo/raw/upload/v123/documents/private-notes.txt'
+    const document = await seedDocument(owner._id!, {
+      storageProvider: StorageProvider.cloudinary,
+      storageBucket: 'demo',
+      storageKey,
+      publicUrl: '',
+      isPublic: false
+    })
+
+    const detailResponse = await request(app).get(`/documents/${document._id}`).set('Authorization', authorization).expect(200)
+
+    expect(detailResponse.body.data.publicUrl).toBe('')
+    expect(detailResponse.body.data.storageKey).toBeUndefined()
+    expect(JSON.stringify(detailResponse.body.data)).not.toContain(storageKey)
   })
 
   it('requires authentication for document listing', async () => {

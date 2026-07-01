@@ -91,3 +91,20 @@ export const resolveSharedLinkController = async (req: Request<{ token: string }
 
   return res.status(HTTP_STATUS.OK).json({ message: SHARING_MESSAGES.GET_SHARED_DOCUMENT_SUCCESS, data: result })
 }
+
+export const getSharedFileController = async (
+  req: Request<{ token: string }, any, any, { download?: string }>,
+  res: Response
+) => {
+  const download = req.query.download === '1' || req.query.download === 'true'
+  const result = await sharingService.getSharedFile({
+    token: req.params.token,
+    download
+  })
+  const safeFileName = result.document.fileName.replace(/"/g, '')
+
+  res.setHeader('Content-Type', result.document.mimeType || 'application/octet-stream')
+  res.setHeader('Content-Disposition', `${download ? 'attachment' : 'inline'}; filename="${safeFileName}"`)
+
+  return result.stream.pipe(res)
+}

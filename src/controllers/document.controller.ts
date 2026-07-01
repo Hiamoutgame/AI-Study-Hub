@@ -97,7 +97,14 @@ export const downloadDocumentController = async (req: Request<{ id: string }>, r
     }
   })
 
-  return res.download(result.filePath, result.document.fileName)
+  if (result.fileStream) {
+    const safeFileName = result.document.fileName.replace(/"/g, '')
+    res.setHeader('Content-Type', result.document.mimeType || 'application/octet-stream')
+    res.setHeader('Content-Disposition', `attachment; filename="${safeFileName}"`)
+    return result.fileStream.pipe(res)
+  }
+
+  return res.download(result.filePath!, result.document.fileName)
 }
 
 export const deleteDocumentController = async (

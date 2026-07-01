@@ -21,9 +21,13 @@ import {
 import { RequestContext } from '~/models/request/common.request'
 import { Solution } from '~/models/Solution.schema'
 import { DocumentExtractionJob } from '~/models/DocumentExtractionJob.schema'
+import { CloudinaryStorage, LocalStorage, storageAdapter, UploadResult } from '~/services/storage'
 import databaseService from './database.service'
 import folderService from './folder.service'
 import helperService from './helpers/helper.service'
+
+const localStorage = new LocalStorage()
+const cloudStorage = new CloudinaryStorage()
 
 class DocumentService {
   private toObjectId(id: string) {
@@ -188,8 +192,72 @@ class DocumentService {
     return file.path ? file.path.replace(/\\/g, '/') : `test-memory://${file.originalname}`
   }
 
+  private getResourceType(mimeType: string): 'raw' | 'image' | 'auto' {
+    if (mimeType.startsWith('image/')) {
+      return 'image'
+    }
+    return 'raw'
+  }
+
+  private isLocalFile(document: Solution): boolean {
+    return document.storageBucket === 'local'
+  }
+
+  private isCloudFile(document: Solution): boolean {
+    return (
+      document.storageProvider === StorageProvider.cloudinary ||
+      document.storageKey.startsWith('https://') ||
+      document.storageKey.startsWith('http://')
+    )
+  }
+
   private getLocalFilePath(document: Solution) {
     return path.isAbsolute(document.storageKey) ? document.storageKey : path.resolve(document.storageKey)
+  }
+
+  private getStorageReadAdapter(document: Solution) {
+    return this.isCloudFile(document) ? cloudStorage : localStorage
+  }
+
+  private async hasActiveShareLinks(solutionId: ObjectId) {
+    const activeLinksCount = await databaseService.permissionLinks.countDocuments({ solutionId, isActive: true })
+    return activeLinksCount > 0
+  }
+
+  private getVisiblePublicUrl(document: Solution) {
+    return document.publicUrl || ''
+  }
+
+  private formatDocumentForClient(document: Solution) {
+    return {
+      _id: document._id,
+      uploaderId: document.uploaderId,
+      categoryId: document.categoryId,
+      folderId: document.folderId,
+      title: document.title,
+      description: document.description,
+      tags: document.tags,
+      fileName: document.fileName,
+      fileExtension: document.fileExtension,
+      fileSizeBytes: document.fileSizeBytes,
+      mimeType: document.mimeType,
+      publicUrl: this.getVisiblePublicUrl(document),
+      thumbnailUrl: document.thumbnailUrl,
+      status: document.status,
+      isPublic: document.isPublic,
+      viewCount: document.viewCount,
+      downloadCount: document.downloadCount,
+      language: document.language,
+      pageCount: document.pageCount,
+      aiStatus: document.aiStatus,
+      aiErrorMessage: document.aiErrorMessage,
+      extractionStatus: document.extractionStatus,
+      extractedText: document.extractedText,
+      extractedAt: document.extractedAt,
+      extractionErrorMessage: document.extractionErrorMessage,
+      createdAt: document.createdAt,
+      updatedAt: document.updatedAt
+    }
   }
 
   private async decreaseStorageUsage(accountId: ObjectId, fileSizeBytes: number) {
@@ -216,6 +284,7 @@ class DocumentService {
     let documentInserted = false
     let jobInserted = false
     let storageUsageIncreased = false
+    let uploadResult: UploadResult | undefined = undefined
 
     try {
       await this.ensureActiveVerifiedAccount(uploaderId)
@@ -223,6 +292,15 @@ class DocumentService {
       const categoryId = await this.validateCategory(payload.categoryId)
       const folderId = await folderService.validateFolderAccess(payload.folderId, uploaderId)
       await this.ensureStorageAvailable(uploaderId, file.size)
+
+      // Upload file len storage adapter
+      uploadResult = await storageAdapter.upload(file, {
+        folder: 'documents',
+        resourceType: this.getResourceType(file.mimetype),
+        originalName: file.originalname
+      })
+
+      const isPublic = this.parseBoolean(payload.isPublic)
 
       // Trich xuat text se duoc xu ly bat dong bo qua worker de tang toc do upload.
       // Trang thai cua Solution se duoc dat la pending.
@@ -239,13 +317,13 @@ class DocumentService {
         fileExtension: path.extname(file.originalname).toLowerCase(),
         fileSizeBytes: file.size,
         mimeType: file.mimetype,
-        storageProvider: StorageProvider.s3,
-        storageBucket: 'local',
-        storageKey: this.getLocalStorageKey(file),
+        storageProvider: uploadResult.provider,
+        storageBucket: uploadResult.storageBucket,
+        storageKey: uploadResult.storageKey,
         publicUrl: '',
-        thumbnailUrl: '',
+        thumbnailUrl: uploadResult.thumbnailUrl,
         status: SolutionStatus.active,
-        isPublic: this.parseBoolean(payload.isPublic),
+        isPublic,
         language: payload.language?.trim() || 'vi',
         aiStatus: AiStatus.pending,
         extractionStatus: ExtractionStatus.pending,
@@ -264,6 +342,8 @@ class DocumentService {
         solutionId,
         uploaderId,
         storageKey: document.storageKey,
+        storageProvider: document.storageProvider,
+        storageBucket: document.storageBucket,
         fileExtension: document.fileExtension,
         mimeType: document.mimeType
       })
@@ -280,12 +360,21 @@ class DocumentService {
         context
       })
 
-      return document
+      // Cleanup local temp file neu upload len cloud (cloudinary)
+      if (uploadResult.provider === StorageProvider.cloudinary) {
+        await this.removeUploadedFile(file)
+      }
+
+      return this.formatDocumentForClient(document)
     } catch (error) {
       await Promise.allSettled([
         documentInserted ? databaseService.solutions.deleteOne({ _id: solutionId, uploaderId }) : Promise.resolve(),
         jobInserted ? databaseService.documentExtractionJobs.deleteOne({ solutionId }) : Promise.resolve(),
         storageUsageIncreased ? this.decreaseStorageUsage(uploaderId, file.size) : Promise.resolve(),
+        // Rollback cloud upload neu insert db that bai
+        uploadResult && uploadResult.provider === StorageProvider.cloudinary
+          ? storageAdapter.delete(uploadResult.storageKey)
+          : Promise.resolve(),
         this.removeUploadedFile(file)
       ])
       throw error
@@ -456,6 +545,7 @@ class DocumentService {
       fileExtension: visibleDocument.fileExtension,
       fileSizeBytes: visibleDocument.fileSizeBytes,
       mimeType: visibleDocument.mimeType,
+      publicUrl: this.getVisiblePublicUrl(visibleDocument),
       thumbnailUrl: visibleDocument.thumbnailUrl,
       pageCount: visibleDocument.pageCount,
       status: visibleDocument.status,
@@ -530,7 +620,11 @@ class DocumentService {
     }
 
     if (payload.isPublic !== undefined) {
-      updateData.isPublic = this.parseBoolean(payload.isPublic)
+      const isPublic = this.parseBoolean(payload.isPublic)
+      updateData.isPublic = isPublic
+      if (!isPublic && !(await this.hasActiveShareLinks(solutionId))) {
+        updateData.publicUrl = ''
+      }
       changedFields.push('isPublic')
     }
 
@@ -565,6 +659,7 @@ class DocumentService {
       folderId: updatedDocument.folderId,
       tags: updatedDocument.tags,
       isPublic: updatedDocument.isPublic,
+      publicUrl: this.getVisiblePublicUrl(updatedDocument),
       language: updatedDocument.language,
       updatedAt: updatedDocument.updatedAt
     }
@@ -589,7 +684,7 @@ class DocumentService {
       extractionErrorMessage: document.extractionErrorMessage,
       storageProvider: document.storageProvider,
       storageBucket: document.storageBucket,
-      storageKey: document.storageKey,
+      publicUrl: this.getVisiblePublicUrl(document),
       createdAt: document.createdAt,
       updatedAt: document.updatedAt
     }
@@ -610,6 +705,23 @@ class DocumentService {
 
     const document = await this.getNotDeletedDocument(solutionId)
     this.ensureCanViewDocument(document, userObjectId)
+
+    // Neu dung cloud storage thi proxy stream qua API, khong expose storageKey cho client.
+    if (this.isCloudFile(document)) {
+      const fileStream = await this.getStorageReadAdapter(document).getFileStream(document.storageKey)
+      await databaseService.solutions.updateOne({ _id: solutionId }, { $inc: { downloadCount: 1 } })
+      await this.createActivityLog({
+        accountId: userObjectId,
+        action: ActivityAction.downloadSolution,
+        solutionId,
+        metadata: { fileName: document.fileName, fileSizeBytes: document.fileSizeBytes },
+        context
+      })
+      return {
+        document,
+        fileStream
+      }
+    }
 
     const filePath = this.getLocalFilePath(document)
     if (!fs.existsSync(filePath)) {

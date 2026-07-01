@@ -1,12 +1,15 @@
+import fs from 'node:fs'
 import { ObjectId } from 'mongodb'
-import { AuthProvider } from '~/constants/enum'
+import { AuthProvider, StorageProvider } from '~/constants/enum'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { USER_MESSAGES } from '~/constants/message'
 import { ErrorWithStatus } from '~/models/Error'
+import { Account } from '~/models/Account.schema'
 import { ChangePasswordReqBody, UpdateProfileReqBody } from '~/models/request/user.request'
 import { hashPassword } from '~/utils/crypto'
 import databaseService from './database.service'
 import helperService from './helpers/helper.service'
+import { storageAdapter, UploadResult } from './storage'
 
 class UserService {
   private toObjectId(accountId: string) {
@@ -17,12 +20,59 @@ class UserService {
     return helperService.ensureActiveVerifiedAccount(accountId)
   }
 
-  private buildAvatarUrl(file?: Express.Multer.File) {
-    if (!file) {
-      return undefined
+  private async removeUploadedFile(file?: Express.Multer.File) {
+    if (!file?.path) {
+      return
     }
 
-    return `/uploads/avatars/${file.filename}`
+    try {
+      await fs.promises.unlink(file.path)
+    } catch {
+      // File cleanup should not hide the original profile update result.
+    }
+  }
+
+  private getLocalAvatarUrl(file: Express.Multer.File, uploadResult: UploadResult) {
+    if (file.filename) {
+      return `/uploads/avatars/${file.filename}`
+    }
+
+    return `/${uploadResult.storageKey.replace(/^\/+/, '')}`
+  }
+
+  private async getAvatarUrl(file: Express.Multer.File, uploadResult: UploadResult) {
+    if (uploadResult.provider === StorageProvider.cloudinary) {
+      return uploadResult.thumbnailUrl || (await storageAdapter.getDownloadUrl(uploadResult.storageKey))
+    }
+
+    return this.getLocalAvatarUrl(file, uploadResult)
+  }
+
+  private async uploadAvatarFile(file: Express.Multer.File) {
+    const uploadResult = await storageAdapter.upload(file, {
+      folder: 'avatars',
+      resourceType: 'image',
+      originalName: file.originalname
+    })
+
+    return {
+      uploadResult,
+      avatarUrl: await this.getAvatarUrl(file, uploadResult)
+    }
+  }
+
+  private async deletePreviousCloudAvatar(account: Account, newStorageKey: string) {
+    if (
+      account.avatarStorageProvider === StorageProvider.cloudinary &&
+      account.avatarStorageKey &&
+      account.avatarStorageKey !== newStorageKey
+    ) {
+      try {
+        await storageAdapter.delete(account.avatarStorageKey)
+      } catch {
+        // Replacing the avatar already succeeded; stale avatar cleanup can be retried manually.
+      }
+    }
   }
 
   private async getStorageQuota(accountId: ObjectId) {
@@ -71,12 +121,16 @@ class UserService {
     avatar?: Express.Multer.File
   }) {
     const _id = this.toObjectId(accountId)
-    await this.getActiveVerifiedAccount(_id)
+    const account = await this.getActiveVerifiedAccount(_id)
+    let uploadedAvatar: UploadResult | undefined
 
     const updateData: Partial<{
       fullName: string
       username: string
       avatarUrl: string
+      avatarStorageProvider: StorageProvider
+      avatarStorageBucket: string
+      avatarStorageKey: string
       updatedAt: Date
     }> = {
       updatedAt: new Date()
@@ -100,27 +154,46 @@ class UserService {
       updateData.username = username
     }
 
-    const avatarUrl = this.buildAvatarUrl(avatar)
-    if (avatarUrl) {
-      updateData.avatarUrl = avatarUrl
-    }
+    try {
+      if (avatar) {
+        const avatarUpload = await this.uploadAvatarFile(avatar)
+        uploadedAvatar = avatarUpload.uploadResult
+        updateData.avatarUrl = avatarUpload.avatarUrl
+        updateData.avatarStorageProvider = avatarUpload.uploadResult.provider
+        updateData.avatarStorageBucket = avatarUpload.uploadResult.storageBucket
+        updateData.avatarStorageKey = avatarUpload.uploadResult.storageKey
+      }
 
-    const updatedAccount = await databaseService.accounts.findOneAndUpdate(
-      { _id },
-      { $set: updateData },
-      { returnDocument: 'after' }
-    )
+      const updatedAccount = await databaseService.accounts.findOneAndUpdate(
+        { _id },
+        { $set: updateData },
+        { returnDocument: 'after' }
+      )
 
-    if (!updatedAccount) {
-      throw new ErrorWithStatus(USER_MESSAGES.USER_NOT_FOUND, HTTP_STATUS.NOT_FOUND)
-    }
+      if (!updatedAccount) {
+        throw new ErrorWithStatus(USER_MESSAGES.USER_NOT_FOUND, HTTP_STATUS.NOT_FOUND)
+      }
 
-    return {
-      _id: updatedAccount._id,
-      fullName: updatedAccount.fullName,
-      username: updatedAccount.username,
-      avatarUrl: updatedAccount.avatarUrl,
-      updatedAt: updatedAccount.updatedAt
+      if (uploadedAvatar?.provider === StorageProvider.cloudinary) {
+        await this.removeUploadedFile(avatar)
+        await this.deletePreviousCloudAvatar(account, uploadedAvatar.storageKey)
+      }
+
+      return {
+        _id: updatedAccount._id,
+        fullName: updatedAccount.fullName,
+        username: updatedAccount.username,
+        avatarUrl: updatedAccount.avatarUrl,
+        updatedAt: updatedAccount.updatedAt
+      }
+    } catch (error) {
+      await Promise.allSettled([
+        uploadedAvatar?.provider === StorageProvider.cloudinary
+          ? storageAdapter.delete(uploadedAvatar.storageKey)
+          : Promise.resolve(),
+        this.removeUploadedFile(avatar)
+      ])
+      throw error
     }
   }
 

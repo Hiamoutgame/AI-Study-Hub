@@ -259,9 +259,9 @@ admin_lock_user, admin_delete_solution, admin_update_ai_config
 | `mimeType`                              | `String`      | required                                                                    | MIME type                                      |
 | `storageProvider`                       | `String`      | enum: `['s3','cloudinary','gcs']`, default: `'s3'`                          | Cloud provider                                 |
 | `storageBucket`                         | `String`      | required                                                                    | Tên bucket                                     |
-| `storageKey`                            | `String`      | required                                                                    | Key/path trên cloud                            |
-| `publicUrl`                             | `String`      | —                                                                           | URL công khai                                  |
-| `thumbnailUrl`                          | `String`      | —                                                                           | Ảnh preview                                    |
+| `storageKey`                            | `String`      | required                                                                    | Key/path trên cloud (local path hoặc Cloudinary `secure_url`) — **dùng nội bộ bởi server/worker** |
+| `publicUrl`                             | `String`      | default: `''`                                                               | URL công khai — **chỉ có giá trị khi `isPublic = true`**, trống nếu private. Xem [cloud-file-storage-plan.md](../plans/cloud-file-storage-plan.md#-quy-ước-quan-trọng-storagekey-vs-publicurl) |
+| `thumbnailUrl`                          | `String`      | —                                                                           | Ảnh preview (luôn có nếu image, không phải file gốc)                                 |
 | `status`                                | `String`      | enum: `['active','processing','error','archived']`, default: `'active'`     | Trạng thái file                                |
 | `isPublic`                              | `Boolean`     | default: `false`                                                            | Công khai không                                |
 | `viewCount`                             | `Number`      | default: `0`                                                                | Lượt xem                                       |

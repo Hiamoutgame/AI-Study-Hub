@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb'
-import { ExtractionStatus } from '~/constants/enum'
+import { ExtractionStatus, StorageProvider } from '~/constants/enum'
 
 /**
  * Interface định nghĩa cấu trúc của một document extraction job trong MongoDB.
@@ -12,6 +12,10 @@ export interface DocumentExtractionJobType {
   uploaderId: ObjectId
   /** Khóa lưu trữ của tệp tin trong hệ thống lưu trữ (ví dụ: đường dẫn file) */
   storageKey: string
+  /** Provider lưu trữ file gốc */
+  storageProvider?: StorageProvider
+  /** Bucket/folder hoặc cloud name tương ứng với provider */
+  storageBucket?: string
   /** Đuôi mở rộng của tệp tin (ví dụ: pdf, docx, txt) */
   fileExtension: string
   /** MIME type của tệp tin (ví dụ: application/pdf) */
@@ -47,6 +51,8 @@ export class DocumentExtractionJob implements DocumentExtractionJobType {
   solutionId: ObjectId
   uploaderId: ObjectId
   storageKey: string
+  storageProvider: StorageProvider
+  storageBucket: string
   fileExtension: string
   mimeType: string
   status: ExtractionStatus
@@ -70,6 +76,8 @@ export class DocumentExtractionJob implements DocumentExtractionJobType {
     this.solutionId = job.solutionId
     this.uploaderId = job.uploaderId
     this.storageKey = job.storageKey
+    this.storageProvider = job.storageProvider || StorageProvider.s3
+    this.storageBucket = job.storageBucket || 'local'
     this.fileExtension = job.fileExtension
     this.mimeType = job.mimeType
     this.status = job.status || ExtractionStatus.pending

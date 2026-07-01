@@ -1,5 +1,5 @@
 import express from 'express'
-import { resolveSharedLinkController } from '~/controllers/sharing.controller'
+import { getSharedFileController, resolveSharedLinkController } from '~/controllers/sharing.controller'
 import { shareTokenValidator } from '~/middlewares/sharing.middlewares'
 import { wrapAsync } from '~/utils/handler'
 
@@ -42,6 +42,7 @@ const sharedRouter = express.Router()
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
+sharedRouter.get('/:token/file', shareTokenValidator, wrapAsync(getSharedFileController))
 sharedRouter.get('/:token', shareTokenValidator, wrapAsync(resolveSharedLinkController))
 
 export default sharedRouter

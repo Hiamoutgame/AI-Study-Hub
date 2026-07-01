@@ -1,13 +1,17 @@
 import path from 'node:path'
-import fs from 'node:fs'
+import { Readable } from 'node:stream'
 import databaseService from '~/services/database.service'
 import documentExtractionJobService from '~/services/documentExtractionJob.service'
 import extractionService from '~/services/extraction.service'
+import { CloudinaryStorage, LocalStorage } from '~/services/storage'
 import { EXTRACTION_WORKER_POLL_INTERVAL_MS } from '~/constants/base'
-import { ExtractionStatus } from '~/constants/enum'
+import { ExtractionStatus, StorageProvider } from '~/constants/enum'
+import { DocumentExtractionJob } from '~/models/DocumentExtractionJob.schema'
 
 const WORKER_ID = `worker-${process.pid}-${Math.random().toString(36).substring(2, 9)}`
 let isRunning = true
+const localStorage = new LocalStorage()
+const cloudStorage = new CloudinaryStorage()
 
 /**
  * Hàm trì hoãn thực thi (sleep) bọc trong Promise để sử dụng với async/await.
@@ -15,44 +19,79 @@ let isRunning = true
  */
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
+const isLegacyCloudStorageKey = (storageKey: string) =>
+  storageKey.startsWith('https://') ||
+  storageKey.startsWith('http://') ||
+  storageKey.startsWith('raw:') ||
+  storageKey.startsWith('image:') ||
+  storageKey.startsWith('video:')
+
+const resolveStorageKeyForWorker = (storageKey: string) => {
+  if (storageKey.startsWith('test-memory://')) {
+    const uploadRoot = process.env.UPLOAD_ROOT || 'uploads'
+    const fileName = storageKey.replace('test-memory://', '')
+    return path.resolve(uploadRoot, fileName)
+  }
+
+  return storageKey
+}
+
+const streamToBuffer = async (stream: NodeJS.ReadableStream): Promise<Buffer> =>
+  new Promise((resolve, reject) => {
+    const chunks: Buffer[] = []
+
+    stream.on('data', (chunk: Buffer | string) => {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
+    })
+    stream.on('error', reject)
+    stream.on('end', () => resolve(Buffer.concat(chunks)))
+  })
+
+const readStorageBuffer = async (job: DocumentExtractionJob) => {
+  const { storageKey, storageProvider } = job
+  const resolvedStorageKey = resolveStorageKeyForWorker(storageKey)
+  const adapter =
+    storageProvider === StorageProvider.cloudinary || isLegacyCloudStorageKey(resolvedStorageKey)
+      ? cloudStorage
+      : localStorage
+  const stream = await adapter.getFileStream(resolvedStorageKey)
+  return streamToBuffer(stream)
+}
+
+const toError = (error: unknown) => (error instanceof Error ? error : new Error(String(error)))
+
 /**
  * Hàm xử lý chính cho một DocumentExtractionJob riêng lẻ.
  * Thực hiện kiểm tra sự tồn tại của tệp tin, trích xuất text và lưu trạng thái kết quả.
  * @param job Đối tượng job trích xuất cần thực hiện.
  */
-async function processJob(job: any): Promise<void> {
-  const { _id, solutionId, uploaderId, storageKey, mimeType, attempts, maxAttempts } = job
+async function processJob(job: DocumentExtractionJob): Promise<void> {
+  const { _id, solutionId, uploaderId, storageKey, fileExtension, mimeType, attempts, maxAttempts } = job
+  if (!_id) {
+    throw new Error('Extraction job is missing _id')
+  }
+
   console.log(
     `[Worker ${WORKER_ID}] Processing job ${_id} for solution ${solutionId} (Attempt ${attempts}/${maxAttempts})`
   )
 
   try {
-    let filePath = storageKey
-    // Hỗ trợ xử lý tệp ảo trong môi trường testing (test-memory://)
-    if (storageKey.startsWith('test-memory://')) {
-      const uploadRoot = process.env.UPLOAD_ROOT || 'uploads'
-      const fileName = storageKey.replace('test-memory://', '')
-      filePath = path.resolve(uploadRoot, fileName)
-    } else if (!path.isAbsolute(storageKey)) {
-      filePath = path.resolve(storageKey)
-    }
+    const buffer = await readStorageBuffer(job)
+    const normalizedExtension = fileExtension.startsWith('.') ? fileExtension : `.${fileExtension}`
+    const fileName = `document-${solutionId.toString()}${normalizedExtension}`
 
-    if (!fs.existsSync(filePath)) {
-      throw new Error(`File not found at path: ${filePath}`)
-    }
-
-    // Giả lập cấu trúc tệp tin Multer để truyền vào service trích xuất chữ có sẵn
+    // Gia lap Multer file tu storage stream de extraction service doc bang buffer.
     const fakeFile = {
       fieldname: 'file',
-      originalname: path.basename(filePath),
+      originalname: fileName,
       encoding: '7bit',
       mimetype: mimeType,
-      size: fs.statSync(filePath).size,
-      destination: path.dirname(filePath),
-      filename: path.basename(filePath),
-      path: filePath,
-      buffer: undefined as any,
-      stream: null as any
+      size: buffer.length,
+      destination: '',
+      filename: fileName,
+      path: '',
+      buffer,
+      stream: Readable.from(buffer)
     } as Express.Multer.File
 
     const result = await extractionService.extractText(fakeFile)
@@ -66,9 +105,10 @@ async function processJob(job: any): Promise<void> {
     } else {
       throw new Error(result.errorMessage || 'Extraction failed')
     }
-  } catch (error: any) {
-    console.error(`[Worker ${WORKER_ID}] Error processing job ${_id}:`, error)
-    await documentExtractionJobService.failJob(_id, solutionId, error, uploaderId, attempts, maxAttempts)
+  } catch (error: unknown) {
+    const extractionError = toError(error)
+    console.error(`[Worker ${WORKER_ID}] Error processing job ${_id}:`, extractionError)
+    await documentExtractionJobService.failJob(_id, solutionId, extractionError, uploaderId, attempts, maxAttempts)
   }
 }
 

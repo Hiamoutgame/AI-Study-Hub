@@ -1,7 +1,7 @@
 import crypto from 'node:crypto'
 import { Filter, ObjectId } from 'mongodb'
 import { BASE_URL } from '~/constants/base'
-import { ActivityAction, ActivityEntityType, PermissionLevel } from '~/constants/enum'
+import { ActivityAction, ActivityEntityType, PermissionLevel, StorageProvider } from '~/constants/enum'
 import HTTP_STATUS from '~/constants/httpStatus'
 import { BOOKMARK_MESSAGES, SHARING_MESSAGES } from '~/constants/message'
 import { ErrorWithStatus } from '~/models/Error'
@@ -10,8 +10,12 @@ import { PermissionLink } from '~/models/PermissionLink.schema'
 import { AddBookmarkReqBody, CreateShareLinkReqBody, GetBookmarksQuery } from '~/models/request/sharing.request'
 import { RequestContext } from '~/models/request/common.request'
 import { Solution } from '~/models/Solution.schema'
+import { CloudinaryStorage, LocalStorage } from './storage'
 import databaseService from './database.service'
 import helperService from './helpers/helper.service'
+
+const localStorage = new LocalStorage()
+const cloudStorage = new CloudinaryStorage()
 
 class SharingService {
   private toObjectId(id: string) {
@@ -47,12 +51,26 @@ class SharingService {
     return `${BASE_URL.replace(/\/$/, '')}/shared/${token}`
   }
 
-  private getPublicFileUrl(document: Solution) {
-    if (document.publicUrl) {
-      return document.publicUrl
+  private getSharedFileUrl(token: string) {
+    return `${this.getShareUrl(token)}/file`
+  }
+
+  private async ensurePublicUrlForShare(document: Solution, token: string) {
+    const publicUrl = this.getShareUrl(token)
+    if (!document.publicUrl) {
+      await databaseService.solutions.updateOne({ _id: document._id }, { $set: { publicUrl, updatedAt: new Date() } })
+      document.publicUrl = publicUrl
     }
 
-    return `${BASE_URL.replace(/\/$/, '')}/${document.storageKey.replace(/^\/+/, '')}`
+    return publicUrl
+  }
+
+  private getStorageAdapter(document: Solution) {
+    return document.storageProvider === StorageProvider.cloudinary ||
+      document.storageKey.startsWith('https://') ||
+      document.storageKey.startsWith('http://')
+      ? cloudStorage
+      : localStorage
   }
 
   private getNotDeletedFilter(): Filter<Solution> {
@@ -310,6 +328,7 @@ class SharingService {
     })
 
     await databaseService.permissionLinks.insertOne(link)
+    await this.ensurePublicUrlForShare(document, link.token)
     await this.createActivityLog({
       accountId: userObjectId,
       action: ActivityAction.shareLinkCreate,
@@ -363,6 +382,13 @@ class SharingService {
     )
 
     if (result.modifiedCount > 0) {
+      if (!document.isPublic) {
+        const activeLinksCount = await databaseService.permissionLinks.countDocuments({ solutionId, isActive: true })
+        if (activeLinksCount === 0) {
+          await databaseService.solutions.updateOne({ _id: solutionId }, { $set: { publicUrl: '', updatedAt: new Date() } })
+        }
+      }
+
       await this.createActivityLog({
         accountId: userObjectId,
         action: ActivityAction.shareLinkRevoke,
@@ -409,7 +435,8 @@ class SharingService {
         context
       })
     ])
-    const fileUrl = this.getPublicFileUrl(document)
+    await this.ensurePublicUrlForShare(document, link.token)
+    const fileUrl = this.getSharedFileUrl(link.token)
 
     return {
       solution: {
@@ -430,7 +457,7 @@ class SharingService {
       canDownload: link.canDownload,
       canComment: link.canComment,
       previewUrl: fileUrl,
-      downloadUrl: link.canDownload ? fileUrl : null,
+      downloadUrl: link.canDownload ? `${fileUrl}?download=1` : null,
       sharedBy: sharedBy
         ? {
             _id: sharedBy._id,
@@ -440,6 +467,35 @@ class SharingService {
           }
         : null,
       expiresAt: link.expiresAt
+    }
+  }
+
+  async getSharedFile({ token, download = false }: { token: string; download?: boolean }) {
+    const link = await databaseService.permissionLinks.findOne({ token, isActive: true })
+    if (!link) {
+      throw new ErrorWithStatus(SHARING_MESSAGES.SHARE_LINK_NOT_FOUND, HTTP_STATUS.NOT_FOUND)
+    }
+
+    const now = new Date()
+    if (link.expiresAt && link.expiresAt <= now) {
+      throw new ErrorWithStatus(SHARING_MESSAGES.SHARE_LINK_EXPIRED, HTTP_STATUS.FORBIDDEN)
+    }
+
+    if (link.maxUses !== null && link.currentUses >= link.maxUses) {
+      throw new ErrorWithStatus(SHARING_MESSAGES.SHARE_LINK_USAGE_LIMIT_REACHED, HTTP_STATUS.FORBIDDEN)
+    }
+
+    if (download && !link.canDownload) {
+      throw new ErrorWithStatus(SHARING_MESSAGES.SHARE_LINK_DOWNLOAD_DENIED, HTTP_STATUS.FORBIDDEN)
+    }
+
+    const document = await this.getNotDeletedDocument(link.solutionId)
+    await this.ensurePublicUrlForShare(document, link.token)
+    const stream = await this.getStorageAdapter(document).getFileStream(document.storageKey)
+
+    return {
+      document,
+      stream
     }
   }
 }

@@ -1,0 +1,21 @@
+services:
+  server:
+    image: anhvietanh1123/ai-study-hub-api:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      STORAGE_PROVIDER: cloudinary
+      DATABASE_URL: ${DATABASE_URL}
+      DB_NAME: ${DB_NAME}
+      BASE_URL: ${BASE_URL}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+    ports:
+      - '5285:5285'
+    restart: unless-stopped

@@ -12,3 +12,4 @@ process.env.SMTP_USER = ''
 process.env.SMTP_PASS = ''
 process.env.EMAIL_FROM = 'test@ai-study-hub.local'
 process.env.UPLOAD_ROOT = path.resolve(process.cwd(), '.test-data', 'uploads')
+process.env.STORAGE_PROVIDER = 'local'

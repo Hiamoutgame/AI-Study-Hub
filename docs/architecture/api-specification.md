@@ -535,6 +535,11 @@ Tất cả response đều bọc trong envelope chuẩn:
 }
 ```
 
+> ⚠️ **`publicUrl`** chỉ có giá trị khi `isPublic = true`. Ở ví dụ trên `isPublic: false` nên `publicUrl: null`.
+> - `storageKey` chứa Cloudinary `secure_url` (hoặc local path) — **chỉ dùng nội bộ bởi server/worker**, KHÔNG expose cho FE.
+> - Khi `isPublic = true`, `publicUrl` sẽ bằng `storageKey` (Cloudinary URL truy cập trực tiếp).
+> - Xem chi tiết: [cloud-file-storage-plan.md — Quy ước storageKey vs publicUrl](../plans/cloud-file-storage-plan.md#-quy-ước-quan-trọng-storagekey-vs-publicurl)
+
 ---
 
 ### US04, US07, US08 — Xem danh sách Tài liệu (có tìm kiếm + lọc)

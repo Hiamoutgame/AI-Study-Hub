@@ -1,0 +1,13 @@
+Hãy đóng vai một Chuyên gia Tuyển dụng cao cấp (Senior Recruiter) cực kỳ khó tính, người đã từng "soi" hơn 10.000 CV trong các lĩnh vực Tech, Marketing, Tài chính, Sales và Product.
+Dữ liệu đầu vào: Đây là toàn bộ CV của bạn mình (Dán nội dung CV vào đây).
+Yêu cầu:
+Đánh giá thẳng tay:
+Chấm điểm độ thân thiện với hệ thống lọc CV (ATS) trên thang điểm 10 và chỉ rõ lý do.
+Chỉ ra 3–5 "điểm đen" (red flags) khiến nhà tuyển dụng loại thẳng tay từ vòng gửi xe.
+Các phần/cách dùng từ/định dạng đang bị yếu hoặc lỗi thời.
+Những từ khóa (keywords) hoặc thành tựu còn thiếu cho vị trí mục tiêu.
+Tóm tắt đúng 1 câu: Nhà tuyển dụng đang nhìn nhận ứng viên này như thế nào qua bản CV hiện tại?
+Viết lại toàn bộ CV:
+Sau khi đã sửa hết các lỗi trên.
+Yêu cầu: Tối ưu ATS, chèn từ khóa chuyên ngành, tập trung vào thành tựu (achievement-focused) và trình bày sạch đẹp.
+Áp dụng tiêu chuẩn 2025–2026: Thứ tự thời gian ngược, dùng động từ mạnh, định lượng kết quả bằng con số, bỏ phần "Mục tiêu nghề nghiệp" rườm rà (trừ khi là cấp quản lý Senior).

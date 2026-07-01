@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb'
-import { AuthProvider, UserRole } from '~/constants/enum'
+import { AuthProvider, StorageProvider, UserRole } from '~/constants/enum'
 
 export interface AccountType {
   _id?: ObjectId
@@ -8,6 +8,9 @@ export interface AccountType {
   fullName: string
   username: string
   avatarUrl?: string
+  avatarStorageProvider?: StorageProvider
+  avatarStorageBucket?: string
+  avatarStorageKey?: string
   role?: UserRole
   provider?: AuthProvider
   providerId?: string
@@ -35,6 +38,9 @@ export class Account implements AccountType {
   fullName: string
   username: string
   avatarUrl: string
+  avatarStorageProvider: StorageProvider
+  avatarStorageBucket: string
+  avatarStorageKey: string
   role: UserRole
   provider: AuthProvider
   providerId: string
@@ -62,6 +68,9 @@ export class Account implements AccountType {
     this.fullName = account.fullName
     this.username = account.username
     this.avatarUrl = account.avatarUrl || ''
+    this.avatarStorageProvider = account.avatarStorageProvider || StorageProvider.s3
+    this.avatarStorageBucket = account.avatarStorageBucket || 'local'
+    this.avatarStorageKey = account.avatarStorageKey || ''
     this.role = account.role || UserRole.user
     this.provider = account.provider || AuthProvider.local
     this.providerId = account.providerId || ''

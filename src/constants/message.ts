@@ -203,6 +203,7 @@ export const SHARING_MESSAGES = {
   SHARE_LINK_NOT_FOUND: 'Share link not found',
   SHARE_LINK_EXPIRED: 'Share link expired',
   SHARE_LINK_USAGE_LIMIT_REACHED: 'Share link usage limit reached',
+  SHARE_LINK_DOWNLOAD_DENIED: 'Share link does not allow download',
   SHARE_TOKEN_GENERATION_FAILED: 'Could not generate share token',
   CREATE_SHARE_LINK_SUCCESS: 'Create share link success',
   GET_SHARE_LINKS_SUCCESS: 'Get share links success',
