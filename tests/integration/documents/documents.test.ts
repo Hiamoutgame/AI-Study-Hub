@@ -206,7 +206,10 @@ describe('document routes', () => {
       isPublic: false
     })
 
-    const detailResponse = await request(app).get(`/documents/${document._id}`).set('Authorization', authorization).expect(200)
+    const detailResponse = await request(app)
+      .get(`/documents/${document._id}`)
+      .set('Authorization', authorization)
+      .expect(200)
 
     expect(detailResponse.body.data.publicUrl).toBe('')
     expect(detailResponse.body.data.storageKey).toBeUndefined()

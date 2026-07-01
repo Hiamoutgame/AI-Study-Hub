@@ -47,7 +47,9 @@ async function runCleanup() {
         if (isCloudFile(doc)) {
           console.log(`Xóa file từ Cloudinary...`)
           // Ignore error if file doesn't exist on cloud
-          await cloudStorage.delete(doc.storageKey).catch((e) => console.log('File không còn trên Cloudinary:', e.message))
+          await cloudStorage
+            .delete(doc.storageKey)
+            .catch((e) => console.log('File không còn trên Cloudinary:', e.message))
         } else {
           console.log(`Xóa file từ Local disk...`)
           await localStorage.delete(doc.storageKey).catch((e) => console.log('File không còn trên disk:', e.message))

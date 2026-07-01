@@ -385,7 +385,10 @@ class SharingService {
       if (!document.isPublic) {
         const activeLinksCount = await databaseService.permissionLinks.countDocuments({ solutionId, isActive: true })
         if (activeLinksCount === 0) {
-          await databaseService.solutions.updateOne({ _id: solutionId }, { $set: { publicUrl: '', updatedAt: new Date() } })
+          await databaseService.solutions.updateOne(
+            { _id: solutionId },
+            { $set: { publicUrl: '', updatedAt: new Date() } }
+          )
         }
       }
 

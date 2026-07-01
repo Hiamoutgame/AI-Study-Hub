@@ -9,10 +9,10 @@
 > [!CAUTION]
 > **KHÔNG ĐƯỢC nhầm lẫn 2 field này.** Nhầm lẫn sẽ gây lỗ hổng bảo mật: file private bị lộ URL cho bất kỳ ai.
 
-| Field | Mục đích | Ai dùng | Khi nào có giá trị |
-|-------|----------|---------|--------------------|
-| `storageKey` | **Key nội bộ** để server/worker đọc file từ storage. Cloudinary dùng dạng `resourceType:publicId` | Chỉ service layer (BE) | **Luôn luôn** — mọi document đều có |
-| `publicUrl` | **URL của app** để mời/xem file qua permission flow, ví dụ `/shared/:token` | FE, share link recipients | Khi có share link active hoặc public route của app |
+| Field        | Mục đích                                                                                          | Ai dùng                   | Khi nào có giá trị                                 |
+| ------------ | ------------------------------------------------------------------------------------------------- | ------------------------- | -------------------------------------------------- |
+| `storageKey` | **Key nội bộ** để server/worker đọc file từ storage. Cloudinary dùng dạng `resourceType:publicId` | Chỉ service layer (BE)    | **Luôn luôn** — mọi document đều có                |
+| `publicUrl`  | **URL của app** để mời/xem file qua permission flow, ví dụ `/shared/:token`                       | FE, share link recipients | Khi có share link active hoặc public route của app |
 
 ### Tại sao phải tách?
 
@@ -55,26 +55,26 @@ Client upload file
 
 ### Vấn đề cụ thể
 
-| Vấn đề | Impact |
-|--------|--------|
-| File lưu local trên VPS | Hết disk nhanh |
-| `storageKey` là local path | Worker/download phụ thuộc disk |
-| Document public không có URL online | FE phải proxy qua API |
-| Download qua API proxy | Tốn bandwidth VPS |
-| Docker volume `uploads-data` | Mất nếu rebuild/migrate VPS |
-| Không CDN | Chậm cho user xa VPS |
+| Vấn đề                              | Impact                         |
+| ----------------------------------- | ------------------------------ |
+| File lưu local trên VPS             | Hết disk nhanh                 |
+| `storageKey` là local path          | Worker/download phụ thuộc disk |
+| Document public không có URL online | FE phải proxy qua API          |
+| Download qua API proxy              | Tốn bandwidth VPS              |
+| Docker volume `uploads-data`        | Mất nếu rebuild/migrate VPS    |
+| Không CDN                           | Chậm cho user xa VPS           |
 
 ### Tại sao chọn Cloudinary?
 
-| Tiêu chí | Cloudinary | S3 | GCS |
-|----------|------------|-----|-----|
-| Free tier | 25GB + 25GB bandwidth/tháng | Không free | Không free |
-| Setup phức tạp | Thấp (SDK đơn giản) | Trung bình (IAM, bucket policy) | Trung bình |
-| CDN built-in | ✅ | Cần thêm CloudFront | Cần thêm |
-| Raw file support | ✅ (pdf, docx, txt, md) | ✅ | ✅ |
-| Image transform | ✅ (thumbnail tự động) | Không | Không |
-| Phù hợp demo | ✅ | Không | Không |
-| Upgrade production | Dễ nâng plan | Dễ scale | Dễ scale |
+| Tiêu chí           | Cloudinary                  | S3                              | GCS        |
+| ------------------ | --------------------------- | ------------------------------- | ---------- |
+| Free tier          | 25GB + 25GB bandwidth/tháng | Không free                      | Không free |
+| Setup phức tạp     | Thấp (SDK đơn giản)         | Trung bình (IAM, bucket policy) | Trung bình |
+| CDN built-in       | ✅                          | Cần thêm CloudFront             | Cần thêm   |
+| Raw file support   | ✅ (pdf, docx, txt, md)     | ✅                              | ✅         |
+| Image transform    | ✅ (thumbnail tự động)      | Không                           | Không      |
+| Phù hợp demo       | ✅                          | Không                           | Không      |
+| Upgrade production | Dễ nâng plan                | Dễ scale                        | Dễ scale   |
 
 > [!NOTE]
 > Cloudinary free tier: 25 credits/tháng ≈ 25GB storage + 25GB bandwidth. Đủ cho demo/dev. Production có thể nâng plan hoặc migrate sang S3 sau.
@@ -126,9 +126,9 @@ export const STORAGE_PROVIDER = process.env.STORAGE_PROVIDER || 'local'
 ```ts
 // src/services/storage/storage.interface.ts
 export interface UploadResult {
-  storageKey: string      // Internal locator; Cloudinary dùng dạng resourceType:publicId
-  thumbnailUrl: string    // URL thumbnail (nếu có, chỉ image)
-  storageBucket: string   // bucket/folder name trên provider
+  storageKey: string // Internal locator; Cloudinary dùng dạng resourceType:publicId
+  thumbnailUrl: string // URL thumbnail (nếu có, chỉ image)
+  storageBucket: string // bucket/folder name trên provider
   provider: StorageProvider
   // LƯU Ý: KHÔNG có publicUrl ở đây.
   // publicUrl được set trong document.service.ts dựa trên isPublic flag.
@@ -142,7 +142,7 @@ export interface StorageAdapter {
 }
 
 export interface UploadOptions {
-  folder: string          // subfolder trong cloud, ví dụ 'documents' | 'avatars'
+  folder: string // subfolder trong cloud, ví dụ 'documents' | 'avatars'
   resourceType: 'raw' | 'image' | 'auto'
   originalName: string
 }
@@ -176,23 +176,20 @@ import { STORAGE_PROVIDER } from '~/constants/base'
 import { LocalStorage } from './local.storage'
 import { CloudinaryStorage } from './cloudinary.storage'
 
-export const storageAdapter =
-  STORAGE_PROVIDER === 'cloudinary'
-    ? new CloudinaryStorage()
-    : new LocalStorage()
+export const storageAdapter = STORAGE_PROVIDER === 'cloudinary' ? new CloudinaryStorage() : new LocalStorage()
 ```
 
 ### Files thay đổi Phase 1
 
-| File | Action |
-|------|--------|
-| `src/constants/base.ts` | Thêm Cloudinary + STORAGE_PROVIDER env |
-| `src/services/storage/storage.interface.ts` | [NEW] Interface |
-| `src/services/storage/local.storage.ts` | [NEW] Local adapter |
-| `src/services/storage/cloudinary.storage.ts` | [NEW] Cloudinary adapter |
-| `src/services/storage/index.ts` | [NEW] Factory |
-| `.env` | Thêm Cloudinary credentials |
-| `package.json` | Thêm `cloudinary` dependency |
+| File                                         | Action                                 |
+| -------------------------------------------- | -------------------------------------- |
+| `src/constants/base.ts`                      | Thêm Cloudinary + STORAGE_PROVIDER env |
+| `src/services/storage/storage.interface.ts`  | [NEW] Interface                        |
+| `src/services/storage/local.storage.ts`      | [NEW] Local adapter                    |
+| `src/services/storage/cloudinary.storage.ts` | [NEW] Cloudinary adapter               |
+| `src/services/storage/index.ts`              | [NEW] Factory                          |
+| `.env`                                       | Thêm Cloudinary credentials            |
+| `package.json`                               | Thêm `cloudinary` dependency           |
 
 ---
 
@@ -203,10 +200,12 @@ export const storageAdapter =
 ### 2.1 Sửa upload middleware strategy
 
 Vấn đề: Multer disk storage ghi file xuống disk trước khi controller chạy. Với cloud, cần:
+
 - **Option A**: Vẫn dùng Multer disk → upload to cloud trong service → xóa local file sau. (Đơn giản, an toàn)
 - **Option B**: Dùng Multer memory storage → stream thẳng lên cloud. (Tốn RAM nếu file lớn)
 
 **Chọn Option A** cho phase này:
+
 1. Multer vẫn ghi file local tạm
 2. Service upload file lên Cloudinary
 3. Xóa file local sau khi cloud upload thành công
@@ -239,13 +238,13 @@ File chỉ tồn tại trên disk **vài giây** trong bước 2→4. VPS disk u
 
 **Bảng tình huống trong Docker:**
 
-| Tình huống | Kết quả |
-|-----------|---------|
-| Upload thành công | File tạm bị `unlink()` ở bước 4 → disk sạch |
-| Cloud upload fail | Rollback xóa DB record, giữ file tạm (retry hoặc cleanup sau) |
-| Container restart/rebuild | Writable layer bị reset → file tạm **tự biến mất** |
+| Tình huống                 | Kết quả                                                       |
+| -------------------------- | ------------------------------------------------------------- |
+| Upload thành công          | File tạm bị `unlink()` ở bước 4 → disk sạch                   |
+| Cloud upload fail          | Rollback xóa DB record, giữ file tạm (retry hoặc cleanup sau) |
+| Container restart/rebuild  | Writable layer bị reset → file tạm **tự biến mất**            |
 | Nhiều user upload cùng lúc | Mỗi file tên unique (`timestamp-random.ext`) → không conflict |
-| Docker image rebuild | Writable layer không thuộc image → zero impact |
+| Docker image rebuild       | Writable layer không thuộc image → zero impact                |
 
 **Khi nào bỏ Docker volume `uploads-data`?**
 
@@ -253,7 +252,7 @@ Hiện tại `compose.yaml` mount persistent volume:
 
 ```yaml
 volumes:
-  - uploads-data:/usr/src/app/uploads  # file tồn tại vĩnh viễn qua restart
+  - uploads-data:/usr/src/app/uploads # file tồn tại vĩnh viễn qua restart
 ```
 
 > [!WARNING]
@@ -268,6 +267,7 @@ Sau khi migrate xong + chuyển `STORAGE_PROVIDER=cloudinary`:
 ```
 
 Kết quả sau khi bỏ volume:
+
 - File tạm nằm trên container writable layer (ephemeral)
 - `unlink()` xóa sau upload → disk usage ≈ 0
 - Container restart → mất hết file tạm (không sao, đã lên cloud)
@@ -324,6 +324,7 @@ Trong `uploadDocument()`:
 
 > [!IMPORTANT]
 > **`publicUrl` KHÔNG tự động lấy từ Cloudinary.** Logic quyết định:
+>
 > - Upload document → `publicUrl = ''`
 > - Tạo share link → `publicUrl = <BASE_URL>/shared/:token`
 > - Không còn public/share route active → `publicUrl = ''`
@@ -357,6 +358,7 @@ await this.removeUploadedFile(file)
 Response `getDocumentDetail` trả `publicUrl` là URL app/share nếu có, không phải Cloudinary URL:
 
 **Document public (`isPublic = true`):**
+
 ```json
 {
   "publicUrl": "https://api.example.com/shared/<token>",
@@ -365,6 +367,7 @@ Response `getDocumentDetail` trả `publicUrl` là URL app/share nếu có, khô
 ```
 
 **Document private (`isPublic = false`):**
+
 ```json
 {
   "publicUrl": "",
@@ -376,17 +379,18 @@ Response `getDocumentDetail` trả `publicUrl` là URL app/share nếu có, khô
 > `thumbnailUrl` luôn có (nếu là image) vì thumbnail là preview nhỏ, không phải file gốc. Không gây rủi ro bảo mật.
 
 FE xử lý:
+
 - `publicUrl` có giá trị → mở route app/share, không mở trực tiếp Cloudinary
 - `publicUrl` trống → FE phải gọi `GET /documents/:id/download` qua API (có auth)
 - `thumbnailUrl` có giá trị → hiển thị `<img src={thumbnailUrl}>` cho mọi document
 
 ### Files thay đổi Phase 2
 
-| File | Action |
-|------|--------|
-| `src/services/document.service.ts` | Sửa `uploadDocument()`, `downloadDocument()` |
-| `src/controllers/document.controller.ts` | Sửa download response (redirect vs stream) |
-| `src/middlewares/upload.middlewares.ts` | Có thể giữ nguyên (vẫn disk storage tạm) |
+| File                                     | Action                                       |
+| ---------------------------------------- | -------------------------------------------- |
+| `src/services/document.service.ts`       | Sửa `uploadDocument()`, `downloadDocument()` |
+| `src/controllers/document.controller.ts` | Sửa download response (redirect vs stream)   |
+| `src/middlewares/upload.middlewares.ts`  | Có thể giữ nguyên (vẫn disk storage tạm)     |
 
 ---
 
@@ -440,10 +444,10 @@ await storageAdapter.delete(document.storageKey)
 
 ### Files thay đổi Phase 3
 
-| File | Action |
-|------|--------|
-| `src/services/document.service.ts` | Thêm `isLocalFile()`, sửa delete logic |
-| `scripts/migrate-local-to-cloud.ts` | [NEW] Migration script |
+| File                                | Action                                 |
+| ----------------------------------- | -------------------------------------- |
+| `src/services/document.service.ts`  | Thêm `isLocalFile()`, sửa delete logic |
+| `scripts/migrate-local-to-cloud.ts` | [NEW] Migration script                 |
 
 ---
 
@@ -470,10 +474,10 @@ Sửa [extraction.service.ts](file:///f:/Coding/Project/AI-Study-Hub/src/service
 
 ### Files thay đổi Phase 4
 
-| File | Action |
-|------|--------|
-| `src/services/extraction.service.ts` | Accept stream/buffer |
-| `src/workers/documentExtraction.worker.ts` | Dùng storage adapter |
+| File                                            | Action                      |
+| ----------------------------------------------- | --------------------------- |
+| `src/services/extraction.service.ts`            | Accept stream/buffer        |
+| `src/workers/documentExtraction.worker.ts`      | Dùng storage adapter        |
 | `src/services/documentExtractionJob.service.ts` | Pass storage info to worker |
 
 ---
@@ -504,12 +508,12 @@ services:
 
 ### Files thay đổi Phase 5
 
-| File | Action |
-|------|--------|
-| `src/services/user.service.ts` | Upload avatar qua storage adapter, cleanup temp file |
-| `src/models/Account.schema.ts` | Lưu avatar storage metadata nội bộ |
-| `compose.cloud.yaml` | Cloud deployment không mount uploads volume |
-| `Dockerfile` | Vẫn giữ `mkdir uploads` để Multer có temp folder trong container |
+| File                           | Action                                                           |
+| ------------------------------ | ---------------------------------------------------------------- |
+| `src/services/user.service.ts` | Upload avatar qua storage adapter, cleanup temp file             |
+| `src/models/Account.schema.ts` | Lưu avatar storage metadata nội bộ                               |
+| `compose.cloud.yaml`           | Cloud deployment không mount uploads volume                      |
+| `Dockerfile`                   | Vẫn giữ `mkdir uploads` để Multer có temp folder trong container |
 
 ---
 
@@ -529,6 +533,7 @@ Có thể tạo endpoint admin hoặc cron job check weekly.
 ### 6.2 Đồng bộ StorageQuota
 
 `StorageQuota.totalBytes` hiện track dung lượng user. Cloud storage thay đổi cách tính:
+
 - Upload thành công → tăng `usedBytes` (giữ nguyên logic hiện tại)
 - Quota vẫn enforce ở tầng API, không phụ thuộc cloud limit
 
@@ -536,14 +541,14 @@ Có thể tạo endpoint admin hoặc cron job check weekly.
 
 ## Tóm Tắt Phases
 
-| Phase | Nội dung | Effort | Dependency |
-|-------|----------|--------|------------|
-| **1** | Storage adapter interface + Cloudinary SDK | 1-2 ngày | Tạo Cloudinary account |
-| **2** | Tích hợp upload flow | 1-2 ngày | Phase 1 |
-| **3** | Migration + backward compat + delete | 1 ngày | Phase 2 |
-| **4** | Worker extraction tương thích cloud | 1 ngày | Phase 2, async extraction plan |
-| **5** | Avatar upload cloud + cleanup | 0.5 ngày | Phase 1 |
-| **6** | Monitoring + quota | 0.5 ngày | Phase 2 |
+| Phase | Nội dung                                   | Effort   | Dependency                     |
+| ----- | ------------------------------------------ | -------- | ------------------------------ |
+| **1** | Storage adapter interface + Cloudinary SDK | 1-2 ngày | Tạo Cloudinary account         |
+| **2** | Tích hợp upload flow                       | 1-2 ngày | Phase 1                        |
+| **3** | Migration + backward compat + delete       | 1 ngày   | Phase 2                        |
+| **4** | Worker extraction tương thích cloud        | 1 ngày   | Phase 2, async extraction plan |
+| **5** | Avatar upload cloud + cleanup              | 0.5 ngày | Phase 1                        |
+| **6** | Monitoring + quota                         | 0.5 ngày | Phase 2                        |
 
 > [!IMPORTANT]
 > Phase 1+2 là **bắt buộc** để giải quyết vấn đề storage VPS. Phase 3-6 có thể làm dần.
@@ -567,14 +572,14 @@ scripts/
 
 ## Rủi Ro Và Mitigation
 
-| Rủi ro | Mitigation |
-|--------|-----------|
-| Cloudinary free tier hết quota | Monitor usage, nâng plan khi cần |
-| Upload cloud fail giữa chừng | Rollback: xóa DB record, giữ local file |
-| File cũ local không accessible sau migrate | Migration script verify trước khi xóa |
-| FE gọi download qua API cho private file | Đúng behavior — private file phải qua auth |
-| Cloudinary URL bị leak | Rủi ro thấp: URL khó đoán, có thể bật Cloudinary signed URL sau |
-| Cloudinary down | Fallback về local storage nếu cloud fail |
+| Rủi ro                                     | Mitigation                                                      |
+| ------------------------------------------ | --------------------------------------------------------------- |
+| Cloudinary free tier hết quota             | Monitor usage, nâng plan khi cần                                |
+| Upload cloud fail giữa chừng               | Rollback: xóa DB record, giữ local file                         |
+| File cũ local không accessible sau migrate | Migration script verify trước khi xóa                           |
+| FE gọi download qua API cho private file   | Đúng behavior — private file phải qua auth                      |
+| Cloudinary URL bị leak                     | Rủi ro thấp: URL khó đoán, có thể bật Cloudinary signed URL sau |
+| Cloudinary down                            | Fallback về local storage nếu cloud fail                        |
 
 ---
 

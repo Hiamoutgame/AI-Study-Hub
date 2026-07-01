@@ -13,7 +13,9 @@ export class LocalStorage implements StorageAdapter {
    * Do Multer đã lưu file xuống disk từ trước nên ở đây chỉ cần lấy thông tin file.
    */
   async upload(file: Express.Multer.File, options: UploadOptions): Promise<UploadResult> {
-    const storageKey = file.path ? file.path.replace(/\\/g, '/') : `uploads/${options.folder}/${Date.now()}-${options.originalName}`
+    const storageKey = file.path
+      ? file.path.replace(/\\/g, '/')
+      : `uploads/${options.folder}/${Date.now()}-${options.originalName}`
     return {
       storageKey,
       thumbnailUrl: '',
